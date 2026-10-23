@@ -27,9 +27,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ProOffer {
 	/**
-	 * Address of SwiftLing Pro's prices.
+	 * Address of SwiftLing Pro's prices: the pricing section of the home page.
 	 */
-	public const URL = 'https://swiftling.pro/pricing/';
+	public const URL = 'https://swiftling.pro/#pricing';
 
 	/**
 	 * User meta: the person hid the card on the Overview. Start over removes it with SwiftLing's

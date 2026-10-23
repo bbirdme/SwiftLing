@@ -54,7 +54,7 @@ class ProOfferTest extends TestCase {
 	 * Every offer leads to swiftling.pro in a tab of its own, with where it was in the address.
 	 */
 	public function test_offers_lead_to_the_prices() {
-		$this->assertSame( 'https://swiftling.pro/pricing/?utm_source=swiftling&utm_medium=plugin&utm_campaign=header', ProOffer::url( 'header' ) );
+		$this->assertSame( 'https://swiftling.pro/?utm_source=swiftling&utm_medium=plugin&utm_campaign=header#pricing', ProOffer::url( 'header' ) );
 		$this->become( 'administrator' );
 		$this->assertMatchesRegularExpression( '~<a [^>]*href="' . preg_quote( esc_url( ProOffer::url( 'header' ) ), '~' ) . '"[^>]*target="_blank"[^>]*rel="noopener[^"]*"~', $this->screen( 'languages' ) );
 	}
@@ -151,7 +151,7 @@ class ProOfferTest extends TestCase {
 		foreach ( array( 'admin', 'includes', 'src', 'assets/js', 'blocks' ) as $dir ) {
 			$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( SWIFTLING_DIR . $dir, \FilesystemIterator::SKIP_DOTS ) );
 			foreach ( $files as $file ) {
-				if ( in_array( $file->getExtension(), array( 'php', 'js' ), true ) && false !== strpos( (string) file_get_contents( $file->getPathname() ), 'swiftling.pro/pricing' ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A source file of the plugin.
+				if ( in_array( $file->getExtension(), array( 'php', 'js' ), true ) && false !== strpos( (string) file_get_contents( $file->getPathname() ), 'swiftling.pro/#pricing' ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A source file of the plugin.
 					$found[] = substr( $file->getPathname(), strlen( SWIFTLING_DIR ) );
 				}
 			}
