@@ -1,0 +1,98 @@
+/*
+ * The suggestion of the browser's language, see src/Switcher/Suggestion.php: a bar along the bottom
+ * of the window, or a card in a bottom corner. It takes the font of the theme; a theme can change
+ * its colours with the variables below. On a phone it sits at the top of the page, in the flow, so
+ * it covers nothing.
+ */
+.swiftling-suggestion {
+	--swiftling-suggestion-background: #fff;
+	--swiftling-suggestion-color: #1e1e1e;
+	--swiftling-suggestion-border: rgba(0, 0, 0, 0.12);
+	position: fixed;
+	z-index: 99998;
+	bottom: 1em;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5em 1em;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0.75em 0.75em 0.75em 1em;
+	border: 1px solid var(--swiftling-suggestion-border);
+	background: var(--swiftling-suggestion-background);
+	color: var(--swiftling-suggestion-color);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+	font: inherit;
+	font-size: 15px;
+	line-height: 1.4;
+}
+
+.swiftling-suggestion.is-bar {
+	right: 0;
+	bottom: 0;
+	left: 0;
+	justify-content: center;
+	border-width: 1px 0 0;
+}
+
+.swiftling-suggestion.is-right,
+.swiftling-suggestion.is-left {
+	max-width: 24em;
+	border-radius: 8px;
+}
+
+.swiftling-suggestion.is-right {
+	right: 1em;
+}
+
+.swiftling-suggestion.is-left {
+	left: 1em;
+}
+
+/* Above a floating switcher in the same corner. */
+body:has(.swiftling-switcher.is-floating-right) .swiftling-suggestion.is-right,
+body:has(.swiftling-switcher.is-floating-left) .swiftling-suggestion.is-left {
+	bottom: 4.5em;
+}
+
+.swiftling-suggestion__text {
+	margin: 0;
+}
+
+.swiftling-suggestion__show {
+	color: inherit;
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.swiftling-suggestion__close {
+	margin: 0;
+	padding: 0 0.35em;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 1.4em;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.swiftling-suggestion__show:focus-visible,
+.swiftling-suggestion__close:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+	.swiftling-suggestion,
+	.swiftling-suggestion.is-right,
+	.swiftling-suggestion.is-left {
+		position: static;
+		max-width: none;
+		border-width: 0 0 1px;
+		border-radius: 0;
+		box-shadow: none;
+	}
+}

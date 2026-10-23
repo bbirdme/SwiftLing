@@ -1,0 +1,102 @@
+/* The Translations column of the admin lists of pages, posts and products. Its width follows the
+   number of languages, see TranslationsColumn::enqueue(). */
+.swiftling-list-langs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+}
+
+/* One language: the state icon and the language's code, a link to its translation. */
+.swiftling-list-lang {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px;
+	border-radius: 6px;
+	color: #1d2327;
+	text-decoration: none;
+}
+
+a.swiftling-list-lang:hover,
+a.swiftling-list-lang:focus {
+	background: #f0f0f1;
+	color: #1d2327;
+}
+
+a.swiftling-list-lang:focus {
+	outline: 2px solid transparent;
+	box-shadow: 0 0 0 2px #2271b1;
+}
+
+.swiftling-list-lang .swiftling-lang,
+.swiftling-list-legend .swiftling-lang {
+	min-width: 0;
+	padding: 2px 5px;
+	border-radius: 5px;
+}
+
+/* A language shown by a separate copy: a dark chip with the mark of a copy. */
+.swiftling-lang.is-copy {
+	gap: 3px;
+	background: #121826;
+	color: #fff;
+}
+
+.swiftling-lang.is-copy::after {
+	content: "";
+	width: 10px;
+	height: 10px;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Crect x='1.5' y='3.5' width='6' height='7' rx='1' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3Cpath d='M4.5 3.5V2.3c0-.5.4-.8.8-.8h4.4c.5 0 .8.4.8.8v5.4c0 .5-.4.8-.8.8H8' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E") center / 10px no-repeat;
+}
+
+/* What the language shows and where a click leads, on hover and on keyboard focus. */
+.swiftling-list-lang[data-tip]:hover::after,
+.swiftling-list-lang[data-tip]:focus-visible::after {
+	content: attr(data-tip);
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	z-index: 20;
+	width: max-content;
+	max-width: 260px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: #1d2327;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+	color: #f0f0f1;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.45;
+	white-space: pre-line;
+	pointer-events: none;
+}
+
+/* What the icons mean, under the list. */
+.tablenav.bottom:has(.swiftling-list-legend) {
+	height: auto;
+}
+
+.swiftling-list-legend {
+	display: flex;
+	clear: both;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	margin: 0;
+	padding: 10px 0 0;
+	color: #50575e;
+	list-style: none;
+}
+
+.swiftling-list-legend li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.swiftling-list-legend .swiftling-status {
+	width: 16px;
+	height: 16px;
+	background-size: 10px;
+}

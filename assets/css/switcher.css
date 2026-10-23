@@ -1,0 +1,307 @@
+/*
+ * Language switcher on the site. It takes the font and colours of the theme around it; the
+ * dropdown panel needs a background of its own, which a theme can change with the variables below.
+ */
+.swiftling-switcher {
+	--swiftling-switcher-panel-background: #fff;
+	--swiftling-switcher-panel-color: #1e1e1e;
+	--swiftling-switcher-panel-border: rgba(0, 0, 0, 0.12);
+	--swiftling-switcher-gap: 0.4em;
+	position: relative;
+	box-sizing: border-box;
+	color: inherit;
+	font: inherit;
+}
+
+.swiftling-switcher *,
+.swiftling-switcher *::before,
+.swiftling-switcher *::after {
+	box-sizing: inherit;
+}
+
+.swiftling-switcher ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-switcher li {
+	margin: 0;
+	padding: 0;
+}
+
+.swiftling-switcher li::before,
+.swiftling-switcher li::marker {
+	content: none;
+}
+
+/* A language: flag, name and code in a row. */
+.swiftling-switcher__link,
+.swiftling-switcher__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--swiftling-switcher-gap);
+	color: inherit;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.swiftling-switcher__link:hover .swiftling-switcher__name,
+.swiftling-switcher__link:focus-visible .swiftling-switcher__name {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.swiftling-switcher__flag {
+	display: inline-block;
+	flex: none;
+	width: 1.5em;
+	height: 1em;
+	margin: 0;
+	border-radius: 2px;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+	object-fit: cover;
+	vertical-align: middle;
+}
+
+/* Sizes chosen on the Switcher screen or by a block, widget or shortcode; medium is the one above. */
+.swiftling-switcher__flag.is-small {
+	width: 1.2em;
+	height: 0.8em;
+}
+
+.swiftling-switcher__flag.is-large {
+	width: 2.1em;
+	height: 1.4em;
+	border-radius: 3px;
+}
+
+.swiftling-switcher__code {
+	font-size: 0.85em;
+	letter-spacing: 0.04em;
+	opacity: 0.75;
+}
+
+.swiftling-switcher__name + .swiftling-switcher__code {
+	margin-inline-start: 0.1em;
+}
+
+/* In a menu the theme draws the item and its link; the label keeps the flag beside the name. */
+.swiftling-switcher__label {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--swiftling-switcher-gap, 0.4em);
+	vertical-align: middle;
+}
+
+/* A hidden language, which only people who can edit content see. */
+.swiftling-switcher .is-hidden-language,
+.swiftling-menu-language.is-hidden-language > a {
+	opacity: 0.55;
+}
+
+/* Lists. */
+.swiftling-switcher__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35em 1.1em;
+}
+
+.swiftling-switcher.is-vertical .swiftling-switcher__list {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.swiftling-switcher__item.is-current > .swiftling-switcher__link {
+	font-weight: 600;
+}
+
+.swiftling-switcher.has-text-align-center .swiftling-switcher__list {
+	justify-content: center;
+}
+
+.swiftling-switcher.has-text-align-right .swiftling-switcher__list {
+	justify-content: flex-end;
+}
+
+.swiftling-switcher.is-vertical.has-text-align-center .swiftling-switcher__list {
+	align-items: center;
+}
+
+.swiftling-switcher.is-vertical.has-text-align-right .swiftling-switcher__list {
+	align-items: flex-end;
+}
+
+/* Dropdown. */
+.swiftling-switcher__dropdown {
+	position: relative;
+	display: inline-block;
+	text-align: start;
+}
+
+.swiftling-switcher__toggle {
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+}
+
+.swiftling-switcher__toggle::-webkit-details-marker {
+	display: none;
+}
+
+.swiftling-switcher__toggle::after {
+	content: "";
+	width: 0.4em;
+	height: 0.4em;
+	margin-inline-start: 0.15em;
+	border-right: 0.12em solid currentColor;
+	border-bottom: 0.12em solid currentColor;
+	transform: translateY(-0.15em) rotate(45deg);
+	transition: transform 0.15s;
+}
+
+.swiftling-switcher__dropdown[open] > .swiftling-switcher__toggle::after {
+	transform: translateY(0.1em) rotate(-135deg);
+}
+
+.swiftling-switcher__toggle:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+	border-radius: 2px;
+}
+
+.swiftling-switcher__menu {
+	position: absolute;
+	z-index: 1000;
+	top: calc(100% + 0.4em);
+	inset-inline-start: 0;
+	min-width: max(100%, 10em);
+	padding: 0.35em 0;
+	border: 1px solid var(--swiftling-switcher-panel-border);
+	border-radius: 8px;
+	background: var(--swiftling-switcher-panel-background);
+	color: var(--swiftling-switcher-panel-color);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+	font-size: 0.95em;
+}
+
+.swiftling-switcher.has-text-align-right .swiftling-switcher__menu {
+	inset-inline-start: auto;
+	inset-inline-end: 0;
+}
+
+/* Only flags: the dropdown is as narrow as a flag, which stands in the middle of it. */
+.swiftling-switcher.is-flag-only .swiftling-switcher__menu {
+	min-width: 100%;
+}
+
+.swiftling-switcher.is-flag-only .swiftling-switcher__menu .swiftling-switcher__link {
+	justify-content: center;
+}
+
+/* The same in a menu of the theme. Themes give a submenu a width of their own, as 150 or 240
+   pixels, each with a selector of its own, so only !important is sure to win here. */
+.swiftling-menu-language-flag-only > ul,
+.swiftling-menu-language-flag-only > .sub-menu {
+	width: auto !important;
+	min-width: 0 !important;
+}
+
+.swiftling-menu-language-flag-only > ul > li > a {
+	text-align: center;
+}
+
+.swiftling-switcher__menu .swiftling-switcher__link {
+	display: flex;
+	width: 100%;
+	padding: 0.45em 1em;
+}
+
+.swiftling-switcher__menu .swiftling-switcher__link:hover,
+.swiftling-switcher__menu .swiftling-switcher__link:focus-visible {
+	background: rgba(0, 0, 0, 0.06);
+	outline: none;
+}
+
+/* At the end of the page, after the footer of the theme. */
+.swiftling-switcher.is-footer:not(.is-floating) {
+	display: flex;
+	justify-content: center;
+	padding: 1.25em 1em;
+}
+
+/* Floating in a corner of the window; the dropdown opens upwards. */
+.swiftling-switcher.is-floating {
+	position: fixed;
+	z-index: 99999;
+	bottom: 1em;
+	padding: 0.55em 0.9em;
+	border: 1px solid var(--swiftling-switcher-panel-border);
+	border-radius: 999px;
+	background: var(--swiftling-switcher-panel-background);
+	color: var(--swiftling-switcher-panel-color);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+	font-size: 15px;
+	line-height: 1.4;
+}
+
+.swiftling-switcher.is-floating-right {
+	right: 1em;
+}
+
+.swiftling-switcher.is-floating-left {
+	left: 1em;
+}
+
+.swiftling-switcher.is-floating .swiftling-switcher__menu {
+	top: auto;
+	bottom: calc(100% + 0.9em);
+}
+
+.swiftling-switcher.is-floating-right .swiftling-switcher__menu {
+	right: -0.9em;
+	left: auto;
+}
+
+.swiftling-switcher.is-floating-left .swiftling-switcher__menu {
+	right: auto;
+	left: -0.9em;
+}
+
+/* Inside the Navigation block of a block theme, the switcher lines up with the links. */
+.wp-block-navigation .swiftling-switcher {
+	display: flex;
+	align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.swiftling-switcher__toggle::after {
+		transition: none;
+	}
+}
+
+@media print {
+	.swiftling-switcher.is-floating,
+	.swiftling-switcher.is-footer {
+		display: none;
+	}
+}
+
+/* The globe of a menu: its lines take the colour of the menu's text. */
+.swiftling-switcher__globe {
+	flex: none;
+	vertical-align: middle;
+}
+
+/* Opened by a click or a tap, also where the theme opens submenus only on hover. */
+.swiftling-menu-language-globe.swiftling-is-open > .sub-menu,
+.swiftling-menu-language-globe.swiftling-is-open > ul {
+	display: block;
+	visibility: visible;
+	opacity: 1;
+}
+
+/* The globe needs no arrow of a submenu, which themes draw after the link of every parent item. */
+.swiftling-menu-language-globe > a::after {
+	content: none !important;
+}

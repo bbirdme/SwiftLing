@@ -1,0 +1,184 @@
+/* Translations panel in the block editor sidebar. */
+.swiftling-panel__languages {
+	margin: 12px -8px 16px;
+}
+
+.swiftling-panel__languages li {
+	margin: 0;
+	border-top: 1px solid #e7e1d6;
+}
+
+.swiftling-panel__languages li:first-child {
+	border-top: 0;
+}
+
+/* Each language: its code, its name and state, and the three ways it can show the post. */
+.swiftling-panel__row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 4px;
+}
+
+.swiftling-panel__row.is-busy {
+	opacity: 0.6;
+}
+
+.swiftling-panel__about {
+	display: grid;
+	flex: 1;
+	gap: 2px;
+	min-width: 0;
+}
+
+.swiftling-panel__modes {
+	display: flex;
+	flex-shrink: 0;
+	gap: 2px;
+}
+
+.swiftling-panel .swiftling-panel__mode {
+	min-width: 32px;
+	height: 32px;
+	padding: 4px;
+	border-radius: 6px;
+	color: #5b6272;
+}
+
+.swiftling-panel .swiftling-panel__mode:hover:not(:disabled) {
+	background: #f6f4ef;
+	color: #1e1e1e;
+}
+
+/* The icons are drawn with lines; WordPress fills the icons of its buttons. */
+.swiftling-panel .swiftling-panel__mode svg,
+.swiftling-panel .swiftling-panel__mode svg path {
+	fill: none;
+}
+
+/* The way the language shows the post now. */
+.swiftling-panel .swiftling-panel__mode.is-pressed,
+.swiftling-panel .swiftling-panel__mode.is-pressed:hover:not(:disabled) {
+	background: #fdeee8;
+	box-shadow: inset 0 0 0 1px #e8552d;
+	color: #b5371a;
+}
+
+.swiftling-panel__lang {
+	min-width: 28px;
+	padding: 2px 6px;
+	border-radius: 5px;
+	background: #efeae1;
+	font-size: 11px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.swiftling-panel__name {
+	overflow: hidden;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* The state is a word with a coloured dot, not a pill that looks like a button. */
+.swiftling-panel__state {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: #5b6272;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.swiftling-panel__state::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #c9c2b5;
+}
+
+.swiftling-panel__state.is-reviewed::before,
+.swiftling-panel__state.is-official::before {
+	background: #1e8e5a;
+}
+
+.swiftling-panel__state.is-machine::before {
+	background: #3b5bdb;
+}
+
+.swiftling-panel__state.is-outdated::before {
+	background: #c27a12;
+}
+
+.swiftling-panel__state.is-partial::before {
+	background: linear-gradient(90deg, #1e8e5a 50%, #c9c2b5 50%);
+}
+
+.swiftling-panel__state.is-duplicate::before {
+	background: #8a8f9b;
+}
+
+.swiftling-panel__state.is-draft::before {
+	background: transparent;
+	border: 2px solid #8a8f9b;
+	width: 6px;
+	height: 6px;
+}
+
+.swiftling-panel__message {
+	display: grid;
+	gap: 10px;
+	margin-top: 4px;
+	padding-top: 14px;
+	border-top: 1px solid #e7e1d6;
+}
+
+.swiftling-panel__message p {
+	margin: 0;
+}
+
+.swiftling-panel__hint {
+	color: #5b6272;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.swiftling-panel__message.is-error p {
+	color: #b42318;
+}
+
+.swiftling-panel .swiftling-panel__wide {
+	justify-content: center;
+	width: 100%;
+}
+
+/* The same box on a settings page of a builder, such as an ACF options page: each language is a
+   link to its translation. */
+.swiftling-panel a.swiftling-panel__row {
+	border-radius: 6px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.swiftling-panel a.swiftling-panel__row:hover,
+.swiftling-panel a.swiftling-panel__row:focus {
+	background: #f6f4ef;
+}
+
+.swiftling-panel a.swiftling-panel__row .dashicons {
+	color: #5b6272;
+}
+
+.postbox .swiftling-panel__languages {
+	margin: 12px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-panel .button.swiftling-panel__wide {
+	box-sizing: border-box;
+	margin-top: 4px;
+	text-align: center;
+}

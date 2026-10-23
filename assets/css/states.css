@@ -1,0 +1,77 @@
+/*
+ * The state icons and language chips, shared by SwiftLing's own screens and the Translations
+ * column of the admin lists of pages and posts. The colours fall back to SwiftLing's tokens where
+ * a screen does not set them.
+ */
+
+/* Status icons. */
+.swiftling-status {
+	display: inline-block;
+	box-sizing: border-box;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 12px;
+	vertical-align: middle;
+}
+
+.swiftling-status.is-reviewed {
+	background-color: var(--swiftling-reviewed, #1e8e5a);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.2 2.2 4.8-4.8' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.swiftling-status.is-machine {
+	background-color: var(--swiftling-machine, #3b5bdb);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6.8 1L2.8 6.8h2.8L5 11l4.2-6H6.4z' fill='%23fff'/%3E%3C/svg%3E");
+}
+
+.swiftling-status.is-official {
+	border: 2px solid var(--swiftling-reviewed, #1e8e5a);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.2 2.2 4.8-4.8' fill='none' stroke='%231e8e5a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.swiftling-status.is-outdated {
+	border: 2px solid var(--swiftling-outdated, #c27a12);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 2.5v4.2' stroke='%23c27a12' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='6' cy='9.2' r='1' fill='%23c27a12'/%3E%3C/svg%3E");
+}
+
+/* Half filled: some texts are translated, others not yet. */
+.swiftling-status.is-partial {
+	border: 2px solid var(--swiftling-reviewed, #1e8e5a);
+	background-image: linear-gradient(90deg, var(--swiftling-reviewed, #1e8e5a) 50%, transparent 50%);
+	background-size: 100%;
+}
+
+.swiftling-status.is-missing {
+	border: 2px dashed #c9c2b5;
+}
+
+.swiftling-status.is-duplicate {
+	border: 2px solid #8a8f9b;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5h6M3 7.5h6' stroke='%235b6272' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Language chips. */
+.swiftling-lang {
+	display: inline-flex;
+	box-sizing: border-box;
+	align-items: center;
+	justify-content: center;
+	min-width: 30px;
+	padding: 3px 7px;
+	border-radius: 6px;
+	background: var(--swiftling-chip, #efeae1);
+	color: var(--swiftling-ink, #121826);
+	font-family: var(--swiftling-font-display, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	line-height: 1.4;
+}
+
+.swiftling-lang.is-source {
+	background: var(--swiftling-ink, #121826);
+	color: #fff;
+}

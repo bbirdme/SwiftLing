@@ -1,0 +1,60 @@
+/* Appearance → Menus: "Show in", a tick per language, in the settings of each item, and what it
+   chose on the bar of the item. */
+.swiftling-show-in {
+	margin: 4px 0 10px;
+	padding: 8px 12px 10px;
+	border: 1px solid #e7e1d6;
+	border-radius: 6px;
+	background: #f6f4ef;
+}
+
+.swiftling-show-in legend {
+	padding: 0 4px;
+	font-weight: 600;
+}
+
+.swiftling-show-in__languages {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 16px;
+}
+
+.swiftling-show-in__languages label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+}
+
+.swiftling-show-in__original,
+.swiftling-show-in__note {
+	color: #50575e;
+	font-size: 12px;
+}
+
+.swiftling-show-in__note {
+	display: block;
+}
+
+.swiftling-show-in-badge {
+	display: inline-block;
+	margin-right: 8px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: #e5eafc;
+	color: #2f4bbf;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.8;
+	vertical-align: middle;
+}
+
+.swiftling-show-in-badge.is-not {
+	background: #fbefd9;
+	color: #8a5a0a;
+}
+
+.swiftling-show-in-badge.is-none {
+	background: #fde9e2;
+	color: #b03a17;
+}

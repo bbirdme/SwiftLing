@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: latest
+          coverage: none
+          tools: composer
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: vendor/bin/phpcs
+
+  tests:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '7.4', 'latest' ]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      WP_TESTS_DB_HOST: 127.0.0.1:3306
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+          extensions: mysqli, intl
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer test
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the package as it would ship
+        run: |
+          mkdir -p dist/swiftling
+          rsync -a --exclude-from=.distignore ./ dist/swiftling/
+
+      - name: Fail if development files are in the package
+        run: |
+          leaked=$(find dist/swiftling -mindepth 1 \( -name '.*' -o -name tests -o -name node_modules -o -path dist/swiftling/tools \) -print)
+          if [ -n "$leaked" ]; then
+            echo "::error::Files that must not ship are in the package. Add them to .distignore."
+            echo "$leaked"
+            exit 1
+          fi
+
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: ./dist/swiftling

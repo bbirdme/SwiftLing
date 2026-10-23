@@ -1,0 +1,25 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: SwiftLing, WordPress and PHP.
+  - type: textarea
+    id: support
+    attributes:
+      label: Support report
+      description: Paste "Copy for support" from SwiftLing › Logs. It holds no content, keys or passwords. Read it first.

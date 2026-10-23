@@ -1,0 +1,6560 @@
+/* SwiftLing admin. Everything is scoped to SwiftLing screens via body.swiftling-screen. */
+
+/* Fonts: bundled locally, see assets/fonts/OFL.txt. */
+@font-face {
+	font-family: "SwiftLing Display";
+	font-style: normal;
+	font-weight: 200 800;
+	font-display: swap;
+	src: url("../fonts/bricolage-grotesque-latin-ext-wght-normal.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+	font-family: "SwiftLing Display";
+	font-style: normal;
+	font-weight: 200 800;
+	font-display: swap;
+	src: url("../fonts/bricolage-grotesque-latin-wght-normal.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: "SwiftLing Sans";
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: swap;
+	src: url("../fonts/instrument-sans-latin-ext-wght-normal.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+	font-family: "SwiftLing Sans";
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: swap;
+	src: url("../fonts/instrument-sans-latin-wght-normal.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: "SwiftLing Mono";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("../fonts/jetbrains-mono-latin-ext-400-normal.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+	font-family: "SwiftLing Mono";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("../fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Design tokens. */
+body.swiftling-screen {
+	--swiftling-ink: #121826;
+	--swiftling-ground: #f6f4ef;
+	--swiftling-surface: #fff;
+	--swiftling-swift: #e8552d;
+	--swiftling-reviewed: #1e8e5a;
+	--swiftling-machine: #3b5bdb;
+	--swiftling-outdated: #c27a12;
+	--swiftling-muted: #5b6272;
+	--swiftling-line: #e7e1d6;
+	--swiftling-field: #ddd5c7;
+	--swiftling-chip: #efeae1;
+	--swiftling-radius: 16px;
+	--swiftling-font-display: "SwiftLing Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--swiftling-font-sans: "SwiftLing Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--swiftling-font-mono: "SwiftLing Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	background: var(--swiftling-ground);
+}
+
+.swiftling {
+	margin: 24px 32px 48px 12px;
+	max-width: 1180px;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-sans);
+	font-size: 14px;
+	line-height: 1.5;
+	accent-color: var(--swiftling-ink);
+}
+
+.swiftling *,
+.swiftling *::before,
+.swiftling *::after {
+	box-sizing: border-box;
+}
+
+.swiftling p {
+	margin: 0;
+	font-size: inherit;
+}
+
+.swiftling h2,
+.swiftling h3 {
+	margin: 0;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.swiftling h2 {
+	font-size: 17px;
+}
+
+.swiftling h3 {
+	font-size: 15px;
+}
+
+.swiftling code,
+.swiftling .swiftling-mono {
+	padding: 0;
+	background: none;
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+}
+
+.swiftling .swiftling-muted {
+	color: var(--swiftling-muted);
+}
+
+.swiftling :focus-visible {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+/* Header. */
+.swiftling-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.swiftling-breadcrumb {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px !important;
+	color: var(--swiftling-muted);
+	font-weight: 600;
+}
+
+.swiftling-breadcrumb__brand {
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-weight: 700;
+}
+
+.swiftling .swiftling-title {
+	margin: 0;
+	padding: 0;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 32px;
+	font-weight: 800;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
+}
+
+.swiftling-description {
+	max-width: 680px;
+	margin-top: 6px !important;
+	color: var(--swiftling-muted);
+	font-size: 15px !important;
+}
+
+.swiftling-header__actions {
+	display: flex;
+	flex-shrink: 0;
+	gap: 10px;
+	padding-top: 16px;
+}
+
+.swiftling .wp-header-end {
+	display: none;
+}
+
+/*
+ * A group of screens, see Menu::renderScreen(): the group's header, the list of its screens beside
+ * the screen, and the screen's own header as the header of its part of the page.
+ */
+.swiftling-group-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 24px;
+	padding: 24px 32px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 20px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-group-header__brand {
+	margin-bottom: 2px !important;
+	color: var(--swiftling-muted);
+	font-family: var(--swiftling-font-display);
+	font-weight: 700;
+}
+
+.swiftling-group-header__end {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 20px;
+}
+
+.swiftling-group-header__flock {
+	flex-shrink: 0;
+	width: 150px;
+	height: 64px;
+}
+
+.swiftling-group-header__flock .is-swift {
+	fill: var(--swiftling-swift);
+}
+
+.swiftling-group-header__flock .is-ink {
+	fill: var(--swiftling-ink);
+}
+
+.swiftling-group-header__flock .is-far {
+	opacity: 0.55;
+}
+
+.swiftling-group {
+	display: flex;
+	align-items: flex-start;
+	gap: 28px;
+}
+
+.swiftling-group__main {
+	flex: 1;
+	min-width: 0;
+}
+
+/* The list of the group's screens, and under it, on Translations, the offer to request support. */
+.swiftling-group__side {
+	display: flex;
+	flex: 0 0 224px;
+	flex-direction: column;
+	gap: 22px;
+	min-width: 0;
+}
+
+.swiftling-rail {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.swiftling-request-card {
+	position: relative;
+	display: grid;
+	gap: 8px;
+	overflow: hidden;
+	padding: 18px;
+	border-radius: 16px;
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-request-card__bird {
+	position: absolute;
+	top: 10px;
+	right: -6px;
+	width: 54px;
+	height: 30px;
+	fill: var(--swiftling-swift);
+	transform: rotate(-14deg);
+}
+
+.swiftling .swiftling-request-card__title {
+	max-width: 160px;
+	font-family: var(--swiftling-font-display);
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.swiftling .swiftling-request-card__text {
+	color: #c9cdd6;
+	font-size: 13px;
+}
+
+.swiftling .swiftling-request-card__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 42px;
+	margin-top: 4px;
+	border-radius: 11px;
+	background: var(--swiftling-swift);
+	color: #fff;
+	font-family: var(--swiftling-font-display);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.swiftling .swiftling-request-card__button:hover,
+.swiftling .swiftling-request-card__button:focus {
+	background: #c94523;
+	color: #fff;
+}
+
+.swiftling-request-card__button svg {
+	width: 15px;
+	height: 15px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling-rail__part {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.swiftling .swiftling-rail__label {
+	margin: 0 0 6px 10px;
+	color: var(--swiftling-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.swiftling .swiftling-rail__item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 44px;
+	padding: 6px 10px;
+	border-radius: 12px;
+	color: #3d4352;
+	font-family: var(--swiftling-font-display);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.swiftling .swiftling-rail__item:hover {
+	background: rgba(255, 255, 255, 0.6);
+	color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-rail__item.is-current {
+	background: var(--swiftling-surface);
+	box-shadow: 0 1px 2px rgba(18, 24, 38, 0.08), 0 0 0 1px var(--swiftling-line);
+	color: var(--swiftling-ink);
+	font-weight: 700;
+}
+
+/* The picture of a screen: a line drawing on a tile of its colour, filled when it is the screen shown. */
+.swiftling-rail__tile {
+	display: grid;
+	flex: 0 0 30px;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border-radius: 9px;
+	background: var(--swiftling-rail-tint);
+	color: var(--swiftling-rail-ink);
+}
+
+.swiftling-rail__tile svg {
+	width: 16px;
+	height: 16px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling-rail__item.is-current .swiftling-rail__tile {
+	background: var(--swiftling-rail-ink);
+	color: #fff;
+}
+
+.swiftling-rail__tile.is-orange { --swiftling-rail-tint: #fde6dd; --swiftling-rail-ink: #c2410c; }
+.swiftling-rail__tile.is-blue { --swiftling-rail-tint: #e3e8fb; --swiftling-rail-ink: #3b5bdb; }
+.swiftling-rail__tile.is-green { --swiftling-rail-tint: #ddf0e6; --swiftling-rail-ink: #1e7a4f; }
+.swiftling-rail__tile.is-teal { --swiftling-rail-tint: #dcf0f3; --swiftling-rail-ink: #0b6b7d; }
+.swiftling-rail__tile.is-amber { --swiftling-rail-tint: #f6e9d2; --swiftling-rail-ink: #9a5b05; }
+.swiftling-rail__tile.is-violet { --swiftling-rail-tint: #ebe5fb; --swiftling-rail-ink: #6741d9; }
+.swiftling-rail__tile.is-ink { --swiftling-rail-tint: #ece7de; --swiftling-rail-ink: #121826; }
+
+.swiftling-header.is-section {
+	margin-bottom: 20px;
+}
+
+.swiftling-header.is-section .swiftling-header__actions {
+	padding-top: 0;
+}
+
+.swiftling .swiftling-header.is-section .swiftling-title {
+	margin-top: 6px;
+	font-size: 24px;
+}
+
+.swiftling .swiftling-section-crumb {
+	color: var(--swiftling-muted);
+	font-weight: 600;
+}
+
+/* A narrow window: the list is one row above the screen, scrolling sideways, without part names. */
+@media (max-width: 960px) {
+	.swiftling-group {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 20px;
+	}
+
+	.swiftling-group__side {
+		flex: none;
+		gap: 12px;
+	}
+
+	/* The offer to request support: one line under the row. */
+	.swiftling-request-card {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 14px;
+		padding: 12px 16px;
+	}
+
+	.swiftling-request-card__bird,
+	.swiftling .swiftling-request-card__text {
+		display: none;
+	}
+
+	.swiftling .swiftling-request-card__title {
+		max-width: none;
+		font-size: 14px;
+	}
+
+	.swiftling .swiftling-request-card__button {
+		min-height: 36px;
+		margin: 0 0 0 auto;
+		padding: 0 14px;
+	}
+
+	/* Relative, so the part names, hidden but read out, stay inside the row and scroll with it. */
+	.swiftling-rail {
+		position: relative;
+		flex: none;
+		flex-direction: row;
+		gap: 4px;
+		overflow-x: auto;
+		padding: 2px 2px 6px;
+	}
+
+	.swiftling-rail__part {
+		flex-direction: row;
+		gap: 4px;
+	}
+
+	.swiftling .swiftling-rail__label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.swiftling .swiftling-rail__item {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+}
+
+@media (max-width: 600px) {
+	.swiftling-group-header {
+		flex-wrap: wrap;
+		padding: 20px;
+	}
+
+	.swiftling-group-header__flock {
+		display: none;
+	}
+}
+
+/* Buttons. */
+.swiftling .swiftling-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 16px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 10px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.swiftling .swiftling-button:hover {
+	border-color: var(--swiftling-ink);
+	color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-button.is-primary {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling .swiftling-button.is-accent {
+	border-color: var(--swiftling-swift);
+	background: var(--swiftling-swift);
+	color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-button.is-ghost {
+	border-color: transparent;
+	background: transparent;
+}
+
+.swiftling .swiftling-button.is-ghost:hover {
+	border-color: transparent;
+	background: var(--swiftling-chip);
+}
+
+.swiftling .swiftling-button.is-strong {
+	border-width: 1.5px;
+	border-color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-button.is-link {
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	border-bottom: 1px solid currentColor;
+	border-radius: 0;
+	background: none;
+}
+
+.swiftling .swiftling-button.is-danger {
+	border-color: #b42318;
+	color: #b42318;
+}
+
+.swiftling .swiftling-button.is-danger-solid {
+	border-color: #b42318;
+	background: #b42318;
+	color: #fff;
+}
+
+.swiftling .swiftling-button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.swiftling .swiftling-button.is-large {
+	min-height: 44px;
+	padding: 0 22px;
+	font-size: 14px;
+}
+
+/* Layout. */
+.swiftling-card {
+	padding: 24px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: var(--swiftling-radius);
+	background: var(--swiftling-surface);
+}
+
+.swiftling-card.is-dark {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.swiftling-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+
+/* One column as wide as the screen: a wider table scrolls in its card instead of widening it. */
+.swiftling-stack {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 20px;
+}
+
+@media (min-width: 1100px) {
+	.swiftling-grid.is-main-side {
+		grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+	}
+
+	.swiftling-grid.is-halves {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.swiftling-grid.is-thirds {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+/* Badges. */
+.swiftling-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.4;
+	white-space: nowrap;
+}
+
+.swiftling-badge.is-reviewed,
+.swiftling-badge.is-published,
+.swiftling-badge.is-working {
+	background: #dcefe4;
+	color: var(--swiftling-reviewed);
+}
+
+.swiftling-badge.is-duplicate {
+	background: #ebe7df;
+	color: #3d4352;
+}
+
+.swiftling-badge.is-machine {
+	background: #e3e8fb;
+	color: var(--swiftling-machine);
+}
+
+.swiftling-badge.is-outdated {
+	background: #fbebd3;
+	color: #8a5608;
+}
+
+/* Form controls. */
+.swiftling input[type="text"],
+.swiftling input[type="search"],
+.swiftling input[type="password"],
+.swiftling select,
+.swiftling textarea {
+	width: 100%;
+	min-height: 38px;
+	padding: 6px 12px;
+	line-height: 1.4;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 10px;
+	background-color: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-sans);
+	font-size: 14px;
+	box-shadow: none;
+}
+
+.swiftling select {
+	height: 38px;
+	padding-right: 32px;
+}
+
+.swiftling input:focus,
+.swiftling select:focus,
+.swiftling textarea:focus {
+	border-color: var(--swiftling-ink);
+	box-shadow: 0 0 0 1px var(--swiftling-ink);
+}
+
+.swiftling-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 0;
+	border-top: 1px solid var(--swiftling-line);
+	cursor: pointer;
+}
+
+.swiftling-toggle-row:first-of-type {
+	border-top: 0;
+}
+
+.swiftling-toggle-row__text {
+	display: grid;
+	gap: 2px;
+}
+
+.swiftling-toggle-row__text span {
+	color: var(--swiftling-muted);
+	font-size: 13px;
+}
+
+.swiftling input.swiftling-toggle {
+	position: relative;
+	flex-shrink: 0;
+	width: 40px;
+	height: 24px;
+	margin: 0;
+	border: 0;
+	border-radius: 999px;
+	background: #e5dfd3;
+	box-shadow: none;
+	appearance: none;
+	cursor: pointer;
+	transition: background-color 0.15s;
+}
+
+.swiftling input.swiftling-toggle::before {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform 0.15s;
+}
+
+.swiftling input.swiftling-toggle:checked {
+	background: var(--swiftling-ink);
+}
+
+.swiftling input.swiftling-toggle:checked::before {
+	content: "";
+	transform: translateX(16px);
+}
+
+/* Tables. */
+.swiftling-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.swiftling-table th {
+	padding: 10px 12px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 600;
+	text-align: left;
+}
+
+.swiftling-table td,
+.swiftling-table tbody th {
+	padding: 14px 12px;
+	border-top: 1px solid var(--swiftling-line);
+	vertical-align: middle;
+}
+
+/* A row's header cell reads as its row's name, not as a column's header. */
+.swiftling-table tbody th {
+	color: var(--swiftling-ink);
+	font-size: 13px;
+}
+
+.swiftling-table .is-numeric {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.swiftling-table .is-center {
+	text-align: center;
+}
+
+/* Small screens. */
+@media (max-width: 782px) {
+	.swiftling {
+		margin: 16px 12px 32px 0;
+	}
+
+	.swiftling-header {
+		flex-direction: column;
+	}
+
+	.swiftling .swiftling-title {
+		font-size: 26px;
+	}
+}
+
+/* Shared: small controls used on several screens. */
+.swiftling .swiftling-icon-button {
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: var(--swiftling-muted);
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.swiftling .swiftling-icon-button:hover {
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+}
+
+/* Shared: card footer, legend and stacked bar. */
+.swiftling-card__foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-legend {
+	display: flex;
+	gap: 16px;
+	margin: 0;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+}
+
+.swiftling-legend li {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.swiftling-legend li::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border-radius: 3px;
+}
+
+.swiftling-legend .is-reviewed::before,
+.swiftling-bar .is-reviewed {
+	background: var(--swiftling-reviewed);
+}
+
+.swiftling-legend .is-machine::before,
+.swiftling-bar .is-machine {
+	background: var(--swiftling-machine);
+}
+
+.swiftling-legend .is-duplicate::before,
+.swiftling-bar .is-duplicate {
+	background: #8a8f9b;
+}
+
+.swiftling-legend .is-partial::before,
+.swiftling-bar .is-partial {
+	background: #8fc9a8;
+}
+
+.swiftling-legend .is-outdated::before,
+.swiftling-bar .is-outdated {
+	background: var(--swiftling-outdated);
+}
+
+.swiftling-bar .is-progress {
+	background: var(--swiftling-swift);
+	transition: width 0.4s ease;
+}
+
+.swiftling-live-progress .swiftling-bar {
+	height: 12px;
+	margin-bottom: 0;
+	background: #f6d8cc;
+}
+
+.swiftling-bar {
+	display: flex;
+	overflow: hidden;
+	height: 8px;
+	margin-bottom: 6px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+}
+
+/* Overview. */
+.swiftling-progress-table td {
+	padding: 12px 8px;
+}
+
+.swiftling-progress-table tr:first-child td {
+	border-top: 0;
+}
+
+.swiftling-progress-table__lang {
+	width: 36px;
+}
+
+.swiftling-progress-table__bar {
+	width: 50%;
+	font-size: 12px;
+}
+
+.swiftling-progress-table__total {
+	font-family: var(--swiftling-font-display);
+	font-size: 22px;
+	font-weight: 800;
+	text-align: right;
+}
+
+.swiftling-attention {
+	margin: 12px 0 0;
+}
+
+.swiftling-attention li {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+	padding: 14px 0;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-attention li:first-child {
+	border-top: 0;
+}
+
+.swiftling-attention .dashicons {
+	flex-shrink: 0;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-attention .dashicons-warning {
+	color: var(--swiftling-outdated);
+}
+
+.swiftling-attention__text {
+	display: grid;
+	flex: 1;
+	font-size: 13px;
+}
+
+/* Shared: toolbar with segmented filter and search. */
+.swiftling-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.swiftling-segmented {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	margin-right: auto;
+	padding: 4px;
+	border-radius: 12px;
+	background: #e9e3d8;
+}
+
+.swiftling .swiftling-segmented button {
+	padding: 7px 12px;
+	border: 0;
+	border-radius: 9px;
+	background: none;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-segmented button span {
+	margin-left: 4px;
+	color: var(--swiftling-muted);
+	font-family: var(--swiftling-font-sans);
+	font-weight: 500;
+}
+
+.swiftling .swiftling-segmented button.is-current {
+	background: var(--swiftling-surface);
+	box-shadow: 0 1px 2px rgba(18, 24, 38, 0.08);
+}
+
+.swiftling input.swiftling-search {
+	width: 220px;
+	padding-left: 34px;
+	background: var(--swiftling-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='4.5' fill='none' stroke='%235b6272' stroke-width='1.5'/%3E%3Cpath d='M10.5 10.5L14 14' stroke='%235b6272' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 12px center / 14px;
+}
+
+.swiftling select.swiftling-filter {
+	width: 160px;
+}
+
+.swiftling-card.is-flush {
+	padding: 8px 12px;
+}
+
+.swiftling-legend.is-icons {
+	margin-top: 16px;
+	font-size: 13px;
+}
+
+.swiftling-legend.is-icons li::before {
+	content: none;
+}
+
+.swiftling-legend.is-icons .swiftling-status {
+	transform: scale(0.8);
+}
+
+/* Shared: icons in buttons. */
+.swiftling .swiftling-button .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+/* Translation editor. */
+.swiftling-editor-bar {
+	position: sticky;
+	top: var(--wp-admin--admin-bar--height, 32px);
+	z-index: 20;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+	padding: 12px 16px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: var(--swiftling-radius);
+	background: var(--swiftling-surface);
+}
+
+.swiftling-editor-bar__status {
+	display: grid;
+	flex-basis: 100%;
+	gap: 6px;
+	margin-top: -6px;
+}
+
+.swiftling-editor-bar__status .swiftling-live-status {
+	margin: 0 !important;
+}
+
+/* Loading and errors on the left, what the last save or tool did on the right, under Save. The
+   line keeps its height while empty, so a message never moves the page. */
+.swiftling-editor-bar__messages {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	min-height: 26px;
+}
+
+.swiftling .swiftling-live-note {
+	max-width: 60%;
+	margin: 0;
+	padding: 4px 12px;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+	text-align: right;
+}
+
+.swiftling-live-note:empty {
+	display: none;
+}
+
+.swiftling-live-note.is-success {
+	background: #e3f4ea;
+	color: var(--swiftling-reviewed);
+}
+
+.swiftling-live-note.is-info {
+	background: #e8edfd;
+	color: var(--swiftling-machine);
+}
+
+.swiftling-live-note.is-error {
+	background: #fde8e6;
+	color: #b42318;
+}
+
+.swiftling .swiftling-button.is-back {
+	border-bottom: 0;
+}
+
+.swiftling-editor-bar__title {
+	display: grid;
+	flex: 1 1 260px;
+	min-width: 0;
+	padding-left: 16px;
+	border-left: 1px solid var(--swiftling-line);
+	font-size: 13px;
+}
+
+.swiftling .swiftling-editor-bar__title h1 {
+	margin: 0;
+	padding: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 18px;
+	font-weight: 800;
+	line-height: 1.3;
+}
+
+.swiftling-editor-bar .swiftling-segmented {
+	margin-right: 0;
+}
+
+.swiftling-editor-bar .swiftling-status,
+.swiftling-editor-languages .swiftling-status {
+	transform: scale(0.8);
+}
+
+/* The buttons of the bar stay together on the right; the languages are a row of their own under
+   the bar, however many there are. Buttons that do not fit wrap to the right, so Save stays above
+   its message. */
+.swiftling-editor-bar__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-left: auto;
+}
+
+.swiftling .swiftling-segmented.swiftling-editor-languages {
+	margin: 0 0 20px;
+}
+
+.swiftling-editor .swiftling-table thead th {
+	background: #f1ede5;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.swiftling-editor .swiftling-table tbody th {
+	width: 120px;
+	padding: 16px 12px;
+	border-top: 1px solid var(--swiftling-line);
+	color: var(--swiftling-muted);
+	font-weight: 600;
+	vertical-align: top;
+}
+
+.swiftling-editor .swiftling-table td {
+	width: 42%;
+	vertical-align: top;
+}
+
+.swiftling-editor .swiftling-table td.is-numeric {
+	width: 40px;
+}
+
+/* An image and its alt text, one below the other, read as one thing: a tint, an edge on the left,
+   and no line between them. Only while images show; alone, an alt text is an ordinary row. */
+.swiftling-live-editor.is-showing-extras tr.is-image-group > * {
+	background: #faf7f1;
+}
+
+.swiftling-live-editor.is-showing-extras tr.is-image-group > :first-child {
+	box-shadow: inset 3px 0 0 var(--swiftling-field);
+}
+
+.swiftling-live-editor.is-showing-extras tr.is-image-group.is-group-end > * {
+	border-top-color: transparent;
+}
+
+.swiftling-editor tr.is-outdated {
+	background: #fffaf1;
+	box-shadow: inset 3px 0 0 var(--swiftling-outdated);
+}
+
+.swiftling-editor del {
+	color: var(--swiftling-muted);
+}
+
+.swiftling .swiftling-editor__section th {
+	padding-top: 24px;
+	color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-editor__section p {
+	margin: 4px 0 0;
+	font-weight: 400;
+}
+
+/* Where the parts around a page are translated, or which page a template is checked on. */
+.swiftling-live-frame {
+	margin: 0 0 12px;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-prefixed {
+	display: flex;
+	align-items: center;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 10px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-prefixed code {
+	padding-left: 12px;
+	color: var(--swiftling-muted);
+	white-space: nowrap;
+}
+
+.swiftling .swiftling-prefixed input[type="text"] {
+	padding-left: 0;
+	border: 0;
+	box-shadow: none;
+}
+
+/* Shared: settings lists, choices and notices. */
+.swiftling-settings {
+	margin-top: 8px;
+}
+
+.swiftling-setting-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 14px 0;
+	border-bottom: 1px solid var(--swiftling-line);
+}
+
+.swiftling-choice {
+	padding: 14px 0 0;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-choice legend {
+	float: left;
+	width: 100%;
+	margin-bottom: 8px;
+	font-weight: 700;
+}
+
+.swiftling-choice label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-right: 24px;
+}
+
+.swiftling-choice input[type="radio"] {
+	margin: 0;
+}
+
+
+
+
+.swiftling-badge.is-source {
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+/* Languages. */
+.swiftling-languages td {
+	padding: 10px 8px;
+}
+
+.swiftling-languages td:first-child {
+	white-space: nowrap;
+}
+
+.swiftling .swiftling-icon-button .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+.swiftling input[type="radio"]:checked {
+	border-color: var(--swiftling-ink);
+	background-color: var(--swiftling-ink);
+}
+
+.swiftling input[type="radio"]:checked::before {
+	background-color: #fff;
+}
+
+
+.swiftling-toolbar.is-flush {
+	margin-bottom: 0;
+}
+
+/* Shared: checkboxes. */
+.swiftling input[type="checkbox"]:not(.swiftling-toggle):checked {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+}
+
+.swiftling input[type="checkbox"]:not(.swiftling-toggle):checked::before {
+	content: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20d%3D%27M14.83%204.89l1.34.94-5.81%208.38H9.02L5.78%209.67l1.34-1.25%202.57%202.4z%27%20fill%3D%27%23fff%27%2F%3E%3C%2Fsvg%3E");
+}
+
+/* Translation editor: rows, code and HTML fields. */
+.swiftling-editor tbody th .swiftling-muted {
+	display: block;
+	font-weight: 500;
+}
+
+/* The field a text is stored in, such as "Team members 2 › Name", under what the text is. */
+.swiftling-editor tbody th .swiftling-live-place {
+	font-weight: 400;
+	font-size: 12px;
+}
+
+/* What a section holds, right under its title. */
+.swiftling .swiftling-editor__intro td {
+	padding-top: 0;
+}
+
+.swiftling pre.swiftling-code,
+.swiftling textarea.swiftling-code {
+	width: 100%;
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.swiftling-code-note {
+	margin-top: 6px !important;
+	color: var(--swiftling-muted);
+	font-size: 12px !important;
+}
+
+/* Translation editor: language tabs, frames, fields and sections. */
+.swiftling .swiftling-segmented a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 12px;
+	border-radius: 9px;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.swiftling .swiftling-segmented a.is-current {
+	background: var(--swiftling-surface);
+	box-shadow: 0 1px 2px rgba(18, 24, 38, 0.08);
+}
+
+.swiftling-live-status {
+	margin: 0 0 12px !important;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-live-status.is-error {
+	color: #b42318;
+	font-weight: 600;
+}
+
+.swiftling-probe-frame {
+	position: absolute;
+	top: 0;
+	left: -12000px;
+	width: 1280px;
+	height: 900px;
+	border: 0;
+	pointer-events: none;
+}
+
+.swiftling textarea.swiftling-live-input {
+	width: 100%;
+	min-height: 40px;
+	padding: 8px 10px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font: inherit;
+	resize: vertical;
+}
+
+.swiftling-live-html > :first-child {
+	margin-top: 0;
+}
+
+.swiftling-live-html > :last-child {
+	margin-bottom: 0;
+}
+
+.swiftling-live-html img {
+	max-width: 160px;
+	height: auto;
+	border-radius: 8px;
+}
+
+/* Empty states, languages form, pagination. */
+.swiftling-empty {
+	max-width: 640px;
+}
+
+.swiftling-empty p {
+	margin: 8px 0 16px !important;
+}
+
+.swiftling-language-add {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-right: auto;
+}
+
+.swiftling-card__foot .swiftling-button.is-primary {
+	margin-left: 12px;
+}
+
+/* Languages screen: the name of each language on a page in each other language. Names in their
+   own language need none. */
+.swiftling-languages-form:has(input[name="names"][value="native"]:checked) .swiftling-language-names {
+	display: none;
+}
+
+.swiftling-language-names__scroll {
+	overflow-x: auto;
+}
+
+.swiftling-language-names__table th,
+.swiftling-language-names__table td {
+	white-space: nowrap;
+}
+
+.swiftling-language-names__table input {
+	width: 100%;
+	min-width: 140px;
+}
+
+/* Languages screen: adding a language fetches translations from wordpress.org, which takes a few
+   seconds. The button shows a spinner in place of its label, so it keeps its size and nothing
+   moves, and the table shows a row for the language until the page loads. */
+.swiftling-languages-form .swiftling-button {
+	position: relative;
+}
+
+.swiftling-languages-form .swiftling-button.is-busy {
+	color: transparent;
+	cursor: progress;
+}
+
+.swiftling-languages-form .swiftling-button.is-busy .swiftling-spinner {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid var(--swiftling-ink);
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: swiftling-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.swiftling-languages-form .swiftling-button.is-busy .swiftling-spinner {
+		animation-duration: 2s;
+	}
+}
+
+.swiftling-languages__pending td {
+	color: var(--swiftling-muted);
+}
+
+.swiftling-languages__progress {
+	margin: 12px 0 0;
+}
+
+.swiftling-languages__progress:empty {
+	display: none;
+}
+
+/* Languages screen: the address format, and the address column that follows it. */
+.swiftling-languages-form .swiftling-card + .swiftling-card {
+	margin-top: 16px;
+}
+
+.swiftling-format {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-format legend {
+	padding: 0;
+}
+
+.swiftling-format label {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.swiftling-format label span {
+	display: grid;
+	gap: 2px;
+}
+
+.swiftling-format input[type="radio"] {
+	margin: 3px 0 0;
+}
+
+.swiftling-format__source {
+	margin: 4px 0 0 28px;
+}
+
+/* Addresses: the word in front of a list, one language at a time. */
+.swiftling-bases .swiftling-card__head + .swiftling-muted {
+	margin: 0 0 16px;
+	max-width: 760px;
+}
+
+.swiftling-bases__languages {
+	width: fit-content;
+	max-width: 100%;
+	margin: 0 0 8px;
+}
+
+/* The flag of a language in its tab, as the switcher shows it; the code where it has none. */
+.swiftling-segmented__flag {
+	flex-shrink: 0;
+	width: 20px;
+	height: 14px;
+	border-radius: 3px;
+	box-shadow: 0 0 0 1px rgba(18, 24, 38, 0.12);
+	object-fit: cover;
+}
+
+.swiftling-bases__group th {
+	padding-top: 20px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.swiftling-bases__size,
+.swiftling-bases__set {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+}
+
+.swiftling-bases__fields {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.swiftling-bases__fields .swiftling-prefixed code + input[type="text"] {
+	padding-left: 0;
+}
+
+.swiftling .swiftling-bases__fields .swiftling-prefixed input[type="text"]:first-child {
+	padding-left: 12px;
+}
+
+.swiftling-bases__fields .swiftling-prefixed > code:last-child {
+	padding: 0 12px 0 0;
+}
+
+.swiftling-prefixed.is-invalid {
+	border-color: #b42318;
+	box-shadow: 0 0 0 1px #b42318;
+}
+
+.swiftling-bases__error {
+	flex-basis: 100%;
+	color: #b42318;
+	font-size: 13px;
+}
+
+.swiftling-bases__example {
+	white-space: nowrap;
+}
+
+/* The original's folder: an option of language folders only. */
+.swiftling-format-form:has(input[name="format"][value="parameter"]:checked) .swiftling-format__source {
+	display: none;
+}
+
+.swiftling-pagination {
+	margin-top: 16px !important;
+}
+
+.swiftling-pagination .page-numbers {
+	display: inline-block;
+	min-width: 28px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	text-align: center;
+	text-decoration: none;
+}
+
+.swiftling-pagination .page-numbers.current {
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+/* Translation editor: visual editor, link addresses. */
+.swiftling .swiftling-editor .wp-editor-wrap {
+	width: 100%;
+}
+
+/* The visual editor's toolbar is laid out for the box model of the rest of the admin. */
+.swiftling .wp-editor-wrap,
+.swiftling .wp-editor-wrap * {
+	box-sizing: content-box;
+}
+
+.swiftling .wp-editor-wrap textarea.swiftling-live-input {
+	box-sizing: border-box;
+	border: 0;
+	border-radius: 0;
+}
+
+.swiftling-live-link {
+	display: grid;
+	gap: 4px;
+	margin-top: 10px;
+	font-size: 13px;
+}
+
+.swiftling-live-link label {
+	color: var(--swiftling-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.swiftling .swiftling-live-link input[type="url"] {
+	width: 100%;
+	min-height: 40px;
+	padding: 8px 10px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font-size: 12px;
+	box-shadow: none;
+}
+
+.swiftling .swiftling-live-link__field .swiftling-button {
+	min-height: 40px;
+}
+
+.swiftling-live-link .swiftling-muted {
+	font-size: 12px;
+}
+
+.swiftling-live-link__field {
+	display: flex;
+	gap: 8px;
+}
+
+.swiftling-live-link__field input {
+	flex: 1;
+	min-width: 0;
+}
+
+/* An address has no spaces to wrap at; it must not push the translation off the screen. */
+.swiftling-live-original code,
+.swiftling-editor tbody th .swiftling-muted {
+	overflow-wrap: anywhere;
+}
+
+.swiftling-live-thumb {
+	display: block;
+	max-width: 160px;
+	max-height: 120px;
+	margin-bottom: 8px;
+	border-radius: 8px;
+}
+
+/* The editor in the middle, what is good to know beside it; below it on a narrow screen. */
+.swiftling:has(.swiftling-editor-layout) {
+	max-width: 1440px;
+}
+
+.swiftling-editor-layout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 24px;
+}
+
+.swiftling-editor-layout > .swiftling-live-editor {
+	flex: 999 1 640px;
+	min-width: 0;
+}
+
+.swiftling-editor-layout__aside {
+	display: grid;
+	flex: 1 1 260px;
+	gap: 16px;
+	min-width: 0;
+}
+
+/* The head of the editor: the language, how far it is translated, and the tools. */
+.swiftling-live-head {
+	display: grid;
+	gap: 12px;
+	padding: 12px 4px 16px;
+}
+
+.swiftling .swiftling-live-head h2 {
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 20px;
+	font-weight: 800;
+}
+
+.swiftling-live-head__title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 4px 16px;
+}
+
+.swiftling .swiftling-live-summary {
+	margin: 0;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-live-head .swiftling-live-meter {
+	margin: 0;
+}
+
+.swiftling-live-meter span {
+	transition: width 0.3s ease;
+}
+
+/* The machine translation button, off for a language the service does not translate: the tooltip
+   shows when the pointer is over it, as a disabled button gets no pointer events of its own. */
+.swiftling-tip.is-above .swiftling-tip__text {
+	top: auto;
+	bottom: calc(100% + 8px);
+	width: 280px;
+}
+
+.swiftling-live-machine-off .swiftling-live-machine[disabled] {
+	pointer-events: none;
+}
+
+#swiftling-live-machine-note .swiftling-notice {
+	margin: 0;
+}
+
+.swiftling-live-toolbar__label {
+	color: var(--swiftling-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+/* What fills the empty fields: a box of its own, so it reads apart from what changes the view. */
+.swiftling-live-fill {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+	background: #faf8f4;
+}
+
+.swiftling-live-fill .swiftling-live-toolbar__label {
+	margin-right: 4px;
+}
+
+/* Which rows show: tabs on the top edge of the table, and the switch that highlights empty rows. */
+.swiftling-live-views {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 4px 16px;
+	padding: 0 4px;
+	border-bottom: 1px solid var(--swiftling-line);
+}
+
+.swiftling-live-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.swiftling-live-tab {
+	position: relative;
+	cursor: pointer;
+}
+
+/* The radio stays, for the keyboard and screen readers, under the tab. */
+.swiftling .swiftling-live-tab input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+}
+
+.swiftling-live-tab > span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 40px;
+	margin-bottom: -1px;
+	padding: 0 12px;
+	border-bottom: 2px solid transparent;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.swiftling-live-tab:hover > span {
+	color: var(--swiftling-ink);
+}
+
+.swiftling-live-tab:has(input:checked) > span {
+	border-bottom-color: var(--swiftling-swift);
+	color: var(--swiftling-ink);
+}
+
+.swiftling-live-tab:has(input:focus-visible) > span {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: -2px;
+	border-radius: 6px 6px 0 0;
+}
+
+.swiftling-live-tab:has(input:disabled) {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.swiftling-live-tab:has(input:disabled):hover > span {
+	color: var(--swiftling-muted);
+}
+
+.swiftling-live-tab__count {
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+	font-size: 12px;
+}
+
+.swiftling-live-tab__count:empty {
+	display: none;
+}
+
+.swiftling-live-tab:has(input:checked) .swiftling-live-tab__count {
+	background: #fdeee8;
+}
+
+/* Highlight empty fields: a switch, pressed while the rows carry their border. */
+.swiftling .swiftling-live-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 40px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--swiftling-ink);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-live-switch::before {
+	content: "";
+	width: 30px;
+	height: 18px;
+	border-radius: 999px;
+	background: radial-gradient(circle at 9px 9px, #fff 6px, transparent 6.5px), var(--swiftling-field);
+	transition: background 0.15s ease;
+}
+
+.swiftling-live-switch[aria-pressed="true"]::before {
+	background: radial-gradient(circle at 21px 9px, #fff 6px, transparent 6.5px), var(--swiftling-swift);
+}
+
+.swiftling .swiftling-live-switch:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.swiftling .swiftling-live-switch:focus-visible {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+/* The image a language shows, above its address; faded while it is the original's. */
+.swiftling-live-chosen.is-same {
+	opacity: 0.45;
+}
+
+/* Highlighted: a border around every row that is still empty. */
+.swiftling-live-editor.is-marking-empty tr.is-empty {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: -2px;
+}
+
+/* The tab of images, links and code: only rows with one of them, an image with its alt text, and the
+   groups that have any. */
+.swiftling-live-editor.is-only-extras tr[data-key]:not(.is-extra):not(.is-code):not(.is-image-group):not(:has(.swiftling-live-link)),
+.swiftling-live-editor.is-only-extras tbody tr:not([data-key]):not(.swiftling-editor__section),
+.swiftling-live-editor.is-only-extras tbody.has-no-extras {
+	display: none;
+}
+
+/* Empty fields always show it: a dashed edge in the colour of what is still to do. */
+.swiftling .swiftling-live-editor textarea.swiftling-live-input:placeholder-shown,
+.swiftling-live-editor tr.is-empty .wp-editor-container {
+	border: 1.5px dashed var(--swiftling-swift);
+	background: #fffaf7;
+}
+
+.swiftling .swiftling-live-editor textarea.swiftling-live-input:focus {
+	border-color: var(--swiftling-swift);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(232, 85, 45, 0.18);
+}
+
+/* The original only reads: a tinted column, so the eye goes to the translations. */
+.swiftling-editor .swiftling-table td.swiftling-live-original {
+	background: #faf8f4;
+	color: #3a4150;
+}
+
+/* Number of changed fields, next to Save. */
+.swiftling-live-unsaved {
+	color: var(--swiftling-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.swiftling-live-unsaved:empty {
+	display: none;
+}
+
+/* A language tab: its state, code, and how much of it is translated. */
+.swiftling-segmented__progress {
+	display: inline-grid;
+	gap: 3px;
+}
+
+.swiftling-segmented__count {
+	color: var(--swiftling-muted);
+	font-family: var(--swiftling-font-sans);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.swiftling .swiftling-segmented__meter {
+	width: 48px;
+	height: 4px;
+	margin: 0;
+}
+
+/* Beside the editor: other ways for the language, notes, the states. */
+.swiftling-side {
+	display: grid;
+	gap: 10px;
+	padding: 18px;
+}
+
+.swiftling .swiftling-side h2 {
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 15px;
+	font-weight: 800;
+}
+
+.swiftling .swiftling-side .swiftling-live-frame {
+	margin: 0;
+	font-size: 13px;
+}
+
+/* The address of the page in the language: its slug after the folder and the pages above. */
+.swiftling-address__form {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+}
+
+.swiftling-address__form label {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+/* The folder and the pages the slug comes after, on a line of their own: beside the editor the
+   field is narrow, and in front of the slug they would leave no room to type in. */
+.swiftling-address__prefix {
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.swiftling-address__field {
+	display: flex;
+	gap: 8px;
+}
+
+.swiftling .swiftling-address__field input[type="text"] {
+	flex: 1;
+	width: 100%;
+	min-width: 0;
+}
+
+.swiftling .swiftling-address p {
+	margin: 0;
+	font-size: 13px;
+}
+
+.swiftling-address__url {
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.swiftling-ways {
+	display: grid;
+	gap: 8px;
+}
+
+.swiftling-ways form {
+	margin: 0;
+}
+
+.swiftling .swiftling-way {
+	display: grid;
+	gap: 2px;
+	width: 100%;
+	margin: 0;
+	padding: 12px 14px;
+	border: 1.5px solid var(--swiftling-line);
+	border-radius: 12px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font: inherit;
+	text-align: left;
+}
+
+.swiftling button.swiftling-way {
+	cursor: pointer;
+}
+
+.swiftling button.swiftling-way:hover {
+	border-color: var(--swiftling-field);
+	background: #faf8f4;
+}
+
+.swiftling .swiftling-way.is-current {
+	border-color: var(--swiftling-ink);
+}
+
+.swiftling-way strong {
+	font-size: 14px;
+}
+
+.swiftling-way span {
+	color: var(--swiftling-muted);
+	font-size: 13px;
+}
+
+.swiftling .swiftling-side__states {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	font-size: 13px;
+	list-style: none;
+}
+
+.swiftling-side__states li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.swiftling-side__states .swiftling-status {
+	flex: none;
+	transform: scale(0.8);
+}
+
+/* Code that shows only on request shows while it is empty and filtered for. */
+.swiftling-live-editor.is-only-empty tr.is-extra.is-filter-match {
+	display: table-row;
+}
+
+.swiftling-live-editor.is-only-empty tr[data-key]:not(.is-filter-match),
+.swiftling-live-editor.is-only-empty tbody tr:not([data-key]):not(.swiftling-editor__section),
+.swiftling-live-editor.is-only-empty tbody.has-no-match {
+	display: none;
+}
+
+.swiftling .swiftling-live-all-done {
+	margin: 0;
+	padding: 24px;
+	color: var(--swiftling-reviewed);
+	font-weight: 600;
+	text-align: center;
+}
+
+/* Code: the original as it is stored, the translation in the same type. */
+.swiftling pre.swiftling-live-code {
+	max-height: 320px;
+	overflow: auto;
+}
+
+.swiftling textarea.swiftling-live-input.swiftling-code {
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+/* Saving: a spinner in place of the label, so the button keeps its size and nothing moves. */
+.swiftling .swiftling-button.swiftling-live-save {
+	position: relative;
+}
+
+.swiftling-spinner {
+	display: none;
+}
+
+.swiftling .swiftling-button.swiftling-live-machine {
+	position: relative;
+}
+
+.swiftling .swiftling-live-save.is-busy,
+.swiftling .swiftling-live-machine.is-busy {
+	color: transparent;
+}
+
+.swiftling-live-save.is-busy .swiftling-spinner,
+.swiftling-live-machine.is-busy .swiftling-spinner {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid #fff;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: swiftling-spin 0.7s linear infinite;
+}
+
+@keyframes swiftling-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.swiftling-live-save.is-busy .swiftling-spinner,
+	.swiftling-live-machine.is-busy .swiftling-spinner {
+		animation-duration: 2s;
+	}
+}
+
+/* Images, videos, links and code show only when the user switches them on. */
+.swiftling-live-editor:not(.is-showing-extras) tbody.is-extras-only,
+.swiftling-live-editor:not(.is-showing-extras) tr.is-extra,
+.swiftling-live-editor:not(.is-showing-extras) .swiftling-live-address,
+.swiftling-live-editor:not(.is-showing-extras) .swiftling-live-link,
+.swiftling-live-editor.is-showing-extras .swiftling-live-only-extras {
+	display: none;
+}
+
+.swiftling-live-address {
+	display: block;
+	margin-top: 8px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	word-break: break-all;
+}
+
+/* Language switcher screen. */
+.swiftling-switcher-form .swiftling-format {
+	margin-top: 16px;
+}
+
+.swiftling-switcher-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 16px;
+	margin-top: 16px;
+}
+
+.swiftling-switcher-fields > label {
+	display: grid;
+	flex: 1 1 200px;
+	gap: 6px;
+	font-weight: 600;
+}
+
+/* A floating switcher is always a dropdown, so its style is chosen only for the row below the footer. */
+.swiftling-switcher-form:has(input[name="footer[position]"]:not([value="end"]):checked) .swiftling-switcher-footer-style {
+	display: none;
+}
+
+/* Step 1: each place a box of its own; switched off, it keeps only its head. */
+.swiftling-switcher-where {
+	margin-top: 14px;
+	padding: 16px 18px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 14px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-switcher-where.is-elsewhere {
+	background: #fbfaf7;
+}
+
+.swiftling-switcher-where__head {
+	display: flex;
+	gap: 14px;
+	align-items: center;
+}
+
+label.swiftling-switcher-where__head {
+	cursor: pointer;
+}
+
+.swiftling-switcher-where__icon {
+	flex: none;
+	color: var(--swiftling-ink);
+}
+
+.swiftling-switcher-where__text {
+	display: grid;
+	flex: 1;
+	gap: 2px;
+}
+
+.swiftling-switcher-where__text strong {
+	font-family: var(--swiftling-font-display);
+	font-size: 15px;
+}
+
+.swiftling-switcher-where__body {
+	display: grid;
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.swiftling-switcher-where:has(.swiftling-switcher-where__head input:not(:checked)) .swiftling-switcher-where__body {
+	display: none;
+}
+
+.swiftling-switcher-where__body > .swiftling-tiles,
+.swiftling-switcher-where__body > .swiftling-picks {
+	margin: 0;
+}
+
+/* Step 2: a tab for each place, with its style, its parts and the size of its flags. */
+.swiftling-switcher-tabs {
+	margin: 18px 0 0;
+}
+
+.swiftling-switcher-place {
+	display: grid;
+	gap: 18px;
+	margin-top: 18px;
+}
+
+.swiftling-switcher-place[hidden] {
+	display: none;
+}
+
+.swiftling .swiftling-switcher-place__note,
+.swiftling .swiftling-switcher-floating-note {
+	margin: 0;
+}
+
+.swiftling-switcher-style,
+.swiftling-switcher-shows {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-switcher-style legend,
+.swiftling-switcher-shows legend {
+	margin-bottom: 8px;
+	padding: 0;
+	font-weight: 600;
+}
+
+.swiftling-switcher-style .swiftling-tiles {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin: 0;
+}
+
+@media (max-width: 782px) {
+	.swiftling-switcher-style .swiftling-tiles {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* The art of a style: the switcher itself, small, instead of a page. */
+.swiftling-tile__art.is-style {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	justify-content: center;
+	color: var(--swiftling-ink);
+}
+
+.swiftling-tile__art.is-style::before,
+.swiftling-tile__art.is-style::after {
+	content: none;
+}
+
+.swiftling-tile__art.is-style i {
+	display: block;
+	width: 21px;
+	height: 14px;
+	border-radius: 2px;
+	background: linear-gradient(var(--swiftling-ink) 0 33.3%, var(--swiftling-swift) 33.3% 66.6%, #f2c94c 66.6%);
+}
+
+.swiftling-tile__art.is-style-vertical {
+	flex-direction: column;
+	gap: 4px;
+}
+
+.swiftling-tile__art.is-style-vertical i {
+	width: 17px;
+	height: 11px;
+}
+
+/* A dropdown: the flag shown, its code and the arrow. */
+.swiftling-tile__art.is-style-dropdown i:nth-child(2) {
+	width: 16px;
+	height: 6px;
+	border-radius: 3px;
+	background: #b9b2a4;
+}
+
+.swiftling-tile__art.is-style-dropdown i:nth-child(3) {
+	width: 6px;
+	height: 6px;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	border-radius: 0;
+	background: none;
+	transform: translateY(-2px) rotate(45deg);
+}
+
+/* What a place shows: one pill each, filled when on. */
+.swiftling-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.swiftling-chip-toggle {
+	position: relative;
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+	padding: 8px 14px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 999px;
+	background: var(--swiftling-surface);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-chip-toggle input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.swiftling-chip-toggle::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border: 1.5px solid #b9b2a4;
+	border-radius: 50%;
+}
+
+.swiftling-chip-toggle:has(input:checked) {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-chip-toggle:has(input:checked)::before {
+	width: 8px;
+	height: 4px;
+	border-width: 0 0 2px 2px;
+	border-color: currentColor;
+	border-radius: 0;
+	transform: translateY(-2px) rotate(-45deg);
+}
+
+.swiftling-chip-toggle:has(input:focus-visible) {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+}
+
+/* The size of flags shows while the place shows flags. */
+.swiftling-switcher-place:has(input[data-swiftling-show="flag"]:not(:checked)) .swiftling-switcher-flag-size {
+	display: none;
+}
+
+/* The language shown is a choice only for a list: a dropdown, a globe and a floating switcher
+   always show it as their button. */
+.swiftling-switcher-form:not(:has(input[name="menu[style]"][value="list"]:checked)) [data-swiftling-place="menu"] [data-swiftling-part="current"],
+.swiftling-switcher-form:has(input[name="footer[position]"]:not([value="end"]):checked) [data-swiftling-place="footer"] [data-swiftling-part="current"],
+.swiftling-switcher-form:has(input[name="footer[style]"][value="dropdown"]:checked) [data-swiftling-place="footer"] [data-swiftling-part="current"] {
+	display: none;
+}
+
+/* A floating switcher is always a dropdown: its style is chosen only for the row below the footer. */
+.swiftling-switcher-floating-note {
+	display: none;
+}
+
+.swiftling-switcher-form:has(input[name="footer[position]"]:not([value="end"]):checked) .swiftling-switcher-floating-note {
+	display: block;
+}
+
+/* A place switched off in step 1 says so; its choices wait, faded. */
+.swiftling .swiftling-switcher-place__off {
+	display: none;
+	margin: 0;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: #fcf0db;
+	color: #7a4a07;
+}
+
+.swiftling-switcher-form:has(input[name="menu[enabled]"]:not(:checked)) .swiftling-switcher-place__off.is-menu,
+.swiftling-switcher-form:not(:has(input[name="menu[menus][]"]:checked)) .swiftling-switcher-place__off.is-menu,
+.swiftling-switcher-form:has(input[name="footer[enabled]"]:not(:checked)) .swiftling-switcher-place__off.is-footer {
+	display: block;
+}
+
+.swiftling-switcher-form:has(input[name="menu[enabled]"]:not(:checked)) [data-swiftling-place="menu"] fieldset,
+.swiftling-switcher-form:not(:has(input[name="menu[menus][]"]:checked)) [data-swiftling-place="menu"] fieldset,
+.swiftling-switcher-form:has(input[name="footer[enabled]"]:not(:checked)) [data-swiftling-place="footer"] fieldset {
+	opacity: 0.5;
+}
+
+/* The preview shows the place of the tab that is open, and at the end of the page the style chosen. */
+.swiftling-switcher-preview__place[hidden],
+.swiftling-preview-footer {
+	display: none;
+}
+
+.swiftling-switcher-form:has(input[name="footer[position]"][value="end"]:checked):has(input[name="footer[style]"][value="horizontal"]:checked) [data-swiftling-footer-style="horizontal"],
+.swiftling-switcher-form:has(input[name="footer[position]"][value="end"]:checked):has(input[name="footer[style]"][value="vertical"]:checked) [data-swiftling-footer-style="vertical"],
+.swiftling-switcher-form:has(input[name="footer[position]"][value="end"]:checked):has(input[name="footer[style]"][value="dropdown"]:checked) [data-swiftling-footer-style="dropdown"],
+.swiftling-switcher-form:has(input[name="footer[position]"]:not([value="end"]):checked) [data-swiftling-footer-style="dropdown"] {
+	display: block;
+}
+
+/* The summary under the preview: what the site does now, as saved. */
+.swiftling-switcher-summary {
+	display: grid;
+	gap: 6px;
+	margin-top: 16px;
+	padding: 16px 20px;
+}
+
+.swiftling-switcher-summary h2 {
+	margin: 0;
+	font-size: 14px;
+}
+
+.swiftling-switcher-summary ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-switcher-summary li {
+	margin: 0;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+}
+
+/* The note's place and texts show while the visitor's language suggests or opens; the conditions
+   of opening while it opens. */
+.swiftling-switcher-form:has(input[name="suggest[mode]"][value="off"]:checked) .swiftling-switcher-suggest {
+	display: none;
+}
+
+.swiftling-switcher-suggest-texts {
+	margin-top: 16px;
+}
+
+.swiftling-switcher-suggest-texts input {
+	width: 100%;
+}
+
+.swiftling-switcher-suggest-texts td:first-child {
+	white-space: nowrap;
+}
+
+/* Anywhere else: each place in a row, its name beside what to use. */
+.swiftling-switcher-places {
+	display: grid;
+	grid-template-columns: 120px minmax(0, 1fr);
+	gap: 12px 16px;
+	margin: 0;
+}
+
+.swiftling-switcher-places dt {
+	margin: 0;
+	font-weight: 700;
+}
+
+.swiftling-switcher-places dd {
+	display: grid;
+	justify-items: start;
+	gap: 6px;
+	margin: 0;
+	color: var(--swiftling-muted);
+}
+
+@media (max-width: 782px) {
+	.swiftling-switcher-places {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 4px;
+	}
+
+	.swiftling-switcher-places dd {
+		margin-bottom: 10px;
+	}
+}
+
+.swiftling .swiftling-switcher-places code {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+	overflow-wrap: anywhere;
+}
+
+.swiftling-switcher-preview__row {
+	display: grid;
+	justify-items: start;
+	gap: 10px;
+	padding: 18px 0;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-switcher-preview__row:first-of-type {
+	border-top: 0;
+}
+
+/* Room for the open dropdown of the last row. */
+.swiftling-switcher-preview__row:last-of-type {
+	min-height: 150px;
+}
+
+.swiftling-switcher-preview .swiftling-switcher {
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-sans);
+	font-size: 15px;
+}
+
+.swiftling-switcher-flags td {
+	padding: 12px 8px;
+}
+
+.swiftling-switcher-flags tr:first-child td {
+	border-top: 0;
+}
+
+/* The choice of a flag, on the Languages and the Switcher screen: Ui::flagChoice(). */
+.swiftling-flag-choice {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.swiftling-flag-choice__image {
+	display: block;
+	flex: none;
+	width: 30px;
+	height: 20px;
+	margin-top: 6px;
+	border-radius: 3px;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+	object-fit: cover;
+}
+
+.swiftling-flag-choice [hidden] {
+	display: none !important;
+}
+
+.swiftling-flag-choice__fields select {
+	width: 100%;
+	min-width: 200px;
+	max-width: 240px;
+}
+
+.swiftling-switcher-flags strong + code {
+	margin-left: 6px;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-flag-choice__own {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	margin-top: 6px;
+}
+
+.swiftling .swiftling-flag-choice__own .swiftling-button.is-link {
+	padding: 0;
+	font-size: 13px;
+}
+
+.swiftling-switcher-save {
+	position: sticky;
+	z-index: 10;
+	bottom: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 20px;
+	padding: 14px 24px;
+	box-shadow: 0 6px 24px rgba(18, 24, 38, 0.08);
+}
+
+/* Buttons and flags set their own display, which would otherwise win over the hidden attribute. */
+.swiftling-switcher-form [hidden] {
+	display: none !important;
+}
+
+/* Languages: order, names and custom languages. */
+.swiftling-languages__handle {
+	width: 28px;
+}
+
+.swiftling-languages [data-swiftling-move] {
+	cursor: grab;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-languages tr.is-dragging {
+	background: var(--swiftling-chip);
+	opacity: 0.7;
+}
+
+.swiftling-languages input[type="text"]:not(.swiftling-mono) {
+	min-width: 140px;
+}
+
+.swiftling-badge.is-custom {
+	margin-left: 6px;
+	background: #e8edfb;
+	color: #2c46b8;
+}
+
+.swiftling-languages__custom {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 6px 14px;
+	margin-top: 8px;
+	white-space: normal;
+}
+
+.swiftling-languages__custom label {
+	display: grid;
+	gap: 2px;
+	font-size: 12px;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-languages__custom select {
+	max-width: 260px;
+}
+
+.swiftling .swiftling-languages__custom .swiftling-languages__rtl {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding-bottom: 10px;
+}
+
+.swiftling-languages__hint {
+	margin-top: 10px !important;
+	font-size: 13px;
+}
+
+.swiftling-custom-language > summary {
+	display: grid;
+	gap: 2px;
+	cursor: pointer;
+	list-style: none;
+}
+
+.swiftling-custom-language > summary::-webkit-details-marker {
+	display: none;
+}
+
+.swiftling-custom-language > summary h2 {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.swiftling-custom-language > summary h2::before {
+	content: "+";
+	display: inline-grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--swiftling-chip);
+	font-size: 16px;
+}
+
+.swiftling-custom-language[open] > summary h2::before {
+	content: "–";
+}
+
+.swiftling-custom-language__fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 14px 20px;
+	margin-top: 18px;
+}
+
+.swiftling-custom-language__fields label {
+	display: grid;
+	gap: 6px;
+	align-content: start;
+	font-weight: 600;
+}
+
+.swiftling-custom-language__fields label .swiftling-muted {
+	font-size: 12px;
+	font-weight: 400;
+}
+
+.swiftling .swiftling-custom-language__fields .swiftling-custom-language__rtl {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	align-self: center;
+}
+
+
+.swiftling-untranslated__note {
+	display: grid;
+	gap: 8px;
+	margin-top: 16px;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-untranslated__note .swiftling-choice {
+	padding: 0;
+	border: 0;
+}
+
+/* General: a card's title and description, then what it holds. */
+.swiftling-settings-form .swiftling-card > h2 + .swiftling-muted {
+	margin: 4px 0 16px;
+}
+
+.swiftling-search-card .swiftling-pick {
+	margin-bottom: 16px;
+}
+
+/* The index of translated text: its state and the button to build it, in a box of their own. */
+.swiftling-search-index {
+	display: grid;
+	gap: 8px;
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-search-index__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.swiftling .swiftling-search-index__head h3 {
+	margin-bottom: 2px;
+}
+
+.swiftling .swiftling-settings__build {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/*
+ * Languages: the languages no longer on the site, and the two warnings before what one of them kept
+ * is deleted, see includes/kept-languages.php.
+ */
+.swiftling-kept {
+	margin-top: 16px;
+}
+
+.swiftling-kept__head {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin-bottom: 12px;
+}
+
+.swiftling .swiftling-kept__head h2 {
+	margin-bottom: 2px;
+}
+
+.swiftling-kept__head p {
+	max-width: 680px;
+}
+
+.swiftling-kept__icon {
+	display: grid;
+	flex: 0 0 36px;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 10px;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-muted);
+}
+
+.swiftling-kept__icon svg,
+.swiftling-kept__delete svg,
+.swiftling-forget__sign svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling-kept__icon svg {
+	width: 18px;
+	height: 18px;
+	stroke-width: 1.5;
+}
+
+.swiftling-kept__table td {
+	vertical-align: middle;
+}
+
+.swiftling-kept__table .swiftling-mono {
+	margin-left: 6px;
+}
+
+.swiftling .swiftling-kept__actions {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.swiftling .swiftling-kept__delete {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	margin-left: 8px;
+	padding: 0 10px;
+	border-radius: 10px;
+	color: #b42318;
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.swiftling .swiftling-kept__delete:hover {
+	background: #fdf1ef;
+	color: #8f1a10;
+}
+
+.swiftling-kept__delete svg {
+	width: 14px;
+	height: 14px;
+	stroke-width: 1.6;
+}
+
+/* The warnings: one dialog, two steps. */
+.swiftling-forget__step {
+	display: grid;
+	gap: 16px;
+}
+
+.swiftling-forget__step[hidden] {
+	display: none;
+}
+
+.swiftling-forget__title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.swiftling-forget__title h2 {
+	margin: 0;
+	font-size: 21px !important;
+}
+
+.swiftling-forget__sign {
+	display: grid;
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	place-items: center;
+	border-radius: 50%;
+	background: #fde3df;
+	color: #b42318;
+}
+
+.swiftling-forget__sign.is-solid {
+	background: #b42318;
+	color: #fff;
+}
+
+.swiftling-forget__sign svg {
+	width: 20px;
+	height: 20px;
+	stroke-width: 1.8;
+}
+
+.swiftling .swiftling-forget__warning {
+	padding: 14px 16px;
+	border: 1px solid #f0b4ac;
+	border-radius: 12px;
+	background: #fdf1ef;
+	color: #7a1d14;
+}
+
+.swiftling-forget__parts {
+	display: grid;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-forget__parts li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--swiftling-chip);
+}
+
+.swiftling-forget__parts li > span:last-child {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.swiftling-forget__understood {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	cursor: pointer;
+}
+
+.swiftling-forget__understood input {
+	margin-top: 3px !important;
+	accent-color: #b42318;
+}
+
+.swiftling-forget__step.is-last {
+	padding: 4px 0 0;
+}
+
+/* Shown in place, without the script that opens it as a dialog. */
+.swiftling-forget[open]:not(:modal) {
+	position: static;
+	width: auto;
+	max-width: 640px;
+	margin: 20px 0 0;
+	border: 2px solid #b42318;
+	box-shadow: none;
+}
+
+/* Request support, see admin/views/request.php. */
+.swiftling-request {
+	display: grid;
+	gap: 18px;
+	max-width: 760px;
+}
+
+.swiftling-request__kinds {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-request__kinds legend {
+	margin-bottom: 10px;
+	font-weight: 700;
+}
+
+.swiftling-request__kinds label {
+	position: relative;
+	cursor: pointer;
+}
+
+.swiftling-request__kinds input {
+	position: absolute;
+	opacity: 0;
+}
+
+.swiftling-request__kinds span {
+	display: inline-flex;
+	align-items: center;
+	min-height: 40px;
+	padding: 0 16px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 999px;
+	background: var(--swiftling-surface);
+	font-family: var(--swiftling-font-display);
+	font-weight: 600;
+}
+
+.swiftling-request__kinds input:checked + span {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+	font-weight: 700;
+}
+
+.swiftling-request__kinds input:focus-visible + span {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+}
+
+.swiftling-request__row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 14px;
+}
+
+.swiftling-request__field {
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+}
+
+.swiftling-request__field > span:first-child {
+	font-weight: 700;
+}
+
+.swiftling-request__report {
+	display: grid;
+	gap: 10px;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-request__report label {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	cursor: pointer;
+}
+
+.swiftling-request__report label > span {
+	display: grid;
+	gap: 2px;
+}
+
+.swiftling-request__report summary {
+	width: fit-content;
+	font-weight: 700;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.swiftling-request__report pre {
+	margin: 10px 0 0;
+	padding: 12px 14px;
+	overflow-x: auto;
+	border-radius: 10px;
+	background: var(--swiftling-surface);
+	font-size: 11.5px;
+	line-height: 1.7;
+	white-space: pre-wrap;
+}
+
+.swiftling .swiftling-request-unsent {
+	display: block;
+	max-width: 760px;
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.swiftling-request-sent {
+	display: grid;
+	justify-items: center;
+	gap: 12px;
+	max-width: 760px;
+	padding: 44px 32px 40px;
+	text-align: center;
+}
+
+.swiftling-request-sent__tick {
+	display: grid;
+	width: 64px;
+	height: 64px;
+	place-items: center;
+	border-radius: 50%;
+	background: #ecf7f0;
+	color: var(--swiftling-reviewed);
+}
+
+.swiftling-request-sent__tick svg {
+	width: 30px;
+	height: 30px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling .swiftling-request-sent h3 {
+	font-size: 22px;
+}
+
+.swiftling-request-sent p {
+	max-width: 460px;
+}
+
+.swiftling .swiftling-request-sent__actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px;
+}
+
+/* Forms, "My form is not listed": the offer to ask for the plugin. */
+.swiftling-request-offer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.swiftling .swiftling-request-offer h2 {
+	margin-bottom: 2px;
+}
+
+/* First setup. */
+.swiftling-setup {
+	display: grid;
+	justify-items: center;
+	gap: 20px;
+	padding: 32px 0;
+}
+
+.swiftling .swiftling-setup__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 18px;
+	font-weight: 700;
+}
+
+
+.swiftling-setup__card {
+	display: grid;
+	gap: 22px;
+	width: 100%;
+	max-width: 620px;
+	box-sizing: border-box;
+	padding: 36px 40px;
+}
+
+.swiftling-setup__intro {
+	display: grid;
+	gap: 8px;
+}
+
+.swiftling .swiftling-setup__intro .swiftling-title {
+	margin: 0;
+	font-size: 30px;
+	line-height: 1.15;
+}
+
+.swiftling-setup__field {
+	display: grid;
+	gap: 8px;
+}
+
+.swiftling-setup__field label {
+	font-weight: 700;
+}
+
+.swiftling .swiftling-setup__field select {
+	height: 44px;
+	font-size: 15px;
+}
+
+.swiftling-setup__custom {
+	padding: 0 16px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+}
+
+.swiftling-setup__custom > summary {
+	padding: 14px 0;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-setup__custom[open] {
+	padding-bottom: 18px;
+}
+
+.swiftling-setup__custom .swiftling-custom-language__fields {
+	margin-top: 12px;
+}
+
+.swiftling-setup__foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+/* Another way to set up came first (swiftling_setup_offer): the question follows as the other way. */
+.swiftling .swiftling-setup__or {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	width: 100%;
+	max-width: 620px;
+	margin: 6px 0;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-setup__or::before,
+.swiftling-setup__or::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--swiftling-line);
+}
+
+.swiftling-setup__card.is-second {
+	gap: 20px;
+	padding: 32px 40px;
+}
+
+.swiftling .swiftling-setup__card.is-second .swiftling-setup__intro .swiftling-title {
+	font-size: 22px;
+	line-height: 1.2;
+}
+
+/* Languages: the locked original. */
+/* Under the original's name, on a line of its own: how to change it, a small link with a lock. */
+.swiftling .swiftling-languages__original {
+	margin: 0 0 4px;
+}
+
+.swiftling .swiftling-languages__locked {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	width: fit-content;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.swiftling .swiftling-languages__locked:hover {
+	color: var(--swiftling-ink);
+	text-decoration: underline;
+}
+
+.swiftling-languages__locked .dashicons {
+	width: 13px;
+	height: 13px;
+	font-size: 13px;
+}
+
+/* Settings: start over, marked as the one place that removes data. */
+.swiftling-start-over {
+	margin-top: 20px;
+	border: 2px solid #e3a39b;
+}
+
+.swiftling-start-over__head {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin: -24px -24px 0;
+	padding: 20px 24px;
+	border-radius: 14px 14px 0 0;
+	background: #fdeceb;
+	color: #8f1d14;
+}
+
+.swiftling-start-over__head .dashicons {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	font-size: 28px;
+}
+
+.swiftling .swiftling-start-over__head h2 {
+	margin: 0;
+	color: #8f1d14;
+	font-size: 22px;
+}
+
+.swiftling .swiftling-start-over__head p {
+	margin: 4px 0 0;
+	color: #8f1d14;
+}
+
+.swiftling-start-over__lists {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.swiftling-start-over__lists > div {
+	padding: 14px 16px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+}
+
+/* As far from the lists as they are from each other. */
+.swiftling-notice.swiftling-start-over__warning {
+	margin-top: 16px;
+}
+
+.swiftling-start-over__lists h3 {
+	margin: 0 0 8px;
+	font-size: 14px;
+}
+
+.swiftling-start-over__lists ul {
+	margin: 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.swiftling-start-over__lists li {
+	margin-bottom: 6px;
+}
+
+.swiftling-dialog {
+	width: min(560px, calc(100vw - 32px));
+	box-sizing: border-box;
+	padding: 28px 30px;
+	border: 0;
+	border-radius: 18px;
+	color: var(--swiftling-ink);
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.swiftling-dialog::backdrop {
+	background: rgba(18, 24, 38, 0.55);
+}
+
+/* Shown in place, without the script that opens it as a dialog. */
+.swiftling-start-over .swiftling-dialog[open]:not(:modal) {
+	position: static;
+	width: auto;
+	margin: 20px 0 0;
+	border: 2px solid var(--swiftling-ink);
+	box-shadow: none;
+}
+
+.swiftling-dialog__form {
+	display: grid;
+	gap: 16px;
+}
+
+.swiftling-dialog__form h2 {
+	margin: 0;
+	font-size: 24px;
+}
+
+.swiftling-dialog__choices {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-dialog__choices label {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+	cursor: pointer;
+}
+
+.swiftling-dialog__choices label:has(input:checked) {
+	border: 2px solid var(--swiftling-ink);
+	padding: 13px 15px;
+}
+
+.swiftling-dialog__choices input {
+	margin-top: 3px !important;
+}
+
+.swiftling-dialog__choices span {
+	display: grid;
+	gap: 2px;
+}
+
+.swiftling-dialog__confirm {
+	display: grid;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.swiftling-dialog__foot {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 18px;
+}
+
+.swiftling-setup__custom .swiftling-custom-language__fields label:has(select) {
+	grid-column: 1 / -1;
+}
+
+/* Translation editor: a separate copy of the page for one language. */
+.swiftling-copy {
+	display: grid;
+	gap: 12px;
+	max-width: 880px;
+	margin-top: 16px;
+}
+
+.swiftling .swiftling-copy h2 {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 20px;
+}
+
+.swiftling .swiftling-copy p {
+	margin: 0;
+	line-height: 1.5;
+}
+
+.swiftling-copy__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 12px;
+}
+
+/* Stopping the copy puts it in the trash: a line of its own under the other actions, set apart. */
+.swiftling-copy__stop {
+	display: flex;
+	flex-basis: 100%;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin-top: 4px;
+	padding-top: 14px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-copy__mode {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Translation service. */
+.swiftling-badge.is-failed {
+	background: #fde8e6;
+	color: #b42318;
+}
+
+.swiftling-badge.is-unpaid {
+	background: #fbebd3;
+	color: #8a5608;
+}
+
+.swiftling-badge.is-untested {
+	background: #fbebd3;
+	color: #8a5608;
+}
+
+
+
+
+
+/* The icon of a kind of service, see Ui::serviceIcon(): a line drawing on a tinted tile. */
+.swiftling-service__icon {
+	display: grid;
+	flex: 0 0 48px;
+	width: 48px;
+	height: 48px;
+	place-items: center;
+	border-radius: 14px;
+	background: var(--swiftling-service-tint, #e3e8fb);
+	color: var(--swiftling-service-ink, #3b5bdb);
+}
+
+.swiftling-service__icon.is-blue { --swiftling-service-tint: #e3e8fb; --swiftling-service-ink: #3b5bdb; }
+.swiftling-service__icon.is-teal { --swiftling-service-tint: #dcf0f3; --swiftling-service-ink: #0b6b7d; }
+.swiftling-service__icon.is-violet { --swiftling-service-tint: #ebe5fb; --swiftling-service-ink: #6741d9; }
+.swiftling-service__icon.is-amber { --swiftling-service-tint: #f6e9d2; --swiftling-service-ink: #9a5b05; }
+.swiftling-service__icon.is-green { --swiftling-service-tint: #ddf0e6; --swiftling-service-ink: #1e7a4f; }
+.swiftling-service__icon.is-orange { --swiftling-service-tint: #fde6dd; --swiftling-service-ink: #c2410c; }
+
+.swiftling-service__icon svg {
+	width: 28px;
+	height: 28px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.9;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling-service-strip .swiftling-service__icon {
+	background: var(--swiftling-swift);
+	color: #fff;
+}
+
+.swiftling-service__logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 72px;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: var(--swiftling-chip);
+	font-family: var(--swiftling-font-display);
+	font-size: 15px;
+	font-weight: 700;
+}
+
+.swiftling-service__name {
+	font-family: var(--swiftling-font-display);
+	font-size: 16px;
+}
+
+.swiftling-service__key {
+	display: grid;
+	gap: 6px;
+	margin-top: 20px;
+}
+
+.swiftling-service__key label {
+	font-weight: 600;
+}
+
+.swiftling-service__field {
+	display: flex;
+	gap: 10px;
+}
+
+.swiftling .swiftling-service__field input[type="password"] {
+	flex: 1;
+	letter-spacing: 0.04em;
+}
+
+.swiftling-service__key .swiftling-muted {
+	font-size: 12px;
+}
+
+.swiftling .swiftling-service__model select {
+	flex: 1 1 220px;
+	min-width: 0;
+	max-width: none;
+}
+
+
+
+
+
+
+
+
+
+.swiftling-service-guide ol {
+	display: grid;
+	gap: 8px;
+	margin: 16px 0 16px 20px;
+}
+
+.swiftling-service-guide li {
+	margin: 0;
+	line-height: 1.5;
+}
+
+.swiftling-service-guide__note {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+}
+
+
+@media (max-width: 600px) {
+	.swiftling-service-row__head,
+	.swiftling-service__field {
+		flex-wrap: wrap;
+	}
+}
+
+/*
+ * Translation service: a strip with the service in use, a card per kind of service, a row per
+ * service, see admin/views/service.php and service-row.php.
+ */
+.swiftling-service-strip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 16px;
+	padding: 16px 20px;
+	border-radius: var(--swiftling-radius);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling .swiftling-service-strip__text {
+	flex: 1 1 280px;
+}
+
+.swiftling-service-strip__text span,
+.swiftling-service-strip__count {
+	color: #c9cdd6;
+}
+
+.swiftling-service-strip.is-empty {
+	border: 1px dashed var(--swiftling-field);
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+}
+
+.swiftling-service-strip.is-empty .swiftling-service-strip__text span {
+	color: var(--swiftling-muted);
+}
+
+.swiftling-service-group {
+	display: grid;
+	gap: 0;
+}
+
+.swiftling-service-group__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 6px 16px;
+	margin-bottom: 8px;
+}
+
+.swiftling-service-row {
+	border-top: 1px solid var(--swiftling-chip);
+	/* Opened at by an anchor after an action: below WordPress's toolbar, with room to breathe. */
+	scroll-margin-top: 56px;
+}
+
+@media (max-width: 782px) {
+	.swiftling-service-row {
+		scroll-margin-top: 70px;
+	}
+}
+
+.swiftling-service-row__head {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 0;
+}
+
+.swiftling-service-row__text {
+	display: grid;
+	flex: 1 1 220px;
+	gap: 2px;
+}
+
+.swiftling-service-row__head .swiftling-badge {
+	margin-left: auto;
+}
+
+.swiftling-service-row__head form {
+	margin: 0;
+}
+
+/* Translates, or the button that makes a connected service the one in use: a pill with a radio dot. */
+.swiftling .swiftling-service-row__use {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 40px;
+	padding: 0 16px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 999px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.swiftling .swiftling-service-row__use:hover {
+	border-color: var(--swiftling-ink);
+}
+
+.swiftling-service-row__dot {
+	width: 14px;
+	height: 14px;
+	border: 2px solid var(--swiftling-field);
+	border-radius: 50%;
+}
+
+.swiftling .swiftling-service-row__use.is-current {
+	border-color: var(--swiftling-swift);
+	background: #fff3ee;
+	cursor: default;
+}
+
+.swiftling-service-row__use.is-current .swiftling-service-row__dot {
+	border: 4px solid var(--swiftling-swift);
+}
+
+.swiftling-service-row__more {
+	padding: 0 0 16px 86px;
+}
+
+.swiftling-service-row__more summary {
+	width: fit-content;
+	color: var(--swiftling-ink);
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-service-row__body {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 14px;
+	margin-top: 12px;
+}
+
+.swiftling-service-row__box {
+	min-width: 0;
+	display: grid;
+	align-content: start;
+	gap: 10px;
+	padding: 16px 18px;
+	border-radius: 12px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-service-row__box .swiftling-service__key {
+	margin-top: 0;
+}
+
+/* A service's words may hold a long address, which breaks anywhere rather than widen the box. */
+.swiftling-service-row__said .swiftling-notice__text {
+	overflow-wrap: anywhere;
+}
+
+.swiftling-service-row__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+}
+
+.swiftling-service-row__actions form {
+	margin: 0;
+}
+
+.swiftling .swiftling-service-row__count {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.swiftling-service-row__count strong {
+	font-family: var(--swiftling-font-display);
+	font-size: 30px;
+	font-weight: 800;
+	line-height: 1;
+}
+
+.swiftling-service-row__usage .swiftling-bar {
+	background: var(--swiftling-surface);
+}
+
+/* The guide to a key, in the row: one column over the boxes, without a card of its own. */
+.swiftling-service-row__body .swiftling-service-guide {
+	grid-column: 1 / -1;
+	padding: 0;
+	border: 0;
+	background: none;
+}
+
+.swiftling-services .swiftling-card h2 {
+	margin: 0 0 12px;
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+}
+
+.swiftling-services .swiftling-service-group__head h2 {
+	margin: 0;
+}
+
+@media (max-width: 782px) {
+	.swiftling-service-row__more {
+		padding-left: 0;
+	}
+}
+
+.swiftling .swiftling-button.is-danger-text {
+	color: #b42318;
+}
+
+.swiftling-service-privacy p {
+	margin: 0;
+	color: #c9ccd4;
+}
+
+.swiftling-services .swiftling-service-privacy h2 {
+	color: #fff;
+}
+
+.swiftling-service-how ol {
+	display: grid;
+	gap: 4px;
+	margin: 0 0 0 20px;
+}
+
+.swiftling-service-how li {
+	margin: 0;
+}
+
+/* Where the key is kept, and how to keep it in wp-config.php. */
+.swiftling-service-key-place {
+	margin-top: 14px;
+	font-size: 13px;
+}
+
+.swiftling-service-key-place p {
+	margin: 0 0 6px;
+}
+
+.swiftling-service-key-place form {
+	margin: 0;
+}
+
+.swiftling-service-key-place__more summary {
+	color: var(--swiftling-ink);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-service-key-place__more > p {
+	margin: 8px 0;
+}
+
+.swiftling-service-key-place__more ol {
+	display: grid;
+	gap: 6px;
+	margin: 0 0 0 20px;
+}
+
+.swiftling-service-key-place__more li {
+	margin: 0;
+}
+
+.swiftling .swiftling-service-key-place__line {
+	display: block;
+	margin-top: 6px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--swiftling-chip);
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+	user-select: all;
+}
+
+/* Themes & plugins: what is listed. */
+.swiftling-callout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 12px 16px;
+	padding: 18px 20px;
+	border: 1px solid #b9c4f0;
+	border-left: 6px solid var(--swiftling-machine);
+	border-radius: var(--swiftling-radius);
+	background: #eef1fd;
+}
+
+.swiftling-callout > .dashicons {
+	width: 28px;
+	height: 28px;
+	color: var(--swiftling-machine);
+	font-size: 28px;
+}
+
+.swiftling-callout > div {
+	flex: 1 1 420px;
+	min-width: 0;
+}
+
+.swiftling-callout h2 {
+	margin: 0 0 4px;
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+}
+
+.swiftling-callout p {
+	margin: 0;
+	font-size: 14px;
+}
+
+/* A heading with an explanation on hover and on focus. */
+.swiftling-tip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.swiftling .swiftling-tip__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: var(--swiftling-muted);
+	cursor: help;
+}
+
+.swiftling .swiftling-tip__button:hover,
+.swiftling .swiftling-tip__button:focus-visible {
+	color: var(--swiftling-ink);
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 0;
+}
+
+.swiftling-tip__button .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+.swiftling-tip__text {
+	position: absolute;
+	z-index: 20;
+	top: calc(100% + 6px);
+	left: 0;
+	width: 260px;
+	padding: 10px 12px;
+	border-radius: 10px;
+	background: var(--swiftling-ink);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.45;
+	letter-spacing: 0;
+	text-align: left;
+	text-transform: none;
+	white-space: normal;
+	visibility: hidden;
+	opacity: 0;
+}
+
+.swiftling-tip:hover .swiftling-tip__text,
+.swiftling-tip:focus-within .swiftling-tip__text {
+	visibility: visible;
+	opacity: 1;
+}
+
+.swiftling-tip.is-dismissed .swiftling-tip__text {
+	visibility: hidden;
+	opacity: 0;
+}
+
+.swiftling-table th.is-center .swiftling-tip__text {
+	right: 0;
+	left: auto;
+}
+
+/* Themes & plugins: finding texts. */
+
+.swiftling-find .swiftling-card__head {
+	flex-wrap: wrap;
+	margin: 12px 12px 0;
+}
+
+.swiftling-find__ways {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.swiftling-find__way {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 20px 12px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-find__way h3 {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 18px;
+}
+
+.swiftling-find__way p {
+	margin: 0;
+}
+
+.swiftling-find__form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: auto;
+}
+
+.swiftling-find__form label {
+	font-weight: 600;
+}
+
+.swiftling-find__option {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 10px;
+	font-weight: 400 !important;
+}
+
+.swiftling-find__option input {
+	margin-top: 3px !important;
+}
+
+.swiftling-find__live {
+	font-weight: 600;
+}
+
+.swiftling-find__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: auto;
+}
+
+@media (min-width: 1100px) {
+	.swiftling-find__ways {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.swiftling-find__way + .swiftling-find__way {
+		border-left: 1px solid var(--swiftling-line);
+	}
+
+	.swiftling-find__way {
+		padding: 20px;
+	}
+}
+
+/* Positioned, so the hidden texts for screen readers in the table scroll with it and cannot widen the screen. */
+.swiftling-table-wrap {
+	position: relative;
+	overflow-x: auto;
+}
+
+.swiftling-table td.is-actions {
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* Themes & plugins: one theme or plugin. */
+.swiftling-package-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 20px;
+	border-bottom: 1px solid var(--swiftling-line);
+}
+
+.swiftling-package-tabs a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	margin-bottom: -1px;
+	padding: 0 14px;
+	border-bottom: 2px solid transparent;
+	color: var(--swiftling-muted);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.swiftling-package-tabs a:hover,
+.swiftling-package-tabs a.is-current {
+	color: var(--swiftling-ink);
+}
+
+.swiftling-package-tabs a.is-current {
+	border-bottom-color: var(--swiftling-swift);
+}
+
+.swiftling-package-tabs a:focus-visible {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: -2px;
+	box-shadow: none;
+}
+
+.swiftling-list-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 16px;
+}
+
+.swiftling-list-filters__shows {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.swiftling-filter-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 12px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 999px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.swiftling-filter-pill:hover {
+	border-color: var(--swiftling-ink);
+	color: var(--swiftling-ink);
+}
+
+.swiftling-filter-pill.is-current {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-filter-pill__count {
+	opacity: 0.75;
+}
+
+.swiftling-list-filters__search {
+	display: flex;
+	gap: 8px;
+}
+
+.swiftling .swiftling-list-filters__search input[type="search"] {
+	min-height: 36px;
+	width: 240px;
+	max-width: 100%;
+}
+
+.swiftling-list-pages {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+}
+
+/* Themes & plugins: the scan of settings. */
+.swiftling-scan-intro {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.swiftling-scan-intro p {
+	margin: 0 0 4px;
+}
+
+.swiftling-scan {
+	display: grid;
+	gap: 20px;
+}
+
+.swiftling-scan__group .swiftling-card__head {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	margin: 8px 8px 12px;
+}
+
+.swiftling-scan__group h2 {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0;
+	font-size: 17px;
+}
+
+.swiftling-scan__group p {
+	margin: 0;
+}
+
+.swiftling-scan__group summary {
+	cursor: pointer;
+	list-style: none;
+}
+
+.swiftling-scan__group summary::-webkit-details-marker {
+	display: none;
+}
+
+.swiftling-scan__group summary h2::after {
+	content: "\f347";
+	font: normal 16px/1 dashicons;
+}
+
+.swiftling-scan__group details[open] summary h2::after {
+	content: "\f343";
+}
+
+.swiftling-scan__row {
+	display: grid;
+	grid-template-columns: 24px minmax(0, 1fr);
+	gap: 8px 12px;
+	align-items: start;
+	padding: 14px 8px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling .swiftling-scan__row input[type="checkbox"] {
+	margin: 3px 0 0;
+}
+
+.swiftling-scan__row label {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.swiftling-scan__row code {
+	padding: 0;
+	background: none;
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.swiftling-scan__value {
+	grid-column: 2;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--swiftling-ground);
+	overflow-wrap: anywhere;
+}
+
+.swiftling-scan__value pre {
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.swiftling-scan__value .swiftling-live-thumb {
+	display: block;
+	margin-bottom: 6px;
+}
+
+@media (min-width: 1100px) {
+	.swiftling-scan__row {
+		grid-template-columns: 24px minmax(0, 0.9fr) minmax(0, 1.4fr);
+	}
+
+	.swiftling-scan__value {
+		grid-column: auto;
+	}
+}
+
+.swiftling-scan__bar {
+	position: sticky;
+	bottom: 16px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 14px 20px;
+	box-shadow: 0 10px 30px rgba(18, 24, 38, 0.12);
+}
+
+.swiftling-scan__bar > .swiftling-muted {
+	margin-right: auto;
+}
+
+/* Themes & plugins: the scan of the code. */
+.swiftling-code-scan {
+	display: grid;
+	gap: 12px;
+}
+
+.swiftling-code-scan h2,
+.swiftling-code-scan p {
+	margin: 0;
+}
+
+.swiftling-code-scan__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+/* Categories & tags: the lists left out. */
+.swiftling-details {
+	padding: 14px 18px;
+}
+
+.swiftling-details > summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	min-height: 32px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-details > summary .swiftling-muted {
+	font-weight: 400;
+}
+
+.swiftling-details > p {
+	margin: 10px 0 0;
+}
+
+/* Editor of a list of terms: the fields of a term its page does not show. */
+.swiftling-term-more td {
+	padding-top: 6px;
+	padding-bottom: 14px;
+}
+
+.swiftling-term-more summary {
+	display: inline-flex;
+	align-items: center;
+	min-height: 32px;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-term-more p {
+	margin: 4px 0 10px;
+	font-size: 13px;
+}
+
+.swiftling-term-more ul {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-term-more li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin: 0;
+}
+
+.swiftling-term-more__about {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+	min-width: 0;
+}
+
+.swiftling-term-more__choice {
+	display: inline-flex;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.swiftling-term-more__choice form {
+	margin: 0;
+}
+
+.swiftling-term-more__choice button {
+	min-height: 36px;
+	padding: 0 12px;
+	border: 0;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.swiftling-term-more__choice button:hover,
+.swiftling-term-more__choice button:focus-visible {
+	background: var(--swiftling-chip);
+}
+
+.swiftling-term-more__choice button.is-current {
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+/* Placeholders of texts from code: what to keep, and when a translation would break the page. */
+.swiftling-format-note.is-warning {
+	color: #8a5a00;
+	font-weight: 600;
+}
+
+.swiftling-format-note.is-error {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
+.swiftling textarea.swiftling-live-input:has(+ .swiftling-format-note.is-error),
+tr.is-format-error textarea.swiftling-live-input {
+	border-color: #b32d2e;
+	box-shadow: 0 0 0 1px #b32d2e;
+}
+
+/* Menus: the places of the theme a menu shows in. */
+.swiftling-menu-places {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.swiftling-chip {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+/* Editor of a menu: submenu items indented under their parent, and rows without a field. */
+.swiftling-editor tr.is-depth-1 .swiftling-live-original {
+	padding-left: 32px;
+}
+
+.swiftling-editor tr.is-depth-2 .swiftling-live-original {
+	padding-left: 52px;
+}
+
+.swiftling-editor tr.is-depth-3 .swiftling-live-original {
+	padding-left: 72px;
+}
+
+.swiftling-editor tr[class*="is-depth-"] .swiftling-live-original::before {
+	content: "↳";
+	margin-right: 6px;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-editor tr.swiftling-live-info th,
+.swiftling-editor tr.swiftling-live-info .swiftling-live-original {
+	color: var(--swiftling-muted);
+}
+
+.swiftling-editor tr.swiftling-live-info p {
+	font-size: 13px;
+}
+
+/* A menu's label of a page's title, empty while it follows the page's translated title: nothing to
+   do there, so no dashed edge; its field says what shows instead. */
+.swiftling .swiftling-live-editor tr[data-fallback] textarea.swiftling-live-input:placeholder-shown {
+	border: 1px solid var(--swiftling-field);
+	background: var(--swiftling-surface);
+}
+
+/* Whose text a row is, and where else it is translated. */
+.swiftling-live-whose a {
+	font-weight: 600;
+}
+
+/* Editor of a template: where its classic menus are translated. */
+.swiftling-menu-pointer td {
+	padding-top: 8px;
+	padding-bottom: 16px;
+}
+
+.swiftling-menu-pointer__box {
+	display: grid;
+	gap: 10px;
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-menu-pointer__box p {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 10px;
+}
+
+.swiftling-menu-pointer__box ul {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-menu-pointer__box li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin: 0;
+}
+
+.swiftling-menu-pointer__name {
+	flex: 1 1 160px;
+	min-width: 0;
+	font-weight: 600;
+}
+
+
+
+
+/* Menus, one menu: its items by language. */
+.swiftling-menu-langs {
+	display: grid;
+	gap: 16px;
+}
+
+.swiftling-menu-langs__table th[scope="row"] {
+	min-width: 200px;
+	text-align: left;
+	font-weight: 400;
+}
+
+.swiftling-menu-langs__table thead th.is-center {
+	min-width: 96px;
+}
+
+.swiftling-menu-langs__name {
+	display: block;
+	margin-top: 2px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.swiftling-menu-langs__item {
+	display: block;
+	font-weight: 600;
+}
+
+.swiftling-menu-langs__table tr.is-depth-1 th[scope="row"] {
+	padding-left: 32px;
+}
+
+.swiftling-menu-langs__table tr.is-depth-2 th[scope="row"] {
+	padding-left: 52px;
+}
+
+.swiftling-menu-langs__table tr.is-depth-3 th[scope="row"] {
+	padding-left: 72px;
+}
+
+.swiftling-menu-langs__table tr[class*="is-depth-"]:not(.is-depth-0) .swiftling-menu-langs__item::before {
+	content: "↳";
+	margin-right: 6px;
+	color: var(--swiftling-muted);
+	font-weight: 400;
+}
+
+.swiftling-menu-langs__tick {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	cursor: pointer;
+}
+
+.swiftling .swiftling-menu-langs__tick input[type="checkbox"] {
+	margin: 0;
+	accent-color: var(--swiftling-reviewed);
+}
+
+.swiftling-menu-langs__locked,
+.swiftling-menu-langs__waiting {
+	display: block;
+	max-width: 110px;
+	margin: 0 auto;
+	font-size: 11px;
+	line-height: 1.3;
+}
+
+.swiftling-menu-langs__locked {
+	color: var(--swiftling-muted);
+}
+
+.swiftling-menu-langs__waiting {
+	color: #8a5a0a;
+}
+
+
+
+
+
+.swiftling-menu-langs__foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+}
+
+.swiftling-menu-langs__foot p {
+	flex: 1 1 280px;
+}
+
+.swiftling-menu-langs__unsaved {
+	color: #8a5a0a;
+	font-weight: 600;
+}
+
+/* Editor of a menu: the items left out in its language. */
+.swiftling-editor tr.swiftling-live-left-out summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.swiftling-editor tr.swiftling-live-left-out summary .swiftling-muted {
+	margin-left: 8px;
+	font-weight: 400;
+}
+
+.swiftling-editor tr.swiftling-live-left-out details p {
+	margin-top: 8px;
+	font-size: 13px;
+}
+
+.swiftling-menu-langs__tick[hidden] {
+	display: none;
+}
+
+/* Notices, see Ui::notice(): a tinted card with a round sticker and a bold first line. A tip
+   carries the SwiftLing bird. A notice inside a card is the same, smaller. */
+.swiftling-notice {
+	--swiftling-notice-tint: #fdebe4;
+	--swiftling-notice-solid: var(--swiftling-swift);
+	--swiftling-notice-ink: #a8391a;
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin: 0 0 16px;
+	padding: 16px 18px;
+	border-radius: 18px;
+	background: var(--swiftling-notice-tint);
+	color: #2a3040;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.swiftling-notice.is-success {
+	--swiftling-notice-tint: #e3f4ea;
+	--swiftling-notice-solid: var(--swiftling-reviewed);
+	--swiftling-notice-ink: #135c3a;
+}
+
+.swiftling-notice.is-warning {
+	--swiftling-notice-tint: #fcf0db;
+	--swiftling-notice-solid: var(--swiftling-outdated);
+	--swiftling-notice-ink: #7a4a07;
+}
+
+.swiftling-notice.is-error {
+	--swiftling-notice-tint: #fde8e4;
+	--swiftling-notice-solid: #c0391b;
+	--swiftling-notice-ink: #8e2a12;
+}
+
+.swiftling-notice__icon {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: var(--swiftling-notice-solid);
+	color: #fff;
+}
+
+.swiftling-notice__icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.swiftling-notice.is-info .swiftling-notice__icon svg {
+	width: 24px;
+	height: 14px;
+}
+
+.swiftling-notice__body {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	padding-top: 1px;
+}
+
+.swiftling .swiftling-notice__title {
+	color: var(--swiftling-notice-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 1.3;
+}
+
+.swiftling-notice__text a {
+	color: inherit;
+	font-weight: 700;
+}
+
+.swiftling .swiftling-notice__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.swiftling-notice__action {
+	display: inline-flex;
+	align-items: center;
+	min-height: 40px;
+	padding: 0 16px;
+	border-radius: 999px;
+	background: var(--swiftling-ink);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.swiftling-notice__action:hover,
+.swiftling-notice__action:focus {
+	background: #2a3040;
+	color: #fff;
+}
+
+.swiftling-notice.is-compact {
+	gap: 10px;
+	margin: 12px 0 0;
+	padding: 10px 12px;
+	border-radius: 12px;
+	font-size: 13px;
+}
+
+.swiftling-notice.is-compact .swiftling-notice__icon {
+	width: 28px;
+	height: 28px;
+}
+
+.swiftling-notice.is-compact .swiftling-notice__icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.swiftling-notice.is-compact.is-info .swiftling-notice__icon svg {
+	width: 18px;
+	height: 10px;
+}
+
+.swiftling .swiftling-notice.is-compact .swiftling-notice__title {
+	font-size: 15px;
+}
+
+.swiftling-notice.is-compact .swiftling-notice__body {
+	padding-top: 4px;
+}
+
+/* A notice of one line of text sits in the middle of its sticker. */
+.swiftling-notice:not(:has(.swiftling-notice__title)) .swiftling-notice__body {
+	padding-top: 9px;
+}
+
+.swiftling-notice.is-compact:not(:has(.swiftling-notice__title)) .swiftling-notice__body {
+	padding-top: 4px;
+}
+
+/* Menus, one menu: the panel that says how items by language work. */
+.swiftling-menu-help {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px 24px;
+	margin-bottom: 20px;
+	padding: 22px 24px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 20px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-menu-help__bird {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 76px;
+	height: 76px;
+	border-radius: 50%;
+	background: #fde9e2;
+	color: var(--swiftling-swift);
+}
+
+.swiftling-menu-help__bird svg {
+	width: 46px;
+	height: 26px;
+}
+
+.swiftling-menu-help__main {
+	display: flex;
+	flex: 1 1 560px;
+	flex-direction: column;
+	gap: 14px;
+	min-width: 0;
+}
+
+.swiftling-menu-help__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 6px 16px;
+}
+
+.swiftling .swiftling-menu-help__head h2 {
+	margin: 0;
+	font-family: var(--swiftling-font-display);
+	font-size: 21px;
+	font-weight: 800;
+}
+
+.swiftling-menu-help__hide {
+	min-height: 36px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--swiftling-muted);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-menu-help__hide:hover,
+.swiftling-menu-help__hide:focus {
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+}
+
+.swiftling-menu-help__tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.swiftling-menu-help__tile {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px;
+	border-radius: 14px;
+	background: var(--swiftling-ground);
+	color: #3d4352;
+	font-size: 13px;
+}
+
+.swiftling-menu-help__tile strong {
+	display: block;
+	color: var(--swiftling-ink);
+	font-size: 14px;
+}
+
+.swiftling-menu-help__tile a {
+	font-weight: 700;
+}
+
+.swiftling-menu-help__art {
+	flex: 0 0 auto;
+	padding: 6px;
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-menu-help__art.is-ticks {
+	display: grid;
+	grid-template-columns: repeat(3, 12px);
+	gap: 3px;
+}
+
+.swiftling-menu-help__art.is-ticks i {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	background: var(--swiftling-reviewed);
+}
+
+.swiftling-menu-help__art.is-ticks i.is-empty {
+	border: 1.5px solid #8a909c;
+	background: transparent;
+}
+
+.swiftling-menu-help__art.is-tree {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 44px;
+}
+
+.swiftling-menu-help__art.is-tree i {
+	height: 6px;
+	border-radius: 3px;
+	background: var(--swiftling-ink);
+}
+
+.swiftling-menu-help__art.is-tree i + i {
+	margin-left: 10px;
+	background: var(--swiftling-field);
+}
+
+.swiftling-menu-help__art.is-one {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	height: 44px;
+	background: #e5eafc;
+	color: #2f4bbf;
+	font-size: 13px;
+	font-weight: 800;
+}
+
+.swiftling-menu-help-show {
+	margin: -8px 0 12px;
+}
+
+/* Menus: two groups in each row, the texts of the items and which items each language shows.
+   Every language of the texts is in one cell, which wraps, so the table keeps its width. */
+.swiftling-menus-table th.swiftling-menus-table__group {
+	vertical-align: bottom;
+	text-align: left;
+}
+
+.swiftling-menus-table__name {
+	display: block;
+	color: var(--swiftling-ink);
+	font-family: var(--swiftling-font-display);
+	font-size: 16px;
+	font-weight: 800;
+}
+
+.swiftling-menus-table__what {
+	display: block;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+	font-weight: 400;
+}
+
+.swiftling-menus-table__group,
+.swiftling-menus-table__texts,
+.swiftling-menus-table__items {
+	padding-left: 18px !important;
+	border-left: 2px solid var(--swiftling-chip);
+}
+
+.swiftling-menus-table__texts {
+	min-width: 280px;
+}
+
+.swiftling-menus-table__languages {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+
+.swiftling-menus-table__language {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px 2px 4px;
+	border-radius: 999px;
+	background: var(--swiftling-ground);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.swiftling-menus-table__language .swiftling-status {
+	transform: scale(0.8);
+}
+
+.swiftling-menus-table__items {
+	min-width: 220px;
+}
+
+.swiftling-menus-table__items > * {
+	display: block;
+}
+
+.swiftling-menus-table__items .swiftling-button {
+	display: inline-flex;
+	margin-top: 8px;
+}
+
+/* Settings: Translate or Never for a content type, and what is not translated yet in each language,
+   as the language's code with its count. */
+.swiftling-untranslated select {
+	min-width: 260px;
+}
+
+.swiftling-untranslated th {
+	white-space: nowrap;
+}
+
+.swiftling .swiftling-segmented.swiftling-untranslated__translated {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	margin: 0;
+	border: 0;
+	white-space: nowrap;
+}
+
+.swiftling-untranslated__translated label {
+	display: inline-flex;
+	align-items: center;
+	min-height: 36px;
+	padding: 0 14px;
+	border-radius: 9px;
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-untranslated__translated input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.swiftling-untranslated__translated label:has(input:checked) {
+	background: var(--swiftling-surface);
+	box-shadow: 0 1px 2px rgba(18, 24, 38, 0.08);
+}
+
+.swiftling-untranslated__translated label:has(input:focus-visible) {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 1px;
+}
+
+.swiftling-untranslated tr.is-never td {
+	background: #fbfaf7;
+}
+
+.swiftling-untranslated__counts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.swiftling-untranslated__count {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* Translation service: the words that are never translated. */
+.swiftling-never-words {
+	display: grid;
+	gap: 12px;
+	margin-top: 20px;
+}
+
+.swiftling .swiftling-never-words__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling-never-words__list li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 4px 4px 4px 12px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+	font-weight: 600;
+}
+
+.swiftling-never-words__list form {
+	display: inline-flex;
+}
+
+.swiftling-never-words__list button {
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 50%;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-muted);
+	cursor: pointer;
+}
+
+.swiftling-never-words__list button:hover,
+.swiftling-never-words__list button:focus-visible {
+	color: var(--swiftling-ink);
+}
+
+.swiftling-never-words__add {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.swiftling-never-words__add input[type="text"] {
+	flex: 1 1 260px;
+	max-width: 420px;
+}
+
+/* Translation editor: the words of the list a field kept, after machine translation. */
+.swiftling .swiftling-kept-note {
+	margin-top: 6px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+}
+
+/* Addresses: a subdomain or an own domain per language. The hosts and how to set them up show for
+   the format that is chosen, with CSS alone. */
+.swiftling-format-layout {
+	display: grid;
+	gap: 20px;
+	align-items: start;
+}
+
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format-layout,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format-layout {
+	grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+}
+
+.swiftling-format-form:has(input[name="format"]:not([value="directory"]):checked) .swiftling-format__source,
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format__permalinks,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format__permalinks,
+.swiftling-hosts,
+.swiftling-format-help,
+.swiftling-format__check {
+	display: none;
+}
+
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .is-subdomain,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .is-domain {
+	display: grid;
+}
+
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format__check,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format__check {
+	display: inline-flex;
+}
+
+.swiftling-format__buttons {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.swiftling-hosts {
+	gap: 10px;
+	margin-top: 18px;
+	padding-top: 16px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-hosts__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 4px 12px;
+}
+
+.swiftling-hosts__table td {
+	vertical-align: top;
+}
+
+.swiftling-hosts__table input[type="text"] {
+	width: 100%;
+	max-width: 300px;
+}
+
+.swiftling .swiftling-hosts__table input.is-invalid {
+	border-color: #b42318;
+	box-shadow: 0 0 0 1px #b42318;
+}
+
+.swiftling-hosts__error,
+.swiftling-hosts__todo {
+	display: block;
+	max-width: 320px;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+.swiftling-hosts__error {
+	color: #b42318;
+}
+
+.swiftling .swiftling-hosts__note,
+.swiftling .swiftling-hosts__status {
+	margin: 0;
+}
+
+.swiftling .swiftling-hosts__status {
+	color: #8e2a12;
+	font-weight: 600;
+}
+
+.swiftling-format-help {
+	gap: 14px;
+}
+
+.swiftling-format-help section {
+	padding: 18px 20px;
+	border-radius: 14px;
+}
+
+.swiftling-format-help__steps {
+	border: 1px solid var(--swiftling-line);
+	background: var(--swiftling-surface);
+}
+
+.swiftling-format-help__know {
+	background: #fdebe4;
+}
+
+.swiftling .swiftling-format-help h3 {
+	margin: 0 0 10px;
+	font-family: var(--swiftling-font-display);
+	font-size: 16px;
+}
+
+.swiftling-format-help__know h3 {
+	color: #a8391a;
+}
+
+.swiftling .swiftling-format-help ol {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: swiftling-step;
+}
+
+.swiftling-format-help ol li {
+	display: grid;
+	grid-template-columns: 26px minmax(0, 1fr);
+	gap: 10px;
+	margin: 0;
+	counter-increment: swiftling-step;
+}
+
+.swiftling-format-help ol li::before {
+	content: counter(swiftling-step);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--swiftling-ink);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.swiftling .swiftling-format-help ul {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.swiftling-format-help ul li {
+	margin: 0;
+}
+
+.swiftling-format-help__line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.swiftling-format-help__line code {
+	flex: 1;
+	min-width: 0;
+	padding: 6px 8px;
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+	.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format-layout,
+	.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Languages: in the host formats the address has nothing in front of it, and in the subdomain
+   format it is followed by the site's host. */
+.swiftling-prefixed.is-suffixed code {
+	padding: 0 12px 0 0;
+}
+
+.swiftling .swiftling-prefixed.is-unprefixed input[type="text"] {
+	padding-left: 12px;
+}
+
+.swiftling-languages__domain {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+.swiftling-hosts__fonts pre {
+	margin: 0;
+	padding: 10px 12px;
+	overflow-x: auto;
+	border-radius: 10px;
+	background: var(--swiftling-chip);
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+}
+
+.swiftling .swiftling-hosts__fonts p {
+	margin: 0;
+}
+
+.swiftling-format label .swiftling-format__step {
+	display: inline;
+	color: var(--swiftling-muted);
+	font-weight: 400;
+}
+
+/* Addresses: for a subdomain or an own domain, the foot says that Save changes checks first. */
+.swiftling-format__save-note {
+	display: none;
+	font-weight: 600;
+}
+
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format__save-note,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format__save-note {
+	display: inline;
+}
+
+.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format__note,
+.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format__note {
+	display: none;
+}
+
+.swiftling-format-help ol li strong {
+	display: block;
+	margin-top: 4px;
+	color: #8e2a12;
+}
+
+.swiftling-format-help__guides {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling .swiftling-format-help__guides h4 {
+	margin: 0 0 8px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.swiftling .swiftling-format-help__guides ul {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.swiftling-format-help__guides li {
+	margin: 0;
+}
+
+.swiftling-format-help__guides a {
+	font-weight: 700;
+}
+
+.swiftling-format-help__guides li .swiftling-muted {
+	display: block;
+	font-size: 12px;
+}
+
+/* Translation editor: an empty field of a short text fits its whole placeholder at any width, where
+   the browser can size a field by its content; elsewhere its rows leave room for it, see
+   swiftling_live_field_rows(). A field with more rows for its text keeps them. */
+@supports (field-sizing: content) {
+	.swiftling .swiftling-live-editor textarea.swiftling-live-input[data-fit]:placeholder-shown {
+		field-sizing: content;
+	}
+}
+
+/* Language switcher screen, in three steps, with the preview alongside. */
+.swiftling-switcher-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+	gap: 20px;
+	align-items: start;
+}
+
+.swiftling-switcher-aside {
+	position: sticky;
+	top: 52px;
+}
+
+@media (max-width: 1100px) {
+	.swiftling-switcher-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.swiftling-switcher-aside {
+		position: static;
+	}
+}
+
+.swiftling-step__head {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+
+.swiftling-step__number {
+	display: flex;
+	flex: 0 0 36px;
+	align-items: center;
+	justify-content: center;
+	height: 36px;
+	border-radius: 50%;
+	background: var(--swiftling-swift);
+	color: #fff;
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+	font-weight: 800;
+}
+
+.swiftling .swiftling-step__head h2 {
+	margin: 4px 0 2px;
+}
+
+.swiftling .swiftling-step__head p {
+	margin: 0;
+}
+
+.swiftling-step__part,
+.swiftling-switcher-suggest {
+	margin-top: 20px;
+	padding-top: 18px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling .swiftling-step__part h3,
+.swiftling .swiftling-switcher-suggest h3 {
+	margin: 0 0 4px;
+	font-family: var(--swiftling-font-display);
+	font-size: 15px;
+}
+
+.swiftling .swiftling-step__part > p {
+	margin: 0;
+}
+
+/* Folded parts: the places in code, the flags, the texts of the note. */
+.swiftling-step__more {
+	margin-top: 18px;
+	padding: 0 16px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+	background: #fbfaf7;
+}
+
+.swiftling-step__more[open] {
+	padding-bottom: 16px;
+}
+
+.swiftling-step__more summary {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 0;
+	font-weight: 700;
+	list-style: none;
+	cursor: pointer;
+}
+
+.swiftling-step__more summary::-webkit-details-marker {
+	display: none;
+}
+
+.swiftling-step__more summary::before {
+	content: "";
+	width: 7px;
+	height: 7px;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: rotate(-45deg);
+	transition: transform 0.15s;
+}
+
+.swiftling-step__more[open] summary::before {
+	transform: rotate(45deg);
+}
+
+.swiftling-step__more summary:focus-visible {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+}
+
+/* Menus to join, as cards. */
+.swiftling-picks {
+	display: grid;
+	gap: 8px;
+	margin: 12px 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-pick {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px 14px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 12px;
+	cursor: pointer;
+}
+
+.swiftling-pick > span {
+	display: grid;
+	gap: 2px;
+}
+
+/* On the first line of the card's text: WordPress lifts checkboxes and radios by a quarter rem. */
+.swiftling-pick > input[type="checkbox"],
+.swiftling-pick > input[type="radio"] {
+	flex: none;
+	margin: 2px 0 0;
+}
+
+.swiftling-pick:has(input:checked) {
+	border-color: var(--swiftling-swift);
+	background: #fdf3ee;
+}
+
+.swiftling-switcher-fields fieldset,
+.swiftling-switcher-footer-style,
+.swiftling-switcher-flag-size {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-switcher-fields legend,
+.swiftling-switcher-footer-style legend,
+.swiftling-switcher-flag-size legend {
+	margin-bottom: 6px;
+	padding: 0;
+	font-weight: 600;
+}
+
+.swiftling-switcher-footer-style {
+	margin-top: 16px;
+}
+
+/* Radios as a segmented control. */
+.swiftling .swiftling-segmented.swiftling-radios {
+	display: inline-flex;
+	flex-wrap: wrap;
+	margin: 0;
+}
+
+.swiftling-radios label {
+	display: inline-flex;
+	align-items: center;
+	min-height: 36px;
+	padding: 0 14px;
+	border-radius: 9px;
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-radios input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.swiftling-radios label:has(input:checked) {
+	background: var(--swiftling-surface);
+	box-shadow: 0 1px 2px rgba(18, 24, 38, 0.08);
+}
+
+.swiftling-radios label:has(input:focus-visible) {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 1px;
+}
+
+/* Choices as tiles, each with a small drawing of a page. */
+.swiftling-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 12px;
+	margin: 14px 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.swiftling-tile {
+	position: relative;
+	display: grid;
+	align-content: start;
+	gap: 4px;
+	padding: 12px;
+	border: 1.5px solid var(--swiftling-line);
+	border-radius: 14px;
+	background: var(--swiftling-surface);
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.swiftling-tile:hover {
+	box-shadow: 0 6px 16px rgba(18, 24, 38, 0.08);
+	transform: translateY(-1px);
+}
+
+.swiftling-tile input,
+.swiftling-tile input[type]:disabled {
+	position: absolute;
+	/* Also when disabled, which WordPress's own rule would show at 70%. */
+	opacity: 0;
+	pointer-events: none;
+}
+
+.swiftling-tile:has(input:checked) {
+	border-color: var(--swiftling-swift);
+	background: #fdf3ee;
+	box-shadow: 0 0 0 3px rgba(232, 85, 45, 0.15);
+}
+
+.swiftling-tile:has(input:focus-visible) {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+}
+
+.swiftling-tile .swiftling-muted {
+	font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.swiftling-tile,
+	.swiftling-step__more summary::before {
+		transition: none;
+	}
+
+	.swiftling-tile:hover {
+		transform: none;
+	}
+}
+
+.swiftling-tile__art {
+	position: relative;
+	display: block;
+	height: 70px;
+	margin-bottom: 6px;
+	overflow: hidden;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 8px;
+	background: #f6f4ef;
+}
+
+/* The page: a header, and lines of text. */
+.swiftling-tile__art::before {
+	content: "";
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	left: 8px;
+	height: 6px;
+	border-radius: 3px;
+	background: #ddd5c7;
+}
+
+.swiftling-tile__art::after {
+	content: "";
+	position: absolute;
+	top: 22px;
+	right: 34%;
+	left: 8px;
+	height: 26px;
+	background: repeating-linear-gradient(#e4ddd1 0 4px, transparent 4px 9px);
+}
+
+.swiftling-tile__art > span {
+	position: absolute;
+	z-index: 1;
+}
+
+.swiftling-tile__art.is-footer-end > span,
+.swiftling-tile__art.is-note-bar > span,
+.swiftling-tile__art.is-mode-suggest > span {
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 13px;
+	background: var(--swiftling-ink);
+}
+
+.swiftling-tile__art.is-footer-end > span {
+	background: var(--swiftling-swift);
+}
+
+.swiftling-tile__art.is-footer-floating-right > span,
+.swiftling-tile__art.is-footer-floating-left > span {
+	bottom: 7px;
+	width: 28px;
+	height: 12px;
+	border-radius: 6px;
+	background: var(--swiftling-swift);
+}
+
+.swiftling-tile__art.is-footer-floating-right > span,
+.swiftling-tile__art.is-note-right > span {
+	right: 7px;
+}
+
+.swiftling-tile__art.is-footer-floating-left > span,
+.swiftling-tile__art.is-note-left > span {
+	left: 7px;
+}
+
+.swiftling-tile__art.is-note-right > span,
+.swiftling-tile__art.is-note-left > span {
+	bottom: 7px;
+	width: 46px;
+	height: 22px;
+	border-radius: 5px;
+	background: var(--swiftling-ink);
+}
+
+/* The note's button. */
+.swiftling-tile__art.is-note-bar > span::after,
+.swiftling-tile__art.is-mode-suggest > span::after,
+.swiftling-tile__art.is-note-right > span::after,
+.swiftling-tile__art.is-note-left > span::after {
+	content: "";
+	position: absolute;
+	right: 6px;
+	bottom: 3px;
+	width: 14px;
+	height: 7px;
+	border-radius: 3px;
+	background: var(--swiftling-swift);
+}
+
+.swiftling-tile__art.is-mode-off > span {
+	display: none;
+}
+
+/* The page turning to another language. */
+.swiftling-tile__art.is-mode-open > span {
+	top: 50%;
+	right: 10px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	background: var(--swiftling-swift);
+	color: #fff;
+	font-family: var(--swiftling-font-display);
+	font-size: 11px;
+	font-weight: 800;
+	transform: translateY(-50%);
+}
+
+.swiftling-tile__art.is-mode-open > span::after {
+	content: "\2192  DE";
+}
+
+.swiftling-switcher-open {
+	display: none;
+	margin-top: 14px;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: #fdebe4;
+}
+
+.swiftling-switcher-form:has(input[name="suggest[mode]"][value="open"]:checked) .swiftling-switcher-open {
+	display: block;
+}
+
+.swiftling .swiftling-switcher-open ul {
+	margin: 6px 0 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.swiftling-switcher-open li {
+	margin: 2px 0;
+}
+
+.swiftling .swiftling-switcher-suggest > p {
+	margin: 12px 0 0;
+}
+
+.swiftling-switcher-footer-style .swiftling-radios,
+.swiftling-switcher-fields .swiftling-radios,
+.swiftling-switcher-flag-size .swiftling-radios {
+	justify-self: start;
+}
+
+.swiftling-radios__icon {
+	margin-right: 6px;
+}
+
+/* The preview's menu: the switcher in the style and the place chosen in step 1. */
+.swiftling-switcher-preview__row {
+	align-content: start;
+}
+
+.swiftling-preview-menu {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 8px 18px;
+	box-sizing: border-box;
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 10px;
+	background: #fbfaf7;
+}
+
+.swiftling-preview-menu__item {
+	font-weight: 600;
+}
+
+.swiftling-preview-menu__switcher {
+	display: none;
+}
+
+.swiftling-switcher-form:has(input[name="menu[style]"][value="dropdown"]:checked) [data-swiftling-menu-style="dropdown"],
+.swiftling-switcher-form:has(input[name="menu[style]"][value="list"]:checked) [data-swiftling-menu-style="list"],
+.swiftling-switcher-form:has(input[name="menu[style]"][value="globe"]:checked) [data-swiftling-menu-style="globe"] {
+	display: inline-flex;
+}
+
+.swiftling-switcher-form:has(input[name="menu[position]"][value="first"]:checked) .swiftling-preview-menu__switcher {
+	order: -1;
+}
+
+.swiftling-preview-globe {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.swiftling-preview-globe__button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.swiftling-preview-globe__list {
+	margin-top: 8px;
+	padding: 8px 12px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	box-shadow: 0 6px 16px rgba(18, 24, 38, 0.08);
+}
+
+/* Translate everything: the steps and the aside, as the switcher screen has them. */
+.swiftling-translate-all {
+	display: grid;
+	gap: 20px;
+}
+
+/* The part of the screen that is not showing stays away: the layouts below set a display of
+   their own, which would otherwise override the hidden attribute. */
+.swiftling-translate-all [hidden] {
+	display: none;
+}
+
+.swiftling-translate-all__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+	gap: 20px;
+	align-items: start;
+}
+
+.swiftling-translate-all__aside {
+	position: sticky;
+	top: 52px;
+}
+
+@media (max-width: 1100px) {
+	.swiftling-translate-all__layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.swiftling-translate-all__aside {
+		position: static;
+	}
+}
+
+/* The question mark after the line about doing a language once. Its explanation hangs under the
+   words of the step, where it always fits, rather than beside the mark wherever the line happens
+   to end: there it ran off the card and under the admin menu. */
+.swiftling-step__head > div {
+	position: relative;
+}
+
+.swiftling-all-why {
+	position: static;
+}
+
+.swiftling-all-why .swiftling-tip__text {
+	top: calc(100% + 6px);
+	right: auto;
+	left: 0;
+	max-width: 100%;
+}
+
+/* A language that is done: its tile says so and cannot be chosen again. */
+.swiftling-tile.is-done {
+	background: var(--swiftling-chip);
+	cursor: default;
+}
+
+.swiftling-tile.is-done:hover {
+	box-shadow: none;
+	transform: none;
+}
+
+/* What the run will do: three numbers, and what it leaves as it is. */
+.swiftling-all-numbers {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.swiftling-all-number {
+	display: grid;
+	gap: 2px;
+	padding: 12px 14px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 14px;
+	background: var(--swiftling-surface);
+}
+
+.swiftling-all-number strong {
+	font-family: var(--swiftling-font-display);
+	font-size: 24px;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+.swiftling .swiftling-all-keeps,
+.swiftling .swiftling-all-know,
+.swiftling .swiftling-all-how {
+	margin: 14px 0 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.swiftling .swiftling-all-how {
+	margin: 0;
+	padding-left: 18px;
+	list-style: decimal;
+}
+
+.swiftling .swiftling-all-keeps li,
+.swiftling .swiftling-all-know li,
+.swiftling .swiftling-all-how li {
+	margin: 0 0 6px;
+	color: var(--swiftling-muted);
+	font-size: 13px;
+}
+
+.swiftling .swiftling-all-keeps li {
+	padding-left: 22px;
+	position: relative;
+}
+
+.swiftling .swiftling-all-keeps li::before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	color: var(--swiftling-swift);
+	font-weight: 700;
+}
+
+.swiftling-all-agree {
+	align-items: center;
+	margin-top: 16px;
+}
+
+/* One line of text beside the box, both on the same line: the admin's own checkbox carries a
+   margin that would lift it above the words. */
+.swiftling .swiftling-all-agree input[type="checkbox"] {
+	margin: 0;
+}
+
+.swiftling-all-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 16px;
+}
+
+/* While it runs: how far it has come, and what each page did. */
+.swiftling .swiftling-all-running__count {
+	margin: 4px 0 2px;
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+	font-weight: 800;
+}
+
+.swiftling .swiftling-all-counters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	margin: 14px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.swiftling .swiftling-all-counters li {
+	margin: 0;
+	font-size: 13px;
+}
+
+.swiftling .swiftling-all-counters strong {
+	font-family: var(--swiftling-font-display);
+	font-size: 17px;
+	font-weight: 800;
+}
+
+/* Forms: the form plugins SwiftLing knows, and the chooser of the page a form is on. */
+.swiftling-forms-nothing {
+	max-width: 640px;
+}
+
+.swiftling .swiftling-forms-plugins {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 0 12px;
+}
+
+/* The note between the plugins and the button keeps a space before the button. */
+.swiftling .swiftling-forms-nothing .swiftling-card .swiftling-notice {
+	margin-bottom: 16px;
+}
+
+.swiftling .swiftling-forms-check {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 12px;
+}
+
+.swiftling .swiftling-forms-check select {
+	max-width: 420px;
+}
+
+/*
+ * Log screen, see admin/views/log.php.
+ */
+.swiftling-log-filters {
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--swiftling-line);
+}
+
+.swiftling-log-filters select {
+	min-width: 0;
+}
+
+/* Area, search and Show take a second row on a phone rather than leave the card. */
+.swiftling-log-filters .swiftling-list-filters__search {
+	flex-wrap: wrap;
+}
+
+.swiftling-log-empty {
+	margin: 0;
+	padding: 24px 20px;
+}
+
+.swiftling-log-table td {
+	vertical-align: top;
+}
+
+.swiftling-log-when {
+	white-space: nowrap;
+	color: var(--swiftling-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.swiftling-log-level {
+	display: inline-block;
+	padding: 1px 9px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+}
+
+.swiftling-log-level.is-error {
+	background: #fde8e4;
+	color: #8e2a12;
+}
+
+.swiftling-log-level.is-warning {
+	background: #fcf0db;
+	color: #7a4a07;
+}
+
+.swiftling-log-detail {
+	display: block;
+	margin-top: 3px;
+	color: var(--swiftling-muted);
+	font-family: var(--swiftling-font-mono);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.swiftling-log-repeats {
+	margin-left: 6px;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.swiftling-log-keep {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+}
+
+/* Copy for support: the Copy button beside the title, the report in a framed panel under a bar. */
+.swiftling-support__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.swiftling-support__head > div {
+	flex: 1 1 360px;
+	max-width: 720px;
+}
+
+.swiftling .swiftling-support__head h2 {
+	margin-bottom: 4px;
+}
+
+.swiftling .swiftling-support__copy {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.swiftling-support__copy svg {
+	width: 16px;
+	height: 16px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.6;
+	stroke-linejoin: round;
+}
+
+.swiftling-support__report {
+	overflow: hidden;
+	border: 1px solid var(--swiftling-ink);
+	border-radius: 14px;
+	background: var(--swiftling-ground);
+}
+
+.swiftling-support__bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	padding: 10px 16px;
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-support__bird {
+	width: 20px;
+	height: 11px;
+	fill: var(--swiftling-swift);
+}
+
+.swiftling-support__safe {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.1);
+	color: #d7f0e2;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.swiftling-support__safe svg {
+	width: 12px;
+	height: 12px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2.4;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.swiftling .swiftling-support__text {
+	display: block;
+	min-height: 0;
+	padding: 18px 20px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	font-family: var(--swiftling-font-mono);
+	font-size: 12.5px;
+	line-height: 1.75;
+	resize: vertical;
+}
+
+.swiftling .swiftling-support__text:focus {
+	box-shadow: inset 0 0 0 2px var(--swiftling-swift);
+}
+
+/*
+ * The ways Translate everything runs, when another plugin adds one: a card each, its picture, name
+ * and what it does, the current one marked as a chosen language tile is.
+ */
+.swiftling-all-modes {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px;
+	margin: 0 0 20px;
+}
+
+.swiftling .swiftling-all-mode {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 16px 18px;
+	border: 2px solid var(--swiftling-chip);
+	border-radius: 14px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-ink);
+	text-decoration: none;
+	transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.swiftling .swiftling-all-mode:hover {
+	color: var(--swiftling-ink);
+	box-shadow: 0 6px 16px rgba(18, 24, 38, 0.08);
+	transform: translateY(-1px);
+}
+
+.swiftling .swiftling-all-mode:focus-visible {
+	outline: 2px solid var(--swiftling-swift);
+	outline-offset: 2px;
+}
+
+.swiftling .swiftling-all-mode.is-current {
+	border-color: var(--swiftling-swift);
+	background: #fdf3ee;
+	box-shadow: 0 0 0 3px rgba(232, 85, 45, 0.15);
+}
+
+.swiftling-all-mode .swiftling-rail__tile {
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	border-radius: 11px;
+}
+
+.swiftling-all-mode .swiftling-rail__tile svg {
+	width: 20px;
+	height: 20px;
+}
+
+.swiftling-all-mode__text {
+	display: grid;
+	gap: 3px;
+}
+
+.swiftling-all-mode__text strong {
+	font-family: var(--swiftling-font-display);
+	font-size: 16px;
+}
+
+/*
+ * The offer of SwiftLing Pro, see src/Admin/ProOffer.php: the card under the Overview and the line
+ * under machine translation on Translation service. The header's button is an accent button.
+ */
+.swiftling-pro-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 20px;
+}
+
+.swiftling-pro-card__bird {
+	flex-shrink: 0;
+	width: 40px;
+	height: 23px;
+	margin-top: 4px;
+	fill: var(--swiftling-swift);
+}
+
+.swiftling-pro-card__main {
+	flex: 1;
+	min-width: 0;
+}
+
+.swiftling-pro-card__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 6px 24px;
+	margin: 10px 0 0;
+	padding: 0;
+	color: var(--swiftling-muted);
+	list-style: none;
+}
+
+.swiftling-pro-card__list li {
+	position: relative;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.swiftling-pro-card__list li::before {
+	content: "";
+	position: absolute;
+	top: 0.6em;
+	left: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--swiftling-swift);
+}
+
+.swiftling-pro-card__actions {
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	align-items: flex-end;
+	gap: 6px;
+}
+
+.swiftling-pro-card__hide {
+	min-height: 32px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--swiftling-muted);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.swiftling-pro-card__hide:hover,
+.swiftling-pro-card__hide:focus {
+	background: var(--swiftling-chip);
+	color: var(--swiftling-ink);
+}
+
+.swiftling .swiftling-pro-line {
+	margin: 4px 0 0;
+	padding-top: 14px;
+	border-top: 1px solid var(--swiftling-line);
+	color: var(--swiftling-muted);
+}
+
+.swiftling .swiftling-pro-line a {
+	color: var(--swiftling-ink);
+	font-weight: 600;
+}
+
+@media (max-width: 782px) {
+	.swiftling-pro-card {
+		flex-direction: column;
+	}
+
+	.swiftling-pro-card__actions {
+		flex-direction: row;
+		align-items: center;
+	}
+}

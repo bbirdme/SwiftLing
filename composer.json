@@ -1,0 +1,32 @@
+{
+  "name": "bbirdme/swiftling",
+  "description": "SwiftLing: lightweight multilingual WordPress plugin.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require-dev": {
+    "wp-coding-standards/wpcs": "^3.4",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
+    "johnpbloch/wordpress-core": "7.1.*",
+    "wp-phpunit/wp-phpunit": "7.1.*",
+    "yoast/phpunit-polyfills": "^4.0",
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "SwiftLing\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "7.4.33"
+    }
+  },
+  "scripts": {
+    "lint": "phpcs",
+    "lint:fix": "phpcbf",
+    "test": "phpunit"
+  }
+}

@@ -1,0 +1,63 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "swiftling/language-switcher",
+	"title": "Language switcher",
+	"category": "widgets",
+	"icon": "translation",
+	"description": "Lets visitors open the page in another language.",
+	"keywords": [
+		"language",
+		"translation",
+		"multilingual",
+		"flag"
+	],
+	"textdomain": "swiftling",
+	"attributes": {
+		"type": {
+			"type": "string",
+			"enum": [
+				"dropdown",
+				"horizontal",
+				"vertical"
+			],
+			"default": "dropdown"
+		},
+		"flag": {
+			"type": "boolean"
+		},
+		"name": {
+			"type": "boolean"
+		},
+		"code": {
+			"type": "boolean"
+		},
+		"flagSize": {
+			"type": "string",
+			"enum": [
+				"small",
+				"medium",
+				"large"
+			]
+		}
+	},
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"textAlign": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "swiftling-switcher-block",
+	"style": "swiftling-switcher"
+}
