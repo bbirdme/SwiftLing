@@ -62,6 +62,51 @@ function swiftling_editor_url( $subject, $lang = '' ) {
 }
 
 /**
+ * Returns the parts of every page the Templates screen lists as rows of their own, each a
+ * subject of the editor, see swiftling_subject().
+ *
+ * @return array<string, string> Part => its name.
+ */
+function swiftling_site_parts() {
+	return array(
+		'header' => __( 'Header', 'swiftling' ),
+		'footer' => __( 'Footer', 'swiftling' ),
+	);
+}
+
+/**
+ * Returns the page the header and the footer are checked on: one with the site's usual frame. That
+ * is the newest page without a page template of its own, else the newest such post, else the front
+ * page, see swiftling_example_pages(). The front page comes last because it is often a landing
+ * page without header or footer, such as one on Elementor's canvas.
+ *
+ * @return array{url: string, label: string}
+ */
+function swiftling_site_part_example() {
+	return swiftling_memo(
+		'site_part_example',
+		static function () {
+			$examples = array();
+			foreach ( swiftling_example_pages() as $example ) {
+				$examples[ $example['type'] ] = $example;
+			}
+			foreach ( array( 'page', 'single' ) as $type ) {
+				if ( isset( $examples[ $type ] ) ) {
+					return array(
+						'url'   => $examples[ $type ]['url'],
+						'label' => $examples[ $type ]['label'],
+					);
+				}
+			}
+			return array(
+				'url'   => home_url( '/' ),
+				'label' => __( 'Front page', 'swiftling' ),
+			);
+		}
+	);
+}
+
+/**
  * Returns a subject of the translation editor.
  *
  * @param string $key Subject key, e.g. "post:12", "template:twentytwentyfive//404", "view:search", "terms:category" or "menu:3".
@@ -87,6 +132,25 @@ function swiftling_subject( $key ) {
 			'url'   => 'publish' === $post->post_status ? (string) get_permalink( $post ) : (string) get_preview_post_link( $post ),
 			'probe' => true,
 			'post'  => $post,
+		);
+	}
+
+	// The header or the footer every page shows, see swiftling_site_parts(), checked on a page with
+	// the site's usual frame, see swiftling_site_part_example().
+	if ( 0 === strpos( $key, 'site:' ) ) {
+		$parts = swiftling_site_parts();
+		$part  = substr( $key, 5 );
+		if ( ! isset( $parts[ $part ] ) ) {
+			return null;
+		}
+		return array(
+			'key'   => $key,
+			'kind'  => 'site',
+			'title' => $parts[ $part ],
+			'type'  => __( 'Shown on every page', 'swiftling' ),
+			'url'   => swiftling_site_part_example()['url'],
+			'probe' => true,
+			'post'  => null,
 		);
 	}
 

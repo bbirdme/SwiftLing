@@ -353,6 +353,10 @@ function swiftling_save_probe( $subject, $registry, $found, $control, $scoped ) 
 			'page' => array(),
 			'site' => array(),
 		);
+	// The header or the footer lists only its own texts, as the page of its subject.
+	if ( 'site' === $subject['kind'] ) {
+		$sections = array( 'page' => array() );
+	}
 
 	$units = $verdicts['units'];
 	if ( 'post' === $subject['kind'] ) {
@@ -373,7 +377,13 @@ function swiftling_save_probe( $subject, $registry, $found, $control, $scoped ) 
 			$stored[ $entry['o'] ][] = $entry;
 		}
 
-		$section = 'post' === $subject['kind'] ? swiftling_unit_section( $unit, $owner, $scoped ) : swiftling_template_unit_section( $unit );
+		if ( 'post' === $subject['kind'] ) {
+			$section = swiftling_unit_section( $unit, $owner, $scoped );
+		} elseif ( 'site' === $subject['kind'] ) {
+			$section = swiftling_is_site_part_unit( $unit, substr( $owner, 5 ) ) ? 'page' : '';
+		} else {
+			$section = swiftling_template_unit_section( $unit );
+		}
 		if ( '' === $section ) {
 			continue;
 		}
@@ -671,8 +681,16 @@ function swiftling_unit_section( $unit, $post_owner, $scoped ) {
  * @return string "site", "page" or empty.
  */
 function swiftling_template_unit_section( $unit ) {
+	if ( ! empty( $unit['content'] ) ) {
+		return '';
+	}
+	// A builder's header or footer is what every page shows, also when its post can be opened on
+	// its own, as one of Header Footer Elementor, see Builder::sitePart().
+	if ( '' !== \SwiftLing\Builders\Registry::sitePart( $unit['o'] ) ) {
+		return 'site';
+	}
 	// An item of a classic menu is translated on the Menus screen, which the template points to.
-	if ( ! empty( $unit['content'] ) || swiftling_is_post_text( $unit['o'] ) || swiftling_is_menu_item_owner( $unit['o'] ) ) {
+	if ( swiftling_is_post_text( $unit['o'] ) || swiftling_is_menu_item_owner( $unit['o'] ) ) {
 		return '';
 	}
 	if ( 0 === strpos( $unit['o'], 'part:' ) || 'options' === $unit['o'] || swiftling_is_menu_owner( $unit['o'] ) ) {
@@ -682,6 +700,44 @@ function swiftling_template_unit_section( $unit ) {
 		return 'site';
 	}
 	return 'page';
+}
+
+/**
+ * Returns the part of every page a text is in: the header or the footer, which the Templates screen
+ * lists as rows of their own.
+ *
+ * What the text's object says comes first: a builder's header or footer post, see
+ * Builder::sitePart(), or the area of a template part of the Site Editor. Otherwise the landmark
+ * around it decides, a header or footer tag or role, as the page check read it. A menu, also one in
+ * the header, is neither: its items have the Menus screen.
+ *
+ * @param array $unit Text found by the probe.
+ * @return string header, footer, or empty.
+ */
+function swiftling_unit_site_part( $unit ) {
+	$part = \SwiftLing\Builders\Registry::sitePart( $unit['o'] );
+	if ( '' !== $part ) {
+		return $part;
+	}
+	if ( 0 === strpos( $unit['o'], 'part:' ) ) {
+		$template = get_block_template( substr( $unit['o'], 5 ), 'wp_template_part' );
+		if ( $template && in_array( $template->area, array( 'header', 'footer' ), true ) ) {
+			return $template->area;
+		}
+	}
+	return in_array( $unit['region'], array( 'header', 'footer' ), true ) ? $unit['region'] : '';
+}
+
+/**
+ * Whether a text a page check found belongs to the editor of a part of every page: a text every
+ * page shows, see swiftling_template_unit_section(), in that part, see swiftling_unit_site_part().
+ *
+ * @param array  $unit Text found by the probe.
+ * @param string $part header or footer.
+ * @return bool
+ */
+function swiftling_is_site_part_unit( $unit, $part ) {
+	return 'site' === swiftling_template_unit_section( $unit ) && swiftling_unit_site_part( $unit ) === $part;
 }
 
 /**

@@ -9,6 +9,7 @@ namespace SwiftLing\Tests;
 
 use SwiftLing\Builders\Acf;
 use SwiftLing\Builders\Aioseo;
+use SwiftLing\Builders\Breakdance;
 use SwiftLing\Builders\Elementor;
 use SwiftLing\Builders\Registry;
 use SwiftLing\Builders\SeoPress;
@@ -22,7 +23,7 @@ class BuildersTest extends TestCase {
 	 * Every known builder is listed; without the builders installed none is active and none declares anything.
 	 */
 	public function test_registry_without_builders() {
-		$this->assertSame( array( 'elementor', 'acf', 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'woocommerce', 'seopress', 'aioseo' ), array_keys( Registry::all() ) );
+		$this->assertSame( array( 'elementor', 'breakdance', 'acf', 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'woocommerce', 'seopress', 'aioseo' ), array_keys( Registry::all() ) );
 		$this->assertSame( array(), Registry::active() );
 		$this->assertNull( Registry::fieldHoldsText( 'post:1', 'meta/title' ) );
 		$this->assertFalse( Registry::declaresText( 'meta:x||title' ) );
@@ -61,6 +62,22 @@ class BuildersTest extends TestCase {
 		$this->assertNotContains( 'code:css', $elementor->textTypes() );
 		$this->assertContains( '_elementor_css', $elementor->regeneratedMeta() );
 		$this->assertSame( 'disable', $elementor->disableElementCache() );
+	}
+
+	/**
+	 * Breakdance is active only with its plugin in Breakdance's mode. It does not say a post is built
+	 * with it, since a separate copy in Breakdance was not checked; only its header and footer posts
+	 * are parts of every page.
+	 */
+	public function test_breakdance_without_the_plugin() {
+		$breakdance = new Breakdance();
+		$this->assertSame( 'breakdance', $breakdance->id() );
+		$this->assertFalse( $breakdance->isActive() );
+		$post = self::factory()->post->create();
+		update_post_meta( $post, '_breakdance_data', '{"tree_json_string":"{}"}' );
+		$this->assertFalse( $breakdance->isUsed( $post ) );
+		$this->assertSame( '', $breakdance->sitePart( 'post:' . $post ) );
+		$this->assertSame( '', $breakdance->sitePart( 'options' ) );
 	}
 
 	/**

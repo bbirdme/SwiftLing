@@ -108,6 +108,34 @@ final class Elementor extends Builder {
 	}
 
 	/**
+	 * Returns which part of every page a post is: a header or footer of the plugin Header Footer
+	 * Elementor, a post of its type "elementor-hf" whose meta "ehf_template_type" says which. Such a
+	 * post can be opened on its own, so without this its texts would be listed as those of a post of
+	 * their own. Its blocks for shortcodes and "before footer" are no header or footer.
+	 *
+	 * Checked with Header Footer Elementor 2.9.5. The headers and footers of Elementor Pro's theme
+	 * builder are not covered: they were not checked.
+	 *
+	 * @param string $owner Object key.
+	 * @return string header, footer, or empty.
+	 */
+	public function sitePart( string $owner ): string {
+		if ( 0 !== strpos( $owner, 'post:' ) ) {
+			return '';
+		}
+		$post_id = (int) substr( $owner, 5 );
+		if ( 'elementor-hf' !== get_post_type( $post_id ) ) {
+			return '';
+		}
+		$parts = array(
+			'type_header' => 'header',
+			'type_footer' => 'footer',
+		);
+		$type  = (string) get_post_meta( $post_id, 'ehf_template_type', true );
+		return isset( $parts[ $type ] ) ? $parts[ $type ] : '';
+	}
+
+	/**
 	 * Returns the meta Elementor writes again from a page's data: its CSS, the rendered copy of its
 	 * elements and the list of its assets. Checked in Elementor 4.3.3.
 	 *

@@ -76,6 +76,11 @@ function swiftling_live_rows_html( $subject, $lang, $result ) {
 	if ( 'package' === $subject['kind'] ) {
 		$empty = __( 'No texts in this list.', 'swiftling' );
 	}
+	if ( 'site' === $subject['kind'] ) {
+		$empty = 'site:footer' === $subject['key']
+			? __( 'The page it was checked on shows no text in its footer. A menu in it is translated on the Menus screen.', 'swiftling' )
+			: __( 'The page it was checked on shows no text in its header. A menu in it is translated on the Menus screen.', 'swiftling' );
+	}
 	if ( 'comments' === $subject['kind'] ) {
 		$empty = ! empty( $result['list']['search'] ) ? __( 'No comment has these words.', 'swiftling' ) : __( 'No comments here.', 'swiftling' );
 	}

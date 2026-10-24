@@ -50,6 +50,9 @@ if ( ! $swiftling_languages['targets'] ) {
 }
 
 $swiftling_views = swiftling_can_list( 'edit_theme_options' ) ? swiftling_site_views() : array();
+// The header and the footer, each a row of its own, translated once for every page.
+$swiftling_parts        = $swiftling_views ? swiftling_site_parts() : array();
+$swiftling_part_example = swiftling_site_part_example();
 // Texts builders keep outside posts, such as ACF's options pages, each a subject of the editor;
 // only those the user may translate.
 $swiftling_builders = array();
@@ -69,7 +72,15 @@ foreach ( \SwiftLing\Builders\Registry::subjects() as $swiftling_builder => $swi
 		}
 	}
 }
-$swiftling_keys = wp_list_pluck( $swiftling_views, 'key' );
+$swiftling_keys = array_merge(
+	array_map(
+		static function ( $part ): string {
+			return 'site:' . $part;
+		},
+		array_keys( $swiftling_parts )
+	),
+	wp_list_pluck( $swiftling_views, 'key' )
+);
 foreach ( $swiftling_builders as $swiftling_groups ) {
 	foreach ( $swiftling_groups as $swiftling_group ) {
 		$swiftling_keys = array_merge( $swiftling_keys, wp_list_pluck( $swiftling_group['subjects'], 'key' ) );
@@ -79,6 +90,45 @@ $swiftling_states  = swiftling_object_states( $swiftling_keys );
 $swiftling_columns = 4 + count( $swiftling_languages['targets'] );
 ?>
 <div class="swiftling-stack">
+<?php if ( $swiftling_parts ) : ?>
+<section class="swiftling-card">
+	<div class="swiftling-card__head">
+		<h2><?php esc_html_e( 'Header and footer', 'swiftling' ); ?></h2>
+	</div>
+	<div class="swiftling-table-wrap">
+		<table class="swiftling-table">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Part', 'swiftling' ); ?></th>
+					<th><?php esc_html_e( 'Checked on', 'swiftling' ); ?></th>
+					<?php foreach ( $swiftling_languages['targets'] as $swiftling_language ) : ?>
+						<th class="is-center"><?php Ui::lang( $swiftling_language['code'] ); ?></th>
+					<?php endforeach; ?>
+					<th><span class="screen-reader-text"><?php esc_html_e( 'Actions', 'swiftling' ); ?></span></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $swiftling_parts as $swiftling_part => $swiftling_part_name ) : ?>
+					<tr>
+						<td>
+							<strong><?php echo esc_html( $swiftling_part_name ); ?></strong>
+							<br><span class="swiftling-muted"><?php esc_html_e( 'The same on every page, translated once', 'swiftling' ); ?></span>
+						</td>
+						<td>
+							<?php echo esc_html( $swiftling_part_example['label'] ); ?>
+							<br><code class="swiftling-muted"><?php echo esc_html( wp_make_link_relative( $swiftling_part_example['url'] ) ); ?></code>
+						</td>
+						<?php foreach ( array_keys( $swiftling_languages['targets'] ) as $swiftling_slug ) : ?>
+							<td class="is-center"><?php Ui::statusIcon( $swiftling_states[ 'site:' . $swiftling_part ][ $swiftling_slug ] ); ?></td>
+						<?php endforeach; ?>
+						<td class="is-numeric"><?php Ui::button( __( 'Translate', 'swiftling' ), 'secondary', swiftling_editor_url( 'site:' . $swiftling_part ) ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+</section>
+<?php endif; ?>
 <section class="swiftling-card">
 	<div class="swiftling-card__head">
 		<h2><?php echo esc_html( $swiftling_block ? __( 'Templates', 'swiftling' ) : __( 'Kinds of pages', 'swiftling' ) ); ?></h2>
