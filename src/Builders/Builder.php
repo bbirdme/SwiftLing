@@ -173,6 +173,19 @@ abstract class Builder {
 	}
 
 	/**
+	 * Returns which part of every page an object of the builder is: its header or its footer, kept
+	 * in a post of its own, such as a header template of a theme builder. Its texts are listed with
+	 * the header or footer on the Templates screen, wherever the builder prints them and whatever
+	 * tag it prints them in, see swiftling_unit_site_part().
+	 *
+	 * @param string $owner Object key, e.g. "post:12".
+	 * @return string header, footer, or empty when the object is no such part of the builder.
+	 */
+	public function sitePart( string $owner ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- A builder with headers and footers of its own overrides it.
+		return '';
+	}
+
+	/**
 	 * Returns the subjects the builder adds, for the Templates screen, in groups.
 	 *
 	 * @return array<int, array{title: string, description: string, subjects: array<int, array{key: string, title: string, description: string}>}>
