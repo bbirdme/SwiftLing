@@ -124,6 +124,7 @@ function swiftling_source_hooks( $mode ) {
 	);
 	if ( 'translate' === $mode ) {
 		$hooks[] = array( 'wp_nav_menu_objects', 'swiftling_localize_menu_items', 100, 1 );
+		$hooks[] = array( 'get_pages', 'swiftling_filter_page_titles', 100, 1 );
 	}
 	return array_merge(
 		$hooks,
@@ -1004,6 +1005,33 @@ function swiftling_filter_title( $title, $post_id = 0 ) {
 		return $title;
 	}
 	return swiftling_transform( swiftling_post_owner( $post_id ), 'field/post_title', 'field:post_title', $title );
+}
+
+/**
+ * Titles of the pages get_pages() hands over, in the language of the page. The Page List block,
+ * the menu a block theme shows before a menu is made, prints each title as stored, without
+ * the_title, while its link already leads to the page in the language. Each page is a copy, so
+ * the post as cached keeps its own title.
+ *
+ * @param array $pages Pages.
+ * @return array
+ */
+function swiftling_filter_page_titles( $pages ) {
+	if ( ! is_array( $pages ) ) {
+		return $pages;
+	}
+	foreach ( $pages as $index => $page ) {
+		if ( ! $page instanceof WP_Post ) {
+			continue;
+		}
+		$title = swiftling_filter_title( $page->post_title, $page->ID );
+		if ( $title !== $page->post_title ) {
+			$copy             = clone $page;
+			$copy->post_title = $title;
+			$pages[ $index ]  = $copy;
+		}
+	}
+	return $pages;
 }
 
 /**
