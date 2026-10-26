@@ -308,13 +308,8 @@ function swiftling_save_package_settings() {
 	}
 	check_admin_referer( 'swiftling_package_settings_' . $id );
 
-	$paths = array();
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Paths are compared with the scan's own, see Settings::choose().
-	foreach ( isset( $_POST['paths'] ) && is_array( $_POST['paths'] ) ? wp_unslash( $_POST['paths'] ) : array() as $path ) {
-		if ( is_string( $path ) ) {
-			$paths[] = $path;
-		}
-	}
+	// As text; Settings::choose() finds each among the scan's own paths.
+	$paths = isset( $_POST['paths'] ) && is_array( $_POST['paths'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['paths'] ) ) : array();
 	Settings::choose( $id, $paths );
 
 	// Stored now, so a translation shows on the site from the first save, before the editor opens.

@@ -329,7 +329,7 @@ $swiftling_suggest_positions = array(
 											<input type="radio" name="<?php echo esc_attr( $swiftling_place . '[style]' ); ?>" value="<?php echo esc_attr( $swiftling_style ); ?>" <?php checked( $swiftling_style, $swiftling_settings[ $swiftling_place ]['style'] ); ?>>
 											<span class="swiftling-tile__art is-style is-style-<?php echo esc_attr( $swiftling_style ); ?>" aria-hidden="true">
 												<?php if ( 'globe' === $swiftling_style ) : ?>
-													<?php echo Switcher::globe( 22 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A fixed icon. ?>
+													<?php echo wp_kses( Switcher::globe( 22 ), Ui::ICON_HTML ); ?>
 												<?php else : ?>
 													<i></i><i></i><i></i>
 												<?php endif; ?>
@@ -460,15 +460,14 @@ $swiftling_suggest_positions = array(
 							<tbody>
 								<?php foreach ( $swiftling_all as $swiftling_language ) : ?>
 									<?php
-									$swiftling_locale   = (string) $swiftling_language['locale'];
-									$swiftling_default  = Suggestion::defaults( $swiftling_language );
-									$swiftling_own      = isset( $swiftling_settings['suggest']['texts'][ $swiftling_locale ] ) ? (array) $swiftling_settings['suggest']['texts'][ $swiftling_locale ] : array();
-									$swiftling_field    = 'suggest[texts][' . $swiftling_locale . ']';
-									$swiftling_suggest  = 'swiftling-suggest-' . sanitize_html_class( $swiftling_locale );
-									$swiftling_lang_dir = 'lang="' . esc_attr( $swiftling_default['lang'] ) . '" dir="' . esc_attr( $swiftling_default['dir'] ) . '"';
+									$swiftling_locale  = (string) $swiftling_language['locale'];
+									$swiftling_default = Suggestion::defaults( $swiftling_language );
+									$swiftling_own     = isset( $swiftling_settings['suggest']['texts'][ $swiftling_locale ] ) ? (array) $swiftling_settings['suggest']['texts'][ $swiftling_locale ] : array();
+									$swiftling_field   = 'suggest[texts][' . $swiftling_locale . ']';
+									$swiftling_suggest = 'swiftling-suggest-' . sanitize_html_class( $swiftling_locale );
 									?>
 									<tr>
-										<td><strong <?php echo $swiftling_lang_dir; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?>><?php echo esc_html( $swiftling_language['name'] ); ?></strong></td>
+										<td><strong lang="<?php echo esc_attr( $swiftling_default['lang'] ); ?>" dir="<?php echo esc_attr( $swiftling_default['dir'] ); ?>"><?php echo esc_html( $swiftling_language['name'] ); ?></strong></td>
 										<td>
 											<label class="screen-reader-text" for="<?php echo esc_attr( $swiftling_suggest . '-text' ); ?>">
 												<?php
@@ -476,7 +475,7 @@ $swiftling_suggest_positions = array(
 												echo esc_html( sprintf( __( 'Note in %s', 'swiftling' ), $swiftling_language['name'] ) );
 												?>
 											</label>
-											<input type="text" class="regular-text" id="<?php echo esc_attr( $swiftling_suggest . '-text' ); ?>" name="<?php echo esc_attr( $swiftling_field . '[text]' ); ?>" value="<?php echo esc_attr( isset( $swiftling_own['text'] ) ? (string) $swiftling_own['text'] : '' ); ?>" placeholder="<?php echo esc_attr( $swiftling_default['text'] ); ?>" <?php echo $swiftling_lang_dir; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?>>
+											<input type="text" class="regular-text" id="<?php echo esc_attr( $swiftling_suggest . '-text' ); ?>" name="<?php echo esc_attr( $swiftling_field . '[text]' ); ?>" value="<?php echo esc_attr( isset( $swiftling_own['text'] ) ? (string) $swiftling_own['text'] : '' ); ?>" placeholder="<?php echo esc_attr( $swiftling_default['text'] ); ?>" lang="<?php echo esc_attr( $swiftling_default['lang'] ); ?>" dir="<?php echo esc_attr( $swiftling_default['dir'] ); ?>">
 										</td>
 										<td>
 											<label class="screen-reader-text" for="<?php echo esc_attr( $swiftling_suggest . '-show' ); ?>">
@@ -485,7 +484,7 @@ $swiftling_suggest_positions = array(
 												echo esc_html( sprintf( __( 'Link in %s', 'swiftling' ), $swiftling_language['name'] ) );
 												?>
 											</label>
-											<input type="text" id="<?php echo esc_attr( $swiftling_suggest . '-show' ); ?>" name="<?php echo esc_attr( $swiftling_field . '[show]' ); ?>" value="<?php echo esc_attr( isset( $swiftling_own['show'] ) ? (string) $swiftling_own['show'] : '' ); ?>" placeholder="<?php echo esc_attr( $swiftling_default['show'] ); ?>" <?php echo $swiftling_lang_dir; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?>>
+											<input type="text" id="<?php echo esc_attr( $swiftling_suggest . '-show' ); ?>" name="<?php echo esc_attr( $swiftling_field . '[show]' ); ?>" value="<?php echo esc_attr( isset( $swiftling_own['show'] ) ? (string) $swiftling_own['show'] : '' ); ?>" placeholder="<?php echo esc_attr( $swiftling_default['show'] ); ?>" lang="<?php echo esc_attr( $swiftling_default['lang'] ); ?>" dir="<?php echo esc_attr( $swiftling_default['dir'] ); ?>">
 										</td>
 									</tr>
 								<?php endforeach; ?>
@@ -514,7 +513,7 @@ $swiftling_suggest_positions = array(
 						<span class="swiftling-preview-menu__item"><?php esc_html_e( 'Contact', 'swiftling' ); ?></span>
 						<span class="swiftling-preview-menu__switcher" data-swiftling-menu-style="dropdown">
 							<?php
-							echo Switcher::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+							$swiftling_preview = Switcher::render(
 								array(
 									'style'   => 'dropdown',
 									'flag'    => true,
@@ -523,11 +522,12 @@ $swiftling_suggest_positions = array(
 									'current' => true,
 								)
 							);
+							echo wp_kses( $swiftling_preview, Switcher::allowedHtml() );
 							?>
 						</span>
 						<span class="swiftling-preview-menu__switcher" data-swiftling-menu-style="list">
 							<?php
-							echo Switcher::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+							$swiftling_preview = Switcher::render(
 								array(
 									'style'   => 'horizontal',
 									'flag'    => true,
@@ -536,16 +536,17 @@ $swiftling_suggest_positions = array(
 									'current' => true,
 								)
 							);
+							echo wp_kses( $swiftling_preview, Switcher::allowedHtml() );
 							?>
 						</span>
 						<span class="swiftling-preview-menu__switcher swiftling-preview-globe" data-swiftling-menu-style="globe">
 							<span class="swiftling-preview-globe__button">
-								<?php echo Switcher::globe(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A fixed icon. ?>
+								<?php echo wp_kses( Switcher::globe(), Ui::ICON_HTML ); ?>
 								<span class="swiftling-switcher__code" data-swiftling-globe-code><?php echo esc_html( (string) $swiftling_languages['source']['code'] ); ?></span>
 							</span>
 							<span class="swiftling-preview-globe__list">
 								<?php
-								echo Switcher::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+								$swiftling_preview = Switcher::render(
 									array(
 										'style'   => 'vertical',
 										'flag'    => true,
@@ -554,6 +555,7 @@ $swiftling_suggest_positions = array(
 										'current' => false,
 									)
 								);
+								echo wp_kses( $swiftling_preview, Switcher::allowedHtml() );
 								?>
 							</span>
 						</span>
@@ -576,7 +578,7 @@ $swiftling_suggest_positions = array(
 										'current' => true,
 									)
 								);
-								echo $swiftling_preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+								echo wp_kses( $swiftling_preview, Switcher::allowedHtml() );
 								?>
 							</div>
 						<?php endforeach; ?>
@@ -597,7 +599,7 @@ $swiftling_suggest_positions = array(
 								'current' => true,
 							)
 						);
-						echo $swiftling_preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+						echo wp_kses( $swiftling_preview, Switcher::allowedHtml() );
 						?>
 					</div>
 				<?php endforeach; ?>

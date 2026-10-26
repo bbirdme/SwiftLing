@@ -65,12 +65,12 @@ final class Widget extends \WP_Widget {
 		/** This filter is documented in wp-includes/widgets/class-wp-widget-pages.php */
 		$title = apply_filters( 'widget_title', $instance['title'], $instance, $this->id_base );
 
-		echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the sidebar, from the theme.
+		echo wp_kses_post( $args['before_widget'] );
 		if ( '' !== (string) $title ) {
-			echo $args['before_title'] . esc_html( $title ) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the sidebar, from the theme.
+			echo wp_kses_post( $args['before_title'] ) . esc_html( $title ) . wp_kses_post( $args['after_title'] );
 		}
-		echo $switcher; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
-		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup of the sidebar, from the theme.
+		echo wp_kses( $switcher, Switcher::allowedHtml() );
+		echo wp_kses_post( $args['after_widget'] );
 	}
 
 	/**

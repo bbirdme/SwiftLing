@@ -180,7 +180,7 @@ $swiftling_confirm = isset( $_GET['swiftling_confirm'] );
 		</div>
 	</section>
 </form>
-<script type="application/json" id="swiftling-search-config"><?php echo wp_json_encode( $swiftling_search_config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>
+<script type="application/json" id="swiftling-search-config"><?php echo wp_json_encode( $swiftling_search_config, JSON_HEX_TAG | JSON_HEX_AMP ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>
 
 <?php
 $swiftling_per_language = array();

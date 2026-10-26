@@ -83,4 +83,4 @@ PackageTabs::render( $swiftling_package, 'code' );
 		?>
 	</div>
 </section>
-<script type="application/json" id="swiftling-code-scan-config"><?php echo wp_json_encode( $swiftling_setup, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>
+<script type="application/json" id="swiftling-code-scan-config"><?php echo wp_json_encode( $swiftling_setup, JSON_HEX_TAG | JSON_HEX_AMP ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>

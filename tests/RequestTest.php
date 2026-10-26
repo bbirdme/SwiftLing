@@ -167,7 +167,7 @@ class RequestTest extends TestCase {
 		$location = $this->send( $this->fields( $more ) );
 		$this->assertStringContainsString( 'swiftling_notice=request_incomplete', $location );
 		$this->assertSame( array(), $this->sent );
-		$this->assertSame( $this->fields( $more )['what'], get_transient( 'swiftling_request_draft_' . $user )['what'] );
+		$this->assertSame( sanitize_textarea_field( $this->fields( $more )['what'] ), get_transient( 'swiftling_request_draft_' . $user )['what'] );
 	}
 
 	/**
@@ -186,6 +186,34 @@ class RequestTest extends TestCase {
 				),
 			),
 		);
+	}
+
+	/**
+	 * What waits on the screen is sanitized as it is read: no tags, each field as text of its kind.
+	 * A mistyped email stays as typed, to correct; a page address keeps its encoded letters.
+	 */
+	public function test_waiting_request_is_sanitized() {
+		$user = $this->become( 'administrator' );
+		$this->send(
+			$this->fields(
+				array(
+					'kind'  => 'Plugin<script>',
+					'which' => 'other',
+					'name'  => '<script>alert(1)</script>Bricks <b>Builder</b>',
+					'what'  => "<img src=x onerror=alert(1)>Stays\nin English",
+					'page'  => 'https://example.org/de/%d0%be/"><script>',
+					'email' => 'owner',
+				)
+			)
+		);
+		$draft = get_transient( 'swiftling_request_draft_' . $user );
+		$this->assertSame( 'pluginscript', $draft['kind'] );
+		$this->assertSame( 'other', $draft['which'] );
+		$this->assertSame( 'Bricks Builder', $draft['name'] );
+		$this->assertSame( "Stays\nin English", $draft['what'] );
+		$this->assertSame( 'https://example.org/de/%d0%be/script', $draft['page'] );
+		$this->assertSame( 'owner', $draft['email'] );
+		$this->assertSame( '1', $draft['report'] );
 	}
 
 	/**

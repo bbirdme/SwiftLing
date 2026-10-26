@@ -91,6 +91,28 @@ class SwitcherTest extends TestCase {
 	}
 
 	/**
+	 * What the filter returns is kept to the HTML of a switcher: SwiftLing Pro's currency switcher
+	 * comes through whole, a script or an event handler does not. Every place prints what render()
+	 * returns, so none of them prints more.
+	 */
+	public function test_html_filter_is_kept_to_a_switchers_html() {
+		$currency = '<div class="swiftling-switcher is-dropdown swiftling-currency-switcher" translate="no"><details class="swiftling-switcher__dropdown"><summary class="swiftling-switcher__toggle" aria-label="Currency: EUR">EUR €</summary><ul class="swiftling-switcher__menu"><li class="swiftling-switcher__item"><a class="swiftling-switcher__link" href="http://example.org/?swiftling_currency=USD" data-currency="USD" rel="nofollow">USD $</a></li></ul></details></div>';
+		add_filter(
+			'swiftling_switcher_html',
+			static function ( $html ) use ( $currency ) {
+				return $html . $currency . '<script>alert(1)</script><a href="javascript:alert(2)" onclick="alert(3)">x</a>';
+			}
+		);
+
+		$html = Switcher::render( array( 'style' => 'horizontal' ) );
+		$this->assertStringContainsString( $currency, $html );
+		$this->assertStringNotContainsString( '<script', $html );
+		$this->assertStringNotContainsString( 'javascript:', $html );
+		$this->assertStringNotContainsString( 'onclick', $html );
+		$this->assertSame( $html, wp_kses( $html, Switcher::allowedHtml() ), 'The places that print it again print it unchanged' );
+	}
+
+	/**
 	 * A list links every language, marks the current one and is never translated itself.
 	 */
 	public function test_list() {
@@ -319,6 +341,21 @@ class SwitcherTest extends TestCase {
 			$instance
 		);
 		$this->assertStringContainsString( 'swiftling-switcher__flag is-large', ob_get_clean() );
+
+		// The sidebar's own markup around it, as a theme registers it.
+		ob_start();
+		$widget->widget(
+			array(
+				'before_widget' => '<section id="swiftling_switcher-2" class="widget widget_swiftling_switcher" data-area="footer">',
+				'after_widget'  => '</section>',
+				'before_title'  => '<h2 class="widget-title">',
+				'after_title'   => '</h2>',
+			),
+			array( 'title' => 'Jezik <b>' ) + $instance
+		);
+		$html = ob_get_clean();
+		$this->assertStringStartsWith( '<section id="swiftling_switcher-2" class="widget widget_swiftling_switcher" data-area="footer"><h2 class="widget-title">Jezik &lt;b&gt;</h2><div class="swiftling-switcher', $html );
+		$this->assertStringEndsWith( '</div></section>', $html );
 	}
 
 	/**
@@ -345,6 +382,45 @@ class SwitcherTest extends TestCase {
 		$this->post_form( 'swiftling_save_switcher', array( 'show' => array( 'flag_size' => 'huge' ) ) );
 		$this->redirect_of( $save );
 		$this->assertSame( 'medium', get_option( Settings::OPTION )['show']['flag_size'] );
+	}
+
+	/**
+	 * The Switcher screen saves the flags of its Flags step: a known country, an image address as it
+	 * is, and nothing for a language the site does not have.
+	 */
+	public function test_save_flags() {
+		$this->become( 'administrator' );
+		$this->post_form(
+			'swiftling_save_switcher',
+			array(
+				'flags' => array(
+					'de_DE' => array(
+						'country' => 'AT',
+						'image'   => '',
+					),
+					'fr_FR' => array(
+						'country' => '',
+						'image'   => 'https://example.org/zastave/%c5%a1ampanjac.png"><script>',
+					),
+					'hr'    => array( 'country' => array( 'x' ) ),
+					'xx_XX' => array( 'country' => 'de' ),
+				),
+			)
+		);
+		$this->redirect_of( array( new Settings(), 'save' ) );
+		$this->assertSame(
+			array(
+				'de_DE' => array(
+					'country' => 'at',
+					'image'   => '',
+				),
+				'fr_FR' => array(
+					'country' => '',
+					'image'   => 'https://example.org/zastave/%c5%a1ampanjac.pngscript',
+				),
+			),
+			get_option( Settings::OPTION )['flags']
+		);
 	}
 
 	/**
@@ -441,6 +517,12 @@ class SwitcherTest extends TestCase {
 	public function test_block() {
 		$html = do_blocks( '<!-- wp:swiftling/language-switcher {"type":"horizontal"} /-->' );
 		$this->assertStringContainsString( 'class="swiftling-switcher is-horizontal is-block wp-block-swiftling-language-switcher"', $html );
+
+		// The block's colours, type and spacing, from the theme's presets or typed, stay on it.
+		$html = do_blocks( '<!-- wp:swiftling/language-switcher {"type":"horizontal","textColor":"contrast","fontSize":"small","style":{"color":{"background":"#fafafa"},"spacing":{"padding":{"top":"var:preset|spacing|20","left":"12px"}},"typography":{"lineHeight":"1.4"}}} /-->' );
+		$this->assertStringContainsString( 'has-contrast-color', $html );
+		$this->assertStringContainsString( 'has-small-font-size', $html );
+		$this->assertStringContainsString( 'style="background-color:#fafafa;line-height:1.4;padding-top:var(--wp--preset--spacing--20);padding-left:12px"', $html );
 		$this->assertContains( 'swiftling/language-switcher', apply_filters( 'block_core_navigation_listable_blocks', array() ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, as a theme runs it.
 	}
 
@@ -776,6 +858,13 @@ class SwitcherTest extends TestCase {
 		$this->assertGreaterThan( $looks, strpos( $html, 'name="footer[style]"' ) );
 		$this->assertLessThan( $looks, strpos( $html, 'name="menu[enabled]"' ) );
 		$this->assertLessThan( $looks, strpos( $html, 'name="footer[position]"' ) );
+
+		// The previews and the globe tiles print whole.
+		$globe = '<svg class="swiftling-switcher__globe" width="%1$d" height="%1$d" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z" /></svg>';
+		$this->assertStringContainsString( sprintf( $globe, 22 ), $html );
+		$this->assertStringContainsString( sprintf( $globe, 18 ), $html );
+		$this->assertSame( 9, substr_count( $html, 'class="swiftling-switcher is-' ) );
+		$this->assertMatchesRegularExpression( '~<strong lang="de-DE" dir="ltr">Deutsch</strong>~', $html );
 	}
 
 	/**

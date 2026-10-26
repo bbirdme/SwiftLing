@@ -275,7 +275,7 @@ function swiftling_print_probe_registry() {
 	if ( 0 === strpos( $state['subject'], 'terms:' ) ) {
 		$list['term_fields'] = (object) swiftling_term_meta_callers();
 	}
-	$payload = wp_json_encode( $list, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	$payload = wp_json_encode( $list, JSON_HEX_TAG | JSON_HEX_AMP );
 
 	printf(
 		'<script type="application/json" id="swiftling-probe" data-signature="%s">%s</script>',

@@ -100,7 +100,8 @@ function swiftling_request_choices() {
 /**
  * Returns the request a form asks to send, or what is missing from it.
  *
- * @param array $fields Fields of the form, unslashed: kind, which, name, what, page, email, report.
+ * @param array $fields Fields of the form, as swiftling_handle_request() read them: kind, which,
+ *                      name, what, page, email, report.
  * @return array|WP_Error The request, as it is sent; see the top of this file.
  */
 function swiftling_request_payload( $fields ) {
@@ -200,11 +201,18 @@ function swiftling_handle_request() {
 	}
 	check_admin_referer( 'swiftling_send_request' );
 
-	$user   = get_current_user_id();
-	$fields = array();
-	foreach ( array( 'kind', 'which', 'name', 'what', 'page', 'email', 'report' ) as $field ) {
-		$fields[ $field ] = isset( $_POST[ $field ] ) ? (string) wp_unslash( $_POST[ $field ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in swiftling_request_payload(), and as the screen shows it again.
-	}
+	$user = get_current_user_id();
+	// Each field as text of its kind; the email as typed, so a mistyped one waits on the screen to be
+	// corrected. swiftling_request_payload() then checks what is sent.
+	$fields = array(
+		'kind'   => isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '',
+		'which'  => isset( $_POST['which'] ) ? sanitize_text_field( wp_unslash( $_POST['which'] ) ) : '',
+		'name'   => isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
+		'what'   => isset( $_POST['what'] ) ? sanitize_textarea_field( wp_unslash( $_POST['what'] ) ) : '',
+		'page'   => isset( $_POST['page'] ) ? esc_url_raw( wp_unslash( $_POST['page'] ) ) : '',
+		'email'  => isset( $_POST['email'] ) ? sanitize_text_field( wp_unslash( $_POST['email'] ) ) : '',
+		'report' => isset( $_POST['report'] ) ? sanitize_key( wp_unslash( $_POST['report'] ) ) : '',
+	);
 	$screen = admin_url( 'admin.php?page=swiftling-request' );
 	$draft  = 'swiftling_request_draft_' . $user;
 	$sent   = 'swiftling_requests_sent_' . $user;

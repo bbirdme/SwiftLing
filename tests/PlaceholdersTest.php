@@ -54,6 +54,28 @@ class PlaceholdersTest extends TestCase {
 	}
 
 	/**
+	 * The field of a text with placeholders names them, and points to the note that says to keep
+	 * them; the field of the title, which has none, does neither.
+	 */
+	public function test_field_names_its_placeholders() {
+		$this->become( 'administrator' );
+		$post   = $this->post;
+		$result = $this->check(
+			'post:' . $post->ID,
+			static function () use ( $post ) {
+				__( self::FORMAT, 'zz-theme' ); // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText, WordPress.WP.I18n.TextDomainMismatch, WordPress.WP.I18n.MissingTranslatorsComment -- A theme's text, as the theme writes it.
+				get_the_title( $post );
+			},
+			array( $this->path => 'text' )
+		);
+		$html   = swiftling_live_rows_html( swiftling_subject( 'post:' . $this->post->ID ), 'de', $result );
+
+		$this->assertSame( 1, preg_match_all( '~<textarea[^>]* data-format="%1\$s %2\$d" aria-describedby="([^"]+)"~', $html, $field ) );
+		$this->assertStringContainsString( 'id="' . $field[1][0] . '" aria-live="polite"', $html );
+		$this->assertSame( 1, substr_count( $html, 'data-format=' ) );
+	}
+
+	/**
 	 * The placeholders of a text, each with the value it takes.
 	 */
 	public function test_placeholders() {

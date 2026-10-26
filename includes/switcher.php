@@ -43,6 +43,6 @@ function swiftling_get_language_switcher( $args = array() ) {
  * @param array $args See swiftling_get_language_switcher().
  */
 function swiftling_language_switcher( $args = array() ) {
-	echo swiftling_get_language_switcher( $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+	echo wp_kses( swiftling_get_language_switcher( $args ), \SwiftLing\Switcher\Switcher::allowedHtml() );
 }
 add_action( 'swiftling_language_switcher', 'swiftling_language_switcher' );

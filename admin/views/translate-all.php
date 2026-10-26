@@ -440,4 +440,4 @@ foreach ( $swiftling_summary as $swiftling_slug => $swiftling_language ) {
 		</aside>
 	</div>
 </div>
-<script type="application/json" id="swiftling-all-config"><?php echo wp_json_encode( $swiftling_config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>
+<script type="application/json" id="swiftling-all-config"><?php echo wp_json_encode( $swiftling_config, JSON_HEX_TAG | JSON_HEX_AMP ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON with <, > and & escaped, inside a JSON script element. ?></script>

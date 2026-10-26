@@ -51,7 +51,7 @@ $swiftling_second = '' !== $swiftling_offer;
 	<?php endif; ?>
 
 	<?php if ( $swiftling_second ) : ?>
-		<?php echo $swiftling_offer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Printed by the callbacks of swiftling_setup_offer, which escape their own output; only held back to know whether there is any. ?>
+		<?php echo wp_kses( $swiftling_offer, array_merge( wp_kses_allowed_html( 'post' ), Ui::ICON_HTML ) ); ?>
 		<p class="swiftling-setup__or"><span><?php esc_html_e( 'or set SwiftLing up by hand', 'swiftling' ); ?></span></p>
 	<?php endif; ?>
 

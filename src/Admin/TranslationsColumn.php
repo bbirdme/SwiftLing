@@ -153,6 +153,12 @@ final class TranslationsColumn {
 		$copies = swiftling_copies_of( $post_id );
 		$can    = current_user_can( 'edit_post', $post_id );
 
+		$chip = array(
+			'span' => array(
+				'class'       => true,
+				'aria-hidden' => true,
+			),
+		);
 		echo '<div class="swiftling-list-langs">';
 		foreach ( swiftling_languages()['targets'] as $slug => $language ) {
 			$slug  = (string) $slug;
@@ -182,7 +188,7 @@ final class TranslationsColumn {
 				esc_html( $language['code'] )
 			);
 			if ( '' === $href ) {
-				printf( '<span class="swiftling-list-lang" role="img" aria-label="%1$s" data-tip="%1$s">%2$s</span>', esc_attr( $about ), $inner ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from escaped parts above.
+				printf( '<span class="swiftling-list-lang" role="img" aria-label="%1$s" data-tip="%1$s">%2$s</span>', esc_attr( $about ), wp_kses( $inner, $chip ) );
 				continue;
 			}
 			printf(
@@ -190,7 +196,7 @@ final class TranslationsColumn {
 				esc_url( $href ),
 				esc_attr( $about . '. ' . $does ),
 				esc_attr( $about . "\n" . $does ),
-				$inner // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from escaped parts above.
+				wp_kses( $inner, $chip )
 			);
 		}
 		echo '</div>';
@@ -340,11 +346,12 @@ final class TranslationsColumn {
 			),
 			sprintf(
 				/* translators: %s: Number of posts. */
-				_nx( // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- WordPress's own words for the view, in the language it shows them in.
+				_nx(
 					'Mine <span class="count">(%s)</span>',
 					'Mine <span class="count">(%s)</span>',
 					$mine,
-					'posts'
+					'posts',
+					'swiftling'
 				),
 				esc_html( number_format_i18n( $mine ) )
 			),

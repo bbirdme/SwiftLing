@@ -147,17 +147,26 @@ final class Settings {
 	 * Saves which values of a package's settings are translated. Only values the scan lists count.
 	 *
 	 * @param string   $id    Package ID.
-	 * @param string[] $paths Paths of the chosen values.
+	 * @param string[] $paths Paths of the chosen values, as the scan gives them or as a form posts
+	 *                        them, sanitized as text: a path with a tag or a run of spaces in a
+	 *                        key is found all the same. Should two offered paths read the same as
+	 *                        text, the one that is exactly that text is chosen.
 	 * @return array<string, string> The values chosen: path => kind.
 	 */
 	public static function choose( string $id, array $paths ): array {
 		$offered = array();
+		$as_text = array();
 		foreach ( self::candidates( $id ) as $candidate ) {
-			$offered[ $candidate['p'] ] = $candidate['kind'];
+			$offered[ $candidate['p'] ]                        = $candidate['kind'];
+			$as_text[ sanitize_text_field( $candidate['p'] ) ] = $candidate['p'];
 		}
 		$chosen = array();
 		foreach ( $paths as $path ) {
-			if ( is_string( $path ) && isset( $offered[ $path ] ) ) {
+			if ( ! is_string( $path ) ) {
+				continue;
+			}
+			$path = isset( $offered[ $path ] ) ? $path : ( isset( $as_text[ $path ] ) ? $as_text[ $path ] : null );
+			if ( null !== $path ) {
 				$chosen[ $path ] = 'code' === $offered[ $path ] ? 'code' : ( swiftling_is_address_kind( $offered[ $path ] ) ? 'address' : 'text' );
 			}
 		}

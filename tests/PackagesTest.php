@@ -270,6 +270,36 @@ PHP;
 	}
 
 	/**
+	 * The form's paths are sanitized as text as they are read; one whose key has a tag or a run of
+	 * spaces is still the value the scan offered.
+	 */
+	public function test_chosen_settings_from_the_form() {
+		update_option(
+			'zz_footer',
+			array(
+				'<b>line</b>' => 'Izrađeno u Zagrebu',
+				'two  spaces' => 'Apartmani uz more',
+				'plain'       => 'Dobro došli',
+			)
+		);
+		Settings::learnOwners( array( 'zz_footer' => $this->theme ) );
+		$this->become( 'administrator' );
+		$this->post_form(
+			'swiftling_package_settings_' . $this->theme,
+			array(
+				'package' => $this->theme,
+				'paths'   => array( 'option/zz_footer/<b>line<%2Fb>', 'option/zz_footer/two  spaces', 'option/zz_footer/plain', 'option/blogname', array( 'x' ) ),
+			)
+		);
+		$this->redirect_of( 'swiftling_save_package_settings' );
+		$this->assertSame(
+			// A slash in a key is %2F in its path.
+			array( 'option/zz_footer/<b>line<%2Fb>', 'option/zz_footer/two  spaces', 'option/zz_footer/plain' ),
+			array_keys( Settings::chosen( $this->theme ) )
+		);
+	}
+
+	/**
 	 * Code nobody chose is never translated as a whole: its parts stay as they were.
 	 */
 	public function test_code_not_chosen_is_left_alone() {
