@@ -237,12 +237,55 @@ final class Switcher {
 
 		/**
 		 * Filters the HTML of a language switcher, so another plugin can add to it, as SwiftLing Pro
-		 * adds its currency switcher beside it. See docs/hooks.md.
+		 * adds its currency switcher beside it. What it returns is kept to allowedHtml(). See
+		 * docs/hooks.md.
 		 *
 		 * @param string $html The switcher.
 		 * @param array  $args Its options, see args().
 		 */
-		return (string) apply_filters( 'swiftling_switcher_html', '<div ' . $attributes . ' translate="no">' . $html . '</div>', $args );
+		return wp_kses( (string) apply_filters( 'swiftling_switcher_html', '<div ' . $attributes . ' translate="no">' . $html . '</div>', $args ), self::allowedHtml() );
+	}
+
+	/**
+	 * Returns the HTML a switcher is made of, for wp_kses(): its own and that of a dropdown added
+	 * beside it, as SwiftLing Pro's currency switcher, with the attributes a block puts on it.
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
+	public static function allowedHtml(): array {
+		$common = array(
+			'class'      => true,
+			'id'         => true,
+			'style'      => true,
+			'lang'       => true,
+			'dir'        => true,
+			'title'      => true,
+			'translate'  => true,
+			'aria-label' => true,
+			'data-*'     => true,
+		);
+		return array(
+			'div'     => $common,
+			'details' => $common + array( 'open' => true ),
+			'summary' => $common,
+			'ul'      => $common,
+			'li'      => $common,
+			'a'       => $common + array(
+				'href'         => true,
+				'rel'          => true,
+				'hreflang'     => true,
+				'aria-current' => true,
+			),
+			'img'     => $common + array(
+				'src'      => true,
+				'alt'      => true,
+				'width'    => true,
+				'height'   => true,
+				'decoding' => true,
+				'loading'  => true,
+			),
+			'span'    => $common + array( 'aria-hidden' => true ),
+		);
 	}
 
 	/**

@@ -453,7 +453,7 @@ function swiftling_save_languages() {
 
 	// Rows as submitted: locale => slug, visible, label, and for a custom language wp_locale and rtl.
 	$targets = array();
-	$posted  = isset( $_POST['targets'] ) && is_array( $_POST['targets'] ) ? wp_unslash( $_POST['targets'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Every field is sanitized below.
+	$posted  = isset( $_POST['targets'] ) && is_array( $_POST['targets'] ) ? map_deep( wp_unslash( $_POST['targets'] ), 'sanitize_text_field' ) : array();
 	foreach ( $posted as $locale => $row ) {
 		$locale = sanitize_text_field( $locale );
 		if ( ! isset( $available[ $locale ] ) || ! is_array( $row ) ) {
@@ -496,7 +496,7 @@ function swiftling_save_languages() {
 
 	$custom_name = '';
 	if ( isset( $_POST['add_custom'] ) ) {
-		$custom      = isset( $_POST['custom'] ) && is_array( $_POST['custom'] ) ? wp_unslash( $_POST['custom'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Every field is sanitized below.
+		$custom      = isset( $_POST['custom'] ) && is_array( $_POST['custom'] ) ? map_deep( wp_unslash( $_POST['custom'] ), 'sanitize_text_field' ) : array();
 		$custom_name = isset( $custom['name'] ) ? sanitize_text_field( $custom['name'] ) : '';
 		$locale      = swiftling_normalize_locale( isset( $custom['locale'] ) ? sanitize_text_field( $custom['locale'] ) : '' );
 		$wp_locale   = isset( $custom['wp_locale'] ) ? sanitize_text_field( $custom['wp_locale'] ) : '';
@@ -577,7 +577,7 @@ function swiftling_save_languages() {
 
 	// Names written for each language of a page, for the languages the site has once saved.
 	$saved['name_translations'] = swiftling_clean_name_translations(
-		isset( $_POST['name_translations'] ) ? wp_unslash( $_POST['name_translations'] ) : array(), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in swiftling_clean_name_translations().
+		isset( $_POST['name_translations'] ) && is_array( $_POST['name_translations'] ) ? map_deep( wp_unslash( $_POST['name_translations'] ), 'sanitize_text_field' ) : array(),
 		$chosen
 	);
 
@@ -586,7 +586,8 @@ function swiftling_save_languages() {
 	// The flags of the Flag column, for the languages the site has now. A form without the column
 	// posts none and leaves the flags as they are.
 	if ( isset( $_POST['flags'] ) && is_array( $_POST['flags'] ) ) {
-		\SwiftLing\Switcher\Flags::save( wp_unslash( $_POST['flags'] ), $chosen ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checked in Flags::sanitize().
+		// Every language the form can name, so one removed in the same save loses its choice too.
+		\SwiftLing\Switcher\Flags::save( \SwiftLing\Switcher\Flags::posted( array_keys( $available ) ), $chosen );
 	}
 
 	$args = array( 'swiftling_notice' => $notice );

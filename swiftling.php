@@ -1,6 +1,7 @@
 <?php
 /**
  * Plugin Name:       SwiftLing
+ * Plugin URI:        https://swiftling.pro/
  * Description:       Lightweight but powerful and fast multilingual plugin: translate your site with your own translation API key.
  * Version:           1.0.0
  * Requires at least: 6.5

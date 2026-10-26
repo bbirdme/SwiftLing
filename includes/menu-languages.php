@@ -298,7 +298,7 @@ function swiftling_save_menu_items() {
 		wp_die( esc_html__( 'This menu no longer exists.', 'swiftling' ), '', array( 'response' => 404 ) );
 	}
 
-	$posted = isset( $_POST['shown'] ) && is_array( $_POST['shown'] ) ? wp_unslash( $_POST['shown'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Every locale is compared with the site's languages below.
+	$posted = isset( $_POST['shown'] ) && is_array( $_POST['shown'] ) ? map_deep( wp_unslash( $_POST['shown'] ), 'sanitize_text_field' ) : array();
 	$listed = isset( $_POST['items'] ) && is_array( $_POST['items'] ) ? array_map( 'absint', wp_unslash( $_POST['items'] ) ) : array();
 	$items  = swiftling_menu_items( $menu->term_id );
 	$listed = array_flip( $listed );

@@ -508,7 +508,7 @@ final class Recorder {
 					'rest'    => esc_url_raw( rest_url( 'swiftling/v1/' ) ),
 					'nonce'   => wp_create_nonce( 'wp_rest' ),
 				),
-				JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES
+				JSON_HEX_TAG | JSON_HEX_AMP
 			) . ';',
 			'before'
 		);

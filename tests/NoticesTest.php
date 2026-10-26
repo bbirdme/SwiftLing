@@ -50,7 +50,10 @@ class NoticesTest extends TestCase {
 	 * A tip carries the SwiftLing bird; an error is announced at once.
 	 */
 	public function test_kinds() {
-		$this->assertStringContainsString( 'viewBox="0 0 64.86 36.57"', $this->notice( 'info', array( 'text' => 'A tip.' ) ) );
+		// wp_kses() writes attribute names in lower case, as a browser reads them in HTML anyway.
+		$this->assertStringContainsString( 'viewbox="0 0 64.86 36.57"', $this->notice( 'info', array( 'text' => 'A tip.' ) ) );
+		$this->assertStringContainsString( '<svg viewbox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 8.4l2.9 2.9L12.5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>', $this->notice( 'success', array( 'text' => 'Saved.' ) ), 'Every part of an icon' );
+		$this->assertStringContainsString( '<circle cx="8" cy="12.3" r="1.3" fill="currentColor" />', $this->notice( 'warning', array( 'text' => 'Careful.' ) ) );
 		$this->assertStringContainsString( 'role="alert"', $this->notice( 'error', array( 'text' => 'Failed.' ) ) );
 		$this->assertStringContainsString( 'is-warning', $this->notice( 'warning', array( 'text' => 'Careful.' ) ) );
 		// An unknown kind is a tip.

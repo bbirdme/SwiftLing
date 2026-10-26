@@ -92,7 +92,7 @@ final class Suggestion {
 		);
 		printf(
 			'<script type="application/json" id="swiftling-suggestion-data">%s</script>' . "\n",
-			wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+			wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP )
 		);
 	}
 
@@ -118,7 +118,7 @@ final class Suggestion {
 		$script = (string) file_get_contents( SWIFTLING_DIR . 'assets/js/suggestion-open.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A file of the plugin, printed inline so it runs before the page paints.
 		// Without its comments and indents: it is printed into every home page.
 		$script = (string) preg_replace( array( '~/\*.*?\*/~s', '~^\s*//.*$~m', '~^\s+~m', '~\n+~' ), array( '', '', '', "\n" ), $script );
-		wp_print_inline_script_tag( trim( str_replace( 'SWIFTLING_OPENING', (string) wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES ), $script ) ) );
+		wp_print_inline_script_tag( trim( str_replace( 'SWIFTLING_OPENING', (string) wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP ), $script ) ) );
 	}
 
 	/**

@@ -180,12 +180,34 @@ final class Flags {
 		return $countries;
 	}
 	/**
+	 * Returns the flag choices a form posted for the languages the site has, each field sanitized as
+	 * it is read: the country as a key, the image as an address. Both the Languages and the Switcher
+	 * screen post them as flags[locale][country|image], and verify their nonce before they read them.
+	 *
+	 * @param string[] $locales Locales of the languages the site has.
+	 * @return array<string, array{country: string, image: string}> Only the languages the form names.
+	 */
+	public static function posted( array $locales ): array {
+		$flags = array();
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified by the form's handler, which reads them.
+		foreach ( $locales as $locale ) {
+			if ( ! isset( $_POST['flags'][ $locale ] ) || ! is_array( $_POST['flags'][ $locale ] ) ) {
+				continue;
+			}
+			$flags[ $locale ] = array(
+				'country' => isset( $_POST['flags'][ $locale ]['country'] ) && is_string( $_POST['flags'][ $locale ]['country'] ) ? sanitize_key( wp_unslash( $_POST['flags'][ $locale ]['country'] ) ) : '',
+				'image'   => isset( $_POST['flags'][ $locale ]['image'] ) && is_string( $_POST['flags'][ $locale ]['image'] ) ? esc_url_raw( wp_unslash( $_POST['flags'][ $locale ]['image'] ) ) : '',
+			);
+		}
+		// phpcs:enable
+		return $flags;
+	}
+
+	/**
 	 * Returns the flag choices of a form as they are saved: only languages the site has, and only a
 	 * known country, "none" or an image address. A language left on automatic is not kept.
 	 *
-	 * Both the Languages and the Switcher screen post their choices as flags[locale][country|image].
-	 *
-	 * @param array    $posted  The posted flags, unsanitized, by locale.
+	 * @param array    $posted  The posted flags by locale, see posted().
 	 * @param string[] $locales Locales of the languages the site has.
 	 * @return array<string, array{country: string, image: string}>
 	 */

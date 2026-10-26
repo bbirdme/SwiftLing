@@ -1011,8 +1011,9 @@ function swiftling_untranslate_request( $parse ) {
 	if ( ! $parse || 'translate' !== $state['mode'] || '' === $state['locale'] || ! isset( $_SERVER['REQUEST_URI'] ) || ! swiftling_has_slugs( $state['locale'] ) ) {
 		return $parse;
 	}
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only translated slugs in it change; WordPress reads the rest as always.
-	$asked = (string) wp_unslash( $_SERVER['REQUEST_URI'] );
+	// Sanitized as a URL, as everywhere else the address is read: esc_url_raw() leaves out line breaks
+	// and characters such as < > " { } ^. WordPress reads that address, with the original slugs.
+	$asked = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 	$read  = swiftling_untranslate_path( $asked, $state['locale'] );
 	if ( $read === $asked ) {
 		return $parse;
@@ -1021,8 +1022,7 @@ function swiftling_untranslate_request( $parse ) {
 	$request['read']        = $read;
 	$_SERVER['REQUEST_URI'] = wp_slash( $read );
 	if ( isset( $_SERVER['PATH_INFO'] ) ) {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- As above.
-		$_SERVER['PATH_INFO'] = wp_slash( swiftling_untranslate_path( (string) wp_unslash( $_SERVER['PATH_INFO'] ), $state['locale'] ) );
+		$_SERVER['PATH_INFO'] = wp_slash( swiftling_untranslate_path( esc_url_raw( wp_unslash( $_SERVER['PATH_INFO'] ) ), $state['locale'] ) );
 	}
 	return $parse;
 }
@@ -1146,9 +1146,8 @@ function swiftling_redirect_to_translated_slug() {
 	}
 
 	$request = &swiftling_slug_request();
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Compared with addresses WordPress builds; only those are sent.
-	$asked = '' !== $request['asked'] ? $request['asked'] : ( isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '' );
-	$read  = '' !== $request['read'] ? $request['read'] : $asked;
+	$asked   = '' !== $request['asked'] ? $request['asked'] : ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+	$read    = '' !== $request['read'] ? $request['read'] : $asked;
 	// Every address in one spelling: a proxy that writes %D0%BE for %d0%be would otherwise get its
 	// own address back forever.
 	$asked = swiftling_normalize_address( $asked );

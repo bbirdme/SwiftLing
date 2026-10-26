@@ -845,11 +845,10 @@ function swiftling_live_text_field( $unit, $field, $parts, $is_html, $can_edit, 
 	$placeholder = isset( $unit['placeholder'] ) ? $unit['placeholder'] : swiftling_live_placeholder();
 	$rows        = swiftling_live_field_rows( $unit['v'], '' === $field['text'] ? $placeholder : '' );
 	// A field whose rows its placeholder decides fits it exactly where the browser can, see admin.css.
-	$fit = $rows > swiftling_live_field_rows( $unit['v'] ) ? ' data-fit' : '';
+	$fit = $rows > swiftling_live_field_rows( $unit['v'] );
 	// A text from code may go through sprintf(): its placeholders must stay, see swiftling_format_problems().
 	$placeholders = 0 === strpos( $unit['o'], 'gettext:' ) ? (array) swiftling_format_placeholders( $unit['v'] ) : array();
 	$format       = $placeholders ? implode( ' ', array_unique( wp_list_pluck( $placeholders, 'raw' ) ) ) : '';
-	$format_attr  = '' !== $format ? ' data-format="' . esc_attr( $format ) . '" aria-describedby="' . esc_attr( $input_id . '-format' ) . '"' : '';
 	?>
 	<label class="screen-reader-text" for="<?php echo esc_attr( $input_id ); ?>"><?php esc_html_e( 'Translation', 'swiftling' ); ?></label>
 	<?php
@@ -866,13 +865,13 @@ function swiftling_live_text_field( $unit, $field, $parts, $is_html, $can_edit, 
 		<?php // Text with nothing to format inside its wrapping tags, such as a heading, gets a plain field; the tags are put back when it is saved. ?>
 		<?php
 		$rows = swiftling_live_field_rows( $plain, '' === $plain_text ? $placeholder : '' );
-		$fit  = $rows > swiftling_live_field_rows( $plain ) ? ' data-fit' : '';
+		$fit  = $rows > swiftling_live_field_rows( $plain );
 		?>
-		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input swiftling-live-wrapped" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $plain ); ?>" data-prefix="<?php echo esc_attr( $prefix ); ?>" data-suffix="<?php echo esc_attr( $suffix ); ?>" placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php echo $fit; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A fixed attribute. ?><?php echo $format_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $plain_text ); ?></textarea>
+		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input swiftling-live-wrapped" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $plain ); ?>" data-prefix="<?php echo esc_attr( $prefix ); ?>" data-suffix="<?php echo esc_attr( $suffix ); ?>" placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php echo $fit ? ' data-fit' : ''; ?><?php echo '' !== $format ? sprintf( ' data-format="%s" aria-describedby="%s"', esc_attr( $format ), esc_attr( $input_id . '-format' ) ) : ''; ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $plain_text ); ?></textarea>
 	<?php elseif ( $parts ) : ?>
-		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input swiftling-live-rich" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $middle ); ?>" data-prefix="<?php echo esc_attr( $prefix ); ?>" data-suffix="<?php echo esc_attr( $suffix ); ?>" data-blocks="<?php echo $blocks ? '1' : '0'; ?>"<?php echo $format_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $text ); ?></textarea>
+		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input swiftling-live-rich" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $middle ); ?>" data-prefix="<?php echo esc_attr( $prefix ); ?>" data-suffix="<?php echo esc_attr( $suffix ); ?>" data-blocks="<?php echo $blocks ? '1' : '0'; ?>"<?php echo '' !== $format ? sprintf( ' data-format="%s" aria-describedby="%s"', esc_attr( $format ), esc_attr( $input_id . '-format' ) ) : ''; ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $text ); ?></textarea>
 	<?php else : ?>
-		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input<?php echo $is_html || $is_code ? ' swiftling-code' : ''; ?>" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $unit['v'] ); ?>" placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php echo $fit; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A fixed attribute. ?><?php echo $format_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above. ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $field['text'] ); ?></textarea>
+		<textarea id="<?php echo esc_attr( $input_id ); ?>" class="swiftling-live-input<?php echo $is_html || $is_code ? ' swiftling-code' : ''; ?>" rows="<?php echo esc_attr( (string) $rows ); ?>" data-key="<?php echo esc_attr( $field['key'] ); ?>" data-original="<?php echo esc_attr( $unit['v'] ); ?>" placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php echo $fit ? ' data-fit' : ''; ?><?php echo '' !== $format ? sprintf( ' data-format="%s" aria-describedby="%s"', esc_attr( $format ), esc_attr( $input_id . '-format' ) ) : ''; ?><?php disabled( ! $can_edit ); ?>><?php echo esc_textarea( $field['text'] ); ?></textarea>
 		<?php if ( $is_html ) : ?>
 			<p class="swiftling-code-note"><?php esc_html_e( 'Change only the text. Keep tags, attributes and shortcode names as they are.', 'swiftling' ); ?></p>
 		<?php endif; ?>

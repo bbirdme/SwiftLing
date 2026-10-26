@@ -24,6 +24,39 @@ final class Ui {
 	public const BIRD = 'M32.43 0C33.81 0 35.19 2.07 35.88 4.83C43.47 2.76 56.58 5.52 64.86 19.32C56.58 15.18 44.16 13.11 36.91 17.25C36.91 20.7 36.57 22.77 35.88 24.84L40.02 36.57L32.43 28.29L24.84 36.57L28.98 24.84C28.29 22.77 27.95 20.7 27.95 17.25C20.7 13.11 8.28 15.18 0 19.32C8.28 5.52 21.39 2.76 28.98 4.83C29.67 2.07 31.05 0 32.43 0Z';
 
 	/**
+	 * The inline SVG icons of the screens, for wp_kses(): notices, the switcher's globe and the
+	 * offers other plugins print on them, as SwiftLing Pro's import.
+	 */
+	public const ICON_HTML = array(
+		'svg'    => array(
+			'class'        => true,
+			'width'        => true,
+			'height'       => true,
+			'viewbox'      => true,
+			'fill'         => true,
+			'stroke'       => true,
+			'stroke-width' => true,
+			'aria-hidden'  => true,
+			'focusable'    => true,
+		),
+		'path'   => array(
+			'd'               => true,
+			'fill'            => true,
+			'stroke'          => true,
+			'stroke-width'    => true,
+			'stroke-linecap'  => true,
+			'stroke-linejoin' => true,
+		),
+		'circle' => array(
+			'cx'     => true,
+			'cy'     => true,
+			'r'      => true,
+			'fill'   => true,
+			'stroke' => true,
+		),
+	);
+
+	/**
 	 * Prints the screen header: breadcrumb, title, optional description and action buttons.
 	 *
 	 * On a screen of a group, the group's header above is the page's title and says where it is, see
@@ -162,7 +195,7 @@ final class Ui {
 		);
 		?>
 		<div class="<?php echo esc_attr( $classes ); ?>" role="<?php echo 'error' === $kind ? 'alert' : 'status'; ?>">
-			<span class="swiftling-notice__icon"><?php echo $icons[ $kind ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed markup above. ?></span>
+			<span class="swiftling-notice__icon"><?php echo wp_kses( $icons[ $kind ], self::ICON_HTML ); ?></span>
 			<div class="swiftling-notice__body">
 				<?php if ( '' !== $args['title'] ) : ?>
 					<p class="swiftling-notice__title"><?php echo esc_html( $args['title'] ); ?></p>

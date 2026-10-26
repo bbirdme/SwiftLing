@@ -245,13 +245,11 @@ final class Settings {
 		check_admin_referer( 'swiftling_save_switcher' );
 
 		$defaults = self::defaults();
-		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Every field is checked against a list or sanitized below.
-		$show    = isset( $_POST['show'] ) && is_array( $_POST['show'] ) ? wp_unslash( $_POST['show'] ) : array();
-		$menu    = isset( $_POST['menu'] ) && is_array( $_POST['menu'] ) ? wp_unslash( $_POST['menu'] ) : array();
-		$footer  = isset( $_POST['footer'] ) && is_array( $_POST['footer'] ) ? wp_unslash( $_POST['footer'] ) : array();
-		$flags   = isset( $_POST['flags'] ) && is_array( $_POST['flags'] ) ? wp_unslash( $_POST['flags'] ) : array();
-		$suggest = isset( $_POST['suggest'] ) && is_array( $_POST['suggest'] ) ? wp_unslash( $_POST['suggest'] ) : array();
-		// phpcs:enable
+		// Every field as text, then checked against its list below.
+		$show    = isset( $_POST['show'] ) && is_array( $_POST['show'] ) ? map_deep( wp_unslash( $_POST['show'] ), 'sanitize_text_field' ) : array();
+		$menu    = isset( $_POST['menu'] ) && is_array( $_POST['menu'] ) ? map_deep( wp_unslash( $_POST['menu'] ), 'sanitize_text_field' ) : array();
+		$footer  = isset( $_POST['footer'] ) && is_array( $_POST['footer'] ) ? map_deep( wp_unslash( $_POST['footer'] ), 'sanitize_text_field' ) : array();
+		$suggest = isset( $_POST['suggest'] ) && is_array( $_POST['suggest'] ) ? map_deep( wp_unslash( $_POST['suggest'] ), 'sanitize_text_field' ) : array();
 
 		$settings = array(
 			'show'    => array(),
@@ -290,7 +288,7 @@ final class Settings {
 
 		$languages         = swiftling_languages();
 		$locales           = array_merge( array( $languages['source']['locale'] ), wp_list_pluck( $languages['targets'], 'locale' ) );
-		$settings['flags'] = Flags::sanitize( $flags, $locales );
+		$settings['flags'] = Flags::sanitize( Flags::posted( $locales ), $locales );
 
 		foreach ( isset( $suggest['texts'] ) && is_array( $suggest['texts'] ) ? $suggest['texts'] : array() as $locale => $texts ) {
 			$locale = sanitize_text_field( (string) $locale );

@@ -84,7 +84,8 @@ the site better, as SwiftLing Pro's import of the translations of a multilingual
 on a screen that opens before the setup (`before_setup` above). When it prints something, that
 comes first and is the page's main title (`<h1>`); the question follows under "or set SwiftLing up
 by hand", its title one level down and its button secondary. When it prints nothing, the setup is as
-without it.
+without it. What it prints goes through `wp_kses()` with the HTML of a post and inline SVG icons
+(`svg`, `path`, `circle`): a form or a script is left out.
 
 ```php
 add_action(
@@ -407,6 +408,9 @@ Action, for themes. Prints the language switcher; prints nothing when SwiftLing 
 Filter, since hooks 8. The HTML of a language switcher, in every place one is printed (menu,
 footer, block, shortcode, widget, `swiftling_language_switcher`), so a plugin can add to it.
 SwiftLing Pro adds its currency switcher beside it. Not called where there is nothing to switch to.
+What it returns goes through `wp_kses()` with `Switcher::allowedHtml()`: `div`, `details`, `summary`,
+`ul`, `li`, `a`, `img` and `span`, with their classes, `data-*`, `lang`, `title` and the attributes
+of links, images and blocks. Anything else, such as a script or an event handler, is left out.
 
 - `string $html`: the switcher, a `div.swiftling-switcher`.
 - `array $args`: its options: `style` (`dropdown`, `horizontal`, `vertical`), `flag`, `name`,

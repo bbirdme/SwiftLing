@@ -45,8 +45,7 @@ final class Footer {
 		if ( ! $args ) {
 			return;
 		}
-		$html = Switcher::render( $args );
-		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped piece by piece in Switcher::render().
+		echo wp_kses( Switcher::render( $args ), Switcher::allowedHtml() );
 	}
 
 	/**

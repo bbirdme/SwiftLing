@@ -324,6 +324,24 @@ class SlugsTest extends TestCase {
 	}
 
 	/**
+	 * The address a translated slug is read from is sanitized as a URL: the page is found, the rest of
+	 * the request sees no tags and no line breaks, and a slug in another script is kept.
+	 */
+	public function test_request_address_is_sanitized() {
+		$this->slug( 'kontakt', 'kontaktieren' );
+		$this->in_folder( 'de' );
+
+		$this->go_to( 'http://example.org/de/kontaktieren/?q="><script>x</script>&r=%0d%0aSet-Cookie:a&t=a b' );
+		$this->assertSame( $this->ids['kontakt'], get_queried_object_id() );
+		$this->assertSame( '/de/kontaktieren/?q=scriptx/script&r=Set-Cookie:a&t=a%20b', wp_unslash( $_SERVER['REQUEST_URI'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Compared, not used.
+
+		$this->slug( 'kontakt', 'о-нас' );
+		$this->go_to( 'http://example.org/de/о-нас/?a=1' );
+		$this->assertSame( $this->ids['kontakt'], get_queried_object_id() );
+		$this->assertSame( '/de/о-нас/?a=1', wp_unslash( $_SERVER['REQUEST_URI'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Compared, not used.
+	}
+
+	/**
 	 * In the parameter format the slug is translated as well. The links a page builds carry no
 	 * language there, so they lead to the original and keep its slug.
 	 */

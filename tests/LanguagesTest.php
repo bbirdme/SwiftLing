@@ -360,7 +360,7 @@ class LanguagesTest extends TestCase {
 					),
 					'fr_FR' => array(
 						'country' => '',
-						'image'   => 'https://example.org/fr.png',
+						'image'   => 'https://example.org/zastave/%c5%a1ampanjac.png',
 					),
 					'xx_XX' => array(
 						'country' => 'de',
@@ -373,7 +373,7 @@ class LanguagesTest extends TestCase {
 
 		$flags = get_option( 'swiftling_switcher' )['flags'];
 		$this->assertSame( 'at', $flags['de_DE']['country'] );
-		$this->assertSame( 'https://example.org/fr.png', $flags['fr_FR']['image'] );
+		$this->assertSame( 'https://example.org/zastave/%c5%a1ampanjac.png', $flags['fr_FR']['image'] );
 		$this->assertArrayNotHasKey( 'xx_XX', $flags, 'A language the site does not have gets no flag' );
 		$this->assertSame( 'au', $flags['en_GB']['country'], 'A language the form does not name keeps its flag' );
 		$this->assertTrue( get_option( 'swiftling_switcher' )['footer']['enabled'], 'The other settings of the switcher stay' );
@@ -388,7 +388,7 @@ class LanguagesTest extends TestCase {
 		$this->assertArrayNotHasKey( 'de_DE', get_option( 'swiftling_switcher' )['flags'] );
 		$this->post_form( 'swiftling_save_languages', $this->rows() );
 		$this->redirect_of( 'swiftling_save_languages' );
-		$this->assertSame( 'https://example.org/fr.png', get_option( 'swiftling_switcher' )['flags']['fr_FR']['image'] );
+		$this->assertSame( 'https://example.org/zastave/%c5%a1ampanjac.png', get_option( 'swiftling_switcher' )['flags']['fr_FR']['image'] );
 	}
 
 	/**
