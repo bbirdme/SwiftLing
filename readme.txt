@@ -4,13 +4,17 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Lightweight but powerful and fast: make your site multilingual with your own translation API key, any number of languages, an address for each.
 
 == Description ==
+
+**Want more? [SwiftLing Pro](https://swiftling.pro/#pricing) is better translation, a better shop, and support from the developers inside WordPress.** DeepL, Claude, OpenAI and Gemini with your own key, a glossary, the whole site translated on the server with the tab closed, automatic translation when you publish, prices in a currency for each language, and import from WPML, Polylang and TranslatePress. [See what Pro adds](https://swiftling.pro/#pricing). SwiftLing itself stays free, with any number of languages.
+
+**Having a problem or a question?** Please write to the [support forum](https://wordpress.org/support/plugin/swiftling/) first. I read it and will try to help you before you leave a review.
 
 SwiftLing makes your WordPress site multilingual. It finds the texts of a page as visitors see them, wherever they come from: the block editor, a page builder, custom fields, forms, menus, your theme and your plugins. You translate them in one editor, beside the original, and each language gets an address of its own.
 
@@ -153,6 +157,9 @@ License: MIT, https://opensource.org/licenses/MIT
 Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
+
+= 1.0.1 =
+* Links to SwiftLing Pro lead to the prices on swiftling.pro.
 
 = 1.0.0 =
 * First version.
