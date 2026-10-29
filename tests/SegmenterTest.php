@@ -419,4 +419,48 @@ class SegmenterTest extends TestCase {
 		$this->walk( '<div><p>Dobro došli</p><p>kući</p></div>' );
 		$this->assertCount( 1, $this->leaves );
 	}
+
+	/**
+	 * The title of a tab Brizy prints a second time for small screens is the leaf of the same title for large screens.
+	 */
+	public function test_brizy_mobile_tab_title_shares_the_leaf_of_its_twin() {
+		$html = '<ul><li><div class="brz-tabs__nav--button"><span data-brz-translate-text="1" class="brz-span">Prvi tab</span></div></li></ul>'
+			. '<div class="brz-tabs__nav--mobile brz-tabs__nav--mobile--active"><div class="brz-tabs__nav--button"><span>Prvi tab</span></div></div>'
+			. '<div class="brz-tabs__nav--mobile"><div class="brz-tabs__nav--button"><span>Bez blizanca</span></div></div>';
+
+		$walked = $this->walk( $html );
+
+		$this->assertSame( array( 'Prvi tab', 'Prvi tab', 'Bez blizanca' ), array_column( $this->leaves, 0 ) );
+		// The same path, so one text in the editor and one translation for both.
+		$this->assertSame( 'meta/x/@bz0', $this->leaves[0][1] );
+		$this->assertSame( 'meta/x/@bz0', $this->leaves[1][1] );
+		$this->assertSame( 'meta/x/@bztab1', $this->leaves[2][1] );
+		$this->assertStringContainsString( '<span>PRVI TAB</span></div></div><div class="brz-tabs__nav--mobile"><div class="brz-tabs__nav--button"><span>BEZ BLIZANCA</span>', $walked );
+	}
+
+	/**
+	 * Attributes Brizy names data-brz-translatable-* are texts; other attributes are not.
+	 */
+	public function test_brizy_translatable_attributes_are_leaves() {
+		$html = '<div role="timer" aria-label="Countdown timer" data-brz-end="28/11/2026" data-brz-translatable-message="Čestitamo &amp; hvala!" data-brz-translatable-empty=""></div>';
+
+		$walked = $this->walk( $html );
+
+		$this->assertSame( array( 'Čestitamo & hvala!' ), array_column( $this->leaves, 0 ) );
+		$this->assertSame( 'meta/x/@bza0', $this->leaves[0][1] );
+		$this->assertStringContainsString( 'data-brz-translatable-message="ČESTITAMO &amp; HVALA!"', $walked );
+		$this->assertStringContainsString( 'aria-label="Countdown timer" data-brz-end="28/11/2026"', $walked );
+
+		$this->assertSame(
+			$html,
+			swiftling_walk(
+				$html,
+				static function ( $leaf ) {
+					return $leaf;
+				},
+				'meta/x',
+				'meta:x'
+			)
+		);
+	}
 }

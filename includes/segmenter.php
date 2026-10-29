@@ -304,9 +304,15 @@ function swiftling_decode_base64_json( $value ) {
 }
 
 /**
- * Walks the HTML Brizy prints for a page: every element it marks with data-brz-translate-text is
- * one text, the HTML inside it a leaf of its own. The rest of the section, its classes, its
- * layout and its scripts, stays as it is, so a translation cannot break what Brizy built.
+ * Walks the HTML Brizy prints for a page, text by text:
+ *
+ * - every element it marks with data-brz-translate-text is a leaf, the HTML inside it;
+ * - the title of a tab on a small screen, which Brizy prints a second time without the mark, is
+ *   the leaf of the same title on a large screen, so the two are one text;
+ * - every attribute it names data-brz-translatable-*, such as the message of a countdown, is a leaf.
+ *
+ * The rest of the section, its classes, its layout and its scripts, stays as it is, so a
+ * translation cannot break what Brizy built.
  *
  * @param string   $value    String.
  * @param callable $callback Leaf callback.
@@ -317,7 +323,37 @@ function swiftling_decode_base64_json( $value ) {
  * @return string|null The rebuilt string, or null when it holds no text Brizy marked.
  */
 function swiftling_walk_brizy_texts( $value, $callback, $path, $source, $type, $rel ) {
-	if ( false === strpos( $value, 'data-brz-translate-text' ) || ! preg_match_all( '~<(div|span)\b[^>]*\sdata-brz-translate-text="1"[^>]*>~i', $value, $opens, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
+	if ( false === strpos( $value, 'data-brz-translat' ) ) {
+		return null;
+	}
+
+	$paths   = array();
+	$marked  = swiftling_walk_brizy_marked( $value, $callback, $path, $source, $type, $rel, $paths );
+	$current = null === $marked ? $value : $marked;
+
+	$tabs    = swiftling_walk_brizy_mobile_tabs( $current, $callback, $path, $source, $type, $rel, $paths );
+	$current = null === $tabs ? $current : $tabs;
+
+	$attributes = swiftling_walk_brizy_attributes( $current, $callback, $path, $source, $type, $rel );
+	$current    = null === $attributes ? $current : $attributes;
+
+	return null === $marked && null === $tabs && null === $attributes ? null : $current;
+}
+
+/**
+ * Walks the elements Brizy marks with data-brz-translate-text, see swiftling_walk_brizy_texts().
+ *
+ * @param string   $value    String.
+ * @param callable $callback Leaf callback.
+ * @param string   $path     Path of the string.
+ * @param string   $source   Where the value comes from.
+ * @param string   $type     Nearest element type above the string.
+ * @param string   $rel      Path from that element to the string.
+ * @param string[] $paths    Receives the path of each text, by its HTML.
+ * @return string|null The rebuilt string, or null when it holds no such element.
+ */
+function swiftling_walk_brizy_marked( $value, $callback, $path, $source, $type, $rel, array &$paths ) {
+	if ( ! preg_match_all( '~<(div|span)\b[^>]*\sdata-brz-translate-text="1"[^>]*>~i', $value, $opens, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
 		return null;
 	}
 
@@ -358,7 +394,11 @@ function swiftling_walk_brizy_texts( $value, $callback, $path, $source, $type, $
 			continue;
 		}
 
-		$new = call_user_func( $callback, $inner, $path . '/@bz' . $index, swiftling_rule_key( $source, $type, ltrim( $rel . '/@brizy', '/' ) ) );
+		$text_path = $path . '/@bz' . $index;
+		if ( ! isset( $paths[ $inner ] ) ) {
+			$paths[ $inner ] = $text_path;
+		}
+		$new = call_user_func( $callback, $inner, $text_path, swiftling_rule_key( $source, $type, ltrim( $rel . '/@brizy', '/' ) ) );
 		++$index;
 		if ( $new === $inner ) {
 			continue;
@@ -368,7 +408,90 @@ function swiftling_walk_brizy_texts( $value, $callback, $path, $source, $type, $
 		$changed = true;
 	}
 
-	return $changed ? $result . substr( $value, $offset ) : $value;
+	return $changed ? $result . substr( $value, $offset ) : ( $index > 0 ? $value : null );
+}
+
+/**
+ * Walks the titles of tabs Brizy prints for small screens, see swiftling_walk_brizy_texts(). A title
+ * is the leaf of the title with the same HTML on large screens, when there is one, so its
+ * translation is the same text; a title that has no twin is a leaf of its own.
+ *
+ * @param string   $value    String.
+ * @param callable $callback Leaf callback.
+ * @param string   $path     Path of the string.
+ * @param string   $source   Where the value comes from.
+ * @param string   $type     Nearest element type above the string.
+ * @param string   $rel      Path from that element to the string.
+ * @param string[] $paths    Path of each marked text, by its HTML.
+ * @return string|null The rebuilt string, or null when it holds no such title.
+ */
+function swiftling_walk_brizy_mobile_tabs( $value, $callback, $path, $source, $type, $rel, array $paths ) {
+	if ( false === strpos( $value, 'brz-tabs__nav--mobile' ) || ! preg_match_all( '~(<div class="brz-tabs__nav--mobile[^"]*"><div class="brz-tabs__nav--button"><span>)([^<]+)(</span>)~', $value, $titles, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
+		return null;
+	}
+
+	$result  = '';
+	$offset  = 0;
+	$changed = false;
+	$index   = 0;
+
+	foreach ( $titles as $title ) {
+		$inner = $title[2][0];
+		if ( '' === swiftling_visible_text( $inner ) ) {
+			continue;
+		}
+		$start = $title[2][1];
+		$new   = call_user_func( $callback, $inner, $paths[ $inner ] ?? $path . '/@bztab' . $index, swiftling_rule_key( $source, $type, ltrim( $rel . '/@brizy', '/' ) ) );
+		++$index;
+		if ( $new === $inner ) {
+			continue;
+		}
+		$result .= substr( $value, $offset, $start - $offset ) . $new;
+		$offset  = $start + strlen( $inner );
+		$changed = true;
+	}
+
+	return $changed ? $result . substr( $value, $offset ) : ( $index > 0 ? $value : null );
+}
+
+/**
+ * Walks the attributes Brizy names data-brz-translatable-*, see swiftling_walk_brizy_texts().
+ *
+ * @param string   $value    String.
+ * @param callable $callback Leaf callback.
+ * @param string   $path     Path of the string.
+ * @param string   $source   Where the value comes from.
+ * @param string   $type     Nearest element type above the string.
+ * @param string   $rel      Path from that element to the string.
+ * @return string|null The rebuilt string, or null when it holds no such attribute.
+ */
+function swiftling_walk_brizy_attributes( $value, $callback, $path, $source, $type, $rel ) {
+	if ( ! preg_match_all( '~\sdata-brz-translatable-([a-z0-9-]+)="([^"]*)"~i', $value, $attributes, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
+		return null;
+	}
+
+	$result  = '';
+	$offset  = 0;
+	$changed = false;
+	$index   = 0;
+
+	foreach ( $attributes as $attribute ) {
+		$text = html_entity_decode( $attribute[2][0], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( '' === trim( $text ) ) {
+			continue;
+		}
+		$new = call_user_func( $callback, $text, $path . '/@bza' . $index, swiftling_rule_key( $source, $type, ltrim( $rel . '/@brizy-attribute', '/' ) ) );
+		++$index;
+		if ( $new === $text ) {
+			continue;
+		}
+		$start   = $attribute[2][1];
+		$result .= substr( $value, $offset, $start - $offset ) . esc_attr( $new );
+		$offset  = $start + strlen( $attribute[2][0] );
+		$changed = true;
+	}
+
+	return $changed ? $result . substr( $value, $offset ) : ( $index > 0 ? $value : null );
 }
 
 /**
