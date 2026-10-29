@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,13 +17,13 @@ SwiftLing makes your WordPress site multilingual. It finds the texts of a page a
 = Why SwiftLing =
 
 * **Your pages are not duplicated.** Translations are kept in SwiftLing's own tables, so there is one page, not one copy per language, and a text without a translation simply shows in the original.
-* **It works where your content lives.** The block editor and page builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance and Avada, with no shortcodes to wrap around your texts.
+* **It works where your content lives.** The block editor and page builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada, with no shortcodes to wrap around your texts.
 
 = What it translates =
 
 * Pages, posts and custom post types: titles, content, excerpts and fields.
 * The block editor and its templates, patterns and template parts.
-* Page builders: Elementor, and builders that keep their content in WordPress itself, such as Beaver Builder, Breakdance and Avada.
+* Page builders: Elementor, and builders that keep their content in WordPress itself, such as Beaver Builder, Breakdance, Brizy and Avada.
 * Advanced Custom Fields, options pages included.
 * Categories, tags and other taxonomies, with their addresses.
 * Menus: a label of their own for each language, and items shown only in some languages.
@@ -92,7 +92,7 @@ No. Translations are kept in SwiftLing's own tables, and every language shows th
 
 = Does it work with my page builder? =
 
-SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance and Avada. A builder that prints its pages past WordPress shows its texts in the original.
+SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada. A builder that prints its pages past WordPress shows its texts in the original.
 
 = What language are the emails of my forms in? =
 
@@ -165,13 +165,16 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
 
+= 1.0.2 =
+* Brizy: the texts of pages built with Brizy are found and translated.
+
 = 1.0.1 =
 * Links to SwiftLing Pro lead to the prices on swiftling.pro.
 
 = 1.0.0 =
 * First version.
 * One editor beside the original for pages, posts and custom post types, the block editor and its templates, menus, taxonomies, theme and plugin texts, images and Advanced Custom Fields.
-* Page builders that keep their content in WordPress: Elementor, Beaver Builder, Breakdance and Avada.
+* Page builders that keep their content in WordPress: Elementor, Beaver Builder, Breakdance, Brizy and Avada.
 * An address for each language: folder, parameter, subdomain or domain of its own, with translated slugs, hreflang links, canonical addresses and sitemaps.
 * Machine translation with Google Cloud Translation and your own key, for one page or the whole site, with an estimate first.
 * Forms of Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms, and WooCommerce products.

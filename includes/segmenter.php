@@ -254,6 +254,18 @@ function swiftling_walk_string( $value, $callback, $path, $source, $type, $rel )
 		}
 	}
 
+	$encoded = swiftling_decode_base64_json( $trimmed );
+	if ( null !== $encoded ) {
+		$new = swiftling_walk_node( $encoded, $callback, $path . '/@b64', $source, $type, $rel, false );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Writes back what the builder stored as base64 JSON.
+		return $new === $encoded ? $value : base64_encode( wp_json_encode( $new ) );
+	}
+
+	$with_brizy = swiftling_walk_brizy_texts( $value, $callback, $path, $source, $type, $rel );
+	if ( null !== $with_brizy ) {
+		return $with_brizy;
+	}
+
 	$with_shortcodes = swiftling_walk_shortcodes( $value, $callback, $path, $source );
 	if ( null !== $with_shortcodes ) {
 		return $with_shortcodes;
@@ -265,6 +277,98 @@ function swiftling_walk_string( $value, $callback, $path, $source, $type, $rel )
 	}
 
 	return call_user_func( $callback, $value, $path, swiftling_rule_key( $source, $type, $rel ) );
+}
+
+/**
+ * Returns the JSON a string holds as base64, which is how Brizy keeps what it prints and what
+ * its editor saves, in the post meta "brizy-compiled-sections" and in "editor_data".
+ *
+ * Only a string that is base64 all through and decodes to a JSON array or object counts, so a
+ * word or a code that happens to be valid base64 is no JSON and stays a leaf.
+ *
+ * @param string $value String, without leading space.
+ * @return array|stdClass|null The decoded JSON, or null when the string holds none.
+ */
+function swiftling_decode_base64_json( $value ) {
+	if ( strlen( $value ) < 16 || 1 !== preg_match( '~^[A-Za-z0-9+/]+={0,2}$~', $value ) ) {
+		return null;
+	}
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Reads what the builder stored as base64 JSON.
+	$json = base64_decode( $value, true );
+	if ( false === $json || '' === $json || ( '{' !== $json[0] && '[' !== $json[0] ) ) {
+		return null;
+	}
+	$decoded = json_decode( $json );
+
+	return is_array( $decoded ) || is_object( $decoded ) ? $decoded : null;
+}
+
+/**
+ * Walks the HTML Brizy prints for a page: every element it marks with data-brz-translate-text is
+ * one text, the HTML inside it a leaf of its own. The rest of the section, its classes, its
+ * layout and its scripts, stays as it is, so a translation cannot break what Brizy built.
+ *
+ * @param string   $value    String.
+ * @param callable $callback Leaf callback.
+ * @param string   $path     Path of the string.
+ * @param string   $source   Where the value comes from.
+ * @param string   $type     Nearest element type above the string.
+ * @param string   $rel      Path from that element to the string.
+ * @return string|null The rebuilt string, or null when it holds no text Brizy marked.
+ */
+function swiftling_walk_brizy_texts( $value, $callback, $path, $source, $type, $rel ) {
+	if ( false === strpos( $value, 'data-brz-translate-text' ) || ! preg_match_all( '~<(div|span)\b[^>]*\sdata-brz-translate-text="1"[^>]*>~i', $value, $opens, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
+		return null;
+	}
+
+	$result  = '';
+	$offset  = 0;
+	$changed = false;
+	$index   = 0;
+
+	foreach ( $opens as $open ) {
+		$start = $open[0][1] + strlen( $open[0][0] );
+		if ( $open[0][1] < $offset ) {
+			continue;
+		}
+
+		// The closing tag that matches the opening one: the same tag opens and closes inside it too.
+		$tag   = strtolower( $open[1][0] );
+		$depth = 1;
+		$end   = null;
+		$from  = $start;
+		while ( preg_match( '~<(/?)' . $tag . '\b[^>]*>~i', $value, $tag_match, PREG_OFFSET_CAPTURE, $from ) ) {
+			$from = $tag_match[0][1] + strlen( $tag_match[0][0] );
+			if ( '' !== $tag_match[1][0] ) {
+				--$depth;
+			} elseif ( '/>' !== substr( $tag_match[0][0], -2 ) ) {
+				++$depth;
+			}
+			if ( 0 === $depth ) {
+				$end = $tag_match[0][1];
+				break;
+			}
+		}
+		if ( null === $end ) {
+			continue;
+		}
+
+		$inner = substr( $value, $start, $end - $start );
+		if ( '' === swiftling_visible_text( $inner ) ) {
+			continue;
+		}
+
+		$new = call_user_func( $callback, $inner, $path . '/@bz' . $index, swiftling_rule_key( $source, $type, ltrim( $rel . '/@brizy', '/' ) ) );
+		++$index;
+		if ( $new === $inner ) {
+			continue;
+		}
+		$result .= substr( $value, $offset, $start - $offset ) . $new;
+		$offset  = $end;
+		$changed = true;
+	}
+
+	return $changed ? $result . substr( $value, $offset ) : $value;
 }
 
 /**

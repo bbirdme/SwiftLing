@@ -329,4 +329,94 @@ class SegmenterTest extends TestCase {
 		$this->assertSame( 'Dobro došli & hvala', swiftling_visible_text( "<p>Dobro   <b>došli</b></p>\n<script>x()</script> &amp; hvala" ) );
 		$this->assertSame( md5( 'Kontakt' ), swiftling_hash( 'Kontakt' ) );
 	}
+
+	/**
+	 * JSON stored as base64, as Brizy does, is walked, and written back as base64 only when a leaf changed.
+	 */
+	public function test_base64_json_is_walked() {
+		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- The format under test.
+		$stored = base64_encode(
+			wp_json_encode(
+				array(
+					'title' => 'Dobro došli kući',
+					'items' => array( array( 'text' => 'Pozdrav svijetu' ) ),
+				)
+			)
+		);
+
+		$walked = $this->walk( $stored );
+		$this->assertSame( array( 'Dobro došli kući', 'Pozdrav svijetu' ), array_column( $this->leaves, 0 ) );
+		$this->assertSame( 'meta/x/@b64/title', $this->leaves[0][1] );
+		$this->assertSame( 'DOBRO DOŠLI KUĆI', json_decode( base64_decode( $walked ), true )['title'] );
+
+		// Nothing changed: the same string comes back, not a re-encoded one.
+		$same = swiftling_walk(
+			$stored,
+			static function ( $leaf ) {
+				return $leaf;
+			},
+			'meta/x',
+			'meta:x'
+		);
+		$this->assertSame( $stored, $same );
+		// phpcs:enable
+	}
+
+	/**
+	 * A word or a code that is valid base64 but no JSON stays one leaf; so do short strings.
+	 */
+	public function test_base64_that_is_no_json_is_left_alone() {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- The format under test.
+		$this->assertNull( swiftling_decode_base64_json( base64_encode( 'Just a sentence, not JSON.' ) ) );
+		$this->assertNull( swiftling_decode_base64_json( 'Dobrodoslicaaaaa' ) );
+		$this->assertNull( swiftling_decode_base64_json( 'e30=' ) );
+		$this->assertNull( swiftling_decode_base64_json( 'Not base64 at all, with spaces' ) );
+	}
+
+	/**
+	 * Brizy marks each text of the HTML it prints; each is a leaf, the rest of the section stays as it is.
+	 */
+	public function test_brizy_texts_are_leaves() {
+		$html = '<section class="brz-section"><div class="brz-rich-text"><div data-brz-translate-text="1"><h2 class="brz-tp-heading2"><span class="brz-cp-color2">Dobro došli</span></h2></div></div>'
+			. '<a href="#"><span data-brz-translate-text="1" class="brz-span brz-text__editor">Pročitaj više</span></a>'
+			. '<div data-brz-translate-text="1"><div><p>Unutra <b>sadržaj</b></p></div><div>drugi</div></div>'
+			. '<span data-brz-translate-text="1">&nbsp;</span></section>';
+
+		$walked = $this->walk( $html );
+
+		$this->assertSame(
+			array(
+				'<h2 class="brz-tp-heading2"><span class="brz-cp-color2">Dobro došli</span></h2>',
+				'Pročitaj više',
+				'<div><p>Unutra <b>sadržaj</b></p></div><div>drugi</div>',
+			),
+			array_column( $this->leaves, 0 )
+		);
+		$this->assertSame( array( 'meta/x/@bz0', 'meta/x/@bz1', 'meta/x/@bz2' ), array_column( $this->leaves, 1 ) );
+		$this->assertStringStartsWith( '<section class="brz-section"><div class="brz-rich-text"><div data-brz-translate-text="1"><H2 CLASS="BRZ-TP-HEADING2">', $walked );
+		$this->assertStringContainsString( '<a href="#"><span data-brz-translate-text="1" class="brz-span brz-text__editor">PROČITAJ VIŠE</span></a>', $walked );
+		// A marked element with no visible text is left as it is.
+		$this->assertStringEndsWith( '<span data-brz-translate-text="1">&nbsp;</span></section>', $walked );
+
+		// Nothing changed: the same string comes back.
+		$this->assertSame(
+			$html,
+			swiftling_walk(
+				$html,
+				static function ( $leaf ) {
+					return $leaf;
+				},
+				'meta/x',
+				'meta:x'
+			)
+		);
+	}
+
+	/**
+	 * HTML without Brizy's mark is not split by it.
+	 */
+	public function test_html_without_brizy_mark_is_one_leaf() {
+		$this->walk( '<div><p>Dobro došli</p><p>kući</p></div>' );
+		$this->assertCount( 1, $this->leaves );
+	}
 }
