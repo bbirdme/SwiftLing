@@ -92,7 +92,7 @@ No. Translations are kept in SwiftLing's own tables, and every language shows th
 
 = Does it work with my page builder? =
 
-SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada. A builder that prints its pages past WordPress shows its texts in the original.
+SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada. With Brizy, the texts of its free blocks and elements are translated; its Pro elements were not checked. A builder that prints its pages past WordPress shows its texts in the original.
 
 = What language are the emails of my forms in? =
 
@@ -166,7 +166,7 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 == Changelog ==
 
 = 1.0.2 =
-* Brizy: the texts of pages built with Brizy are found and translated.
+* Brizy: the texts of pages built with Brizy are found and translated: its blocks and free elements, the titles of its tabs on small screens, and the texts it keeps in attributes, such as the message of a countdown.
 
 = 1.0.1 =
 * Links to SwiftLing Pro lead to the prices on swiftling.pro.
@@ -174,7 +174,7 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 = 1.0.0 =
 * First version.
 * One editor beside the original for pages, posts and custom post types, the block editor and its templates, menus, taxonomies, theme and plugin texts, images and Advanced Custom Fields.
-* Page builders that keep their content in WordPress: Elementor, Beaver Builder, Breakdance, Brizy and Avada.
+* Page builders that keep their content in WordPress: Elementor, Beaver Builder, Breakdance and Avada.
 * An address for each language: folder, parameter, subdomain or domain of its own, with translated slugs, hreflang links, canonical addresses and sitemaps.
 * Machine translation with Google Cloud Translation and your own key, for one page or the whole site, with an estimate first.
 * Forms of Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms, and WooCommerce products.

@@ -10,6 +10,7 @@ namespace SwiftLing\Tests;
 use SwiftLing\Builders\Acf;
 use SwiftLing\Builders\Aioseo;
 use SwiftLing\Builders\Breakdance;
+use SwiftLing\Builders\Brizy;
 use SwiftLing\Builders\Elementor;
 use SwiftLing\Builders\Registry;
 use SwiftLing\Builders\SeoPress;
@@ -78,6 +79,21 @@ class BuildersTest extends TestCase {
 		$this->assertFalse( $breakdance->isUsed( $post ) );
 		$this->assertSame( '', $breakdance->sitePart( 'post:' . $post ) );
 		$this->assertSame( '', $breakdance->sitePart( 'options' ) );
+	}
+
+	/**
+	 * Brizy is active only with its plugin. Its editor's tree is no text a page shows, and only a
+	 * data-brz-translatable attribute is declared as text.
+	 */
+	public function test_brizy_without_the_plugin() {
+		$brizy = new Brizy();
+		$this->assertSame( 'brizy', $brizy->id() );
+		$this->assertFalse( $brizy->isActive() );
+		$this->assertFalse( $brizy->isUsed( 1 ) );
+		$this->assertTrue( $brizy->holdsNoText( 'meta/brizy/brizy-post/editor_data/@b64/items' ) );
+		$this->assertFalse( $brizy->holdsNoText( 'meta/brizy-compiled-sections/@b64/blocks/*/html' ) );
+		$this->assertTrue( $brizy->declaresText( 'meta:brizy-compiled-sections||blocks/*/html/@brizy-attribute' ) );
+		$this->assertFalse( $brizy->declaresText( 'meta:brizy-compiled-sections||blocks/*/html/@brizy' ) );
 	}
 
 	/**

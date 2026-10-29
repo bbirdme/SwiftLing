@@ -19,12 +19,18 @@ defined( 'ABSPATH' ) || exit;
  * data-brz-translate-text, and each is a text of its own. The tree of the editor is not read, as
  * no page shows it, and a translation of it would change nothing.
  *
+ * A text Brizy marks as translatable is one of three: the HTML inside an element it marks with
+ * data-brz-translate-text, the title of a tab it prints a second time for small screens, and an
+ * attribute it names data-brz-translatable-*.
+ *
  * Brizy builds the HTML in the browser, when a page is saved in its editor, so a text a page does
  * not print yet is found only after the page was saved there.
  *
- * Checked on Brizy 2.8.24 (the free plugin) with a page of its free blocks: headings, paragraphs
- * and buttons. Its Pro elements, its popups, its headers and footers and its menus were not
- * checked.
+ * Checked on Brizy 2.8.24 (the free plugin): 19 of its blocks, and every free element: text, image,
+ * button, icon, map, line, menu, video, audio, icon box, alert, counter, countdown, progress, tabs,
+ * accordion, PayPal, Pinterest and shortcode, and a template for pages. Its forms, popups, global
+ * blocks, headers and footers are Pro and were not checked; the free plugin has none of them, so
+ * this class names no header or footer, see Builder::sitePart().
  */
 class Brizy extends Builder {
 	/**
@@ -66,6 +72,17 @@ class Brizy extends Builder {
 	 */
 	public function holdsNoText( string $path ): bool {
 		return 0 === strpos( $path, 'meta/brizy/' ) && false !== strpos( $path, '/editor_data' );
+	}
+
+	/**
+	 * Whether Brizy itself declares a value as text: an attribute it names data-brz-translatable-*,
+	 * such as the message of a countdown, which a script shows. Its marker shows only in the
+	 * attribute, so the page check counts it as text only for this reason.
+	 *
+	 * @param string $rule Rule key of the value.
+	 */
+	public function declaresText( string $rule ): bool {
+		return '@brizy-attribute' === substr( $rule, -16 );
 	}
 
 	/**
