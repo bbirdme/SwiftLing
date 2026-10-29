@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -165,8 +165,12 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
 
+= 1.0.3 =
+* Brizy: the titles of tabs on small screens and the texts Brizy keeps in attributes, such as the message of a countdown, are translated too.
+* The Translations panel of the block editor shows the state of a language in full in a narrow sidebar.
+
 = 1.0.2 =
-* Brizy: the texts of pages built with Brizy are found and translated: its blocks and free elements, the titles of its tabs on small screens, and the texts it keeps in attributes, such as the message of a countdown.
+* Brizy: the texts of pages built with Brizy are found and translated: its blocks and free elements.
 
 = 1.0.1 =
 * Links to SwiftLing Pro lead to the prices on swiftling.pro.

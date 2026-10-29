@@ -167,4 +167,18 @@ class EditorPanelTest extends TestCase {
 		$this->assertStringContainsString( 'Save', $html );
 		$this->assertStringNotContainsString( 'swiftling-translation', $html );
 	}
+
+	/**
+	 * The state of a language wraps in a narrow sidebar. With "white-space: nowrap" it ran under the
+	 * three buttons beside it and was cut off, as "Machine translate".
+	 */
+	public function test_the_state_of_a_language_may_wrap() {
+		$css = (string) file_get_contents( SWIFTLING_DIR . 'assets/css/editor-panel.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A file of the plugin.
+
+		preg_match( '/\.swiftling-panel__state \{([^}]*)\}/', $css, $rule );
+
+		$this->assertNotEmpty( $rule, 'The state has a rule.' );
+		$this->assertStringNotContainsString( 'nowrap', $rule[1] );
+		$this->assertStringContainsString( 'overflow-wrap', $rule[1] );
+	}
 }
