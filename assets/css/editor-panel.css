@@ -31,6 +31,10 @@
 	min-width: 0;
 }
 
+.swiftling-panel__about > * {
+	min-width: 0;
+}
+
 .swiftling-panel__modes {
 	display: flex;
 	flex-shrink: 0;
@@ -81,20 +85,24 @@
 	white-space: nowrap;
 }
 
-/* The state is a word with a coloured dot, not a pill that looks like a button. */
+/* The state is a word with a coloured dot, not a pill that looks like a button. In a narrow
+   sidebar, or with a wide font, it wraps under its dot rather than run beneath the buttons. */
 .swiftling-panel__state {
 	display: inline-flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 6px;
 	color: #5b6272;
 	font-size: 12px;
-	white-space: nowrap;
+	line-height: 1.4;
+	overflow-wrap: break-word;
 }
 
 .swiftling-panel__state::before {
 	content: "";
+	flex-shrink: 0;
 	width: 8px;
 	height: 8px;
+	margin-top: 4px;
 	border-radius: 50%;
 	background: #c9c2b5;
 }
@@ -125,6 +133,7 @@
 	border: 2px solid #8a8f9b;
 	width: 6px;
 	height: 6px;
+	margin-top: 3px;
 }
 
 .swiftling-panel__message {
