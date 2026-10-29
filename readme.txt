@@ -12,13 +12,12 @@ Lightweight but powerful and fast: make your site multilingual with your own tra
 
 == Description ==
 
-**Want more? [SwiftLing Pro](https://swiftling.pro/#pricing) is better translation, a better shop, and support from the developers inside WordPress.** DeepL, Claude, OpenAI and Gemini with your own key, a glossary, the whole site translated on the server with the tab closed, automatic translation when you publish, prices in a currency for each language, and import from WPML, Polylang and TranslatePress. [See what Pro adds](https://swiftling.pro/#pricing). SwiftLing itself stays free, with any number of languages.
-
-**Having a problem or a question?** Please write to the [support forum](https://wordpress.org/support/plugin/swiftling/) first. I read it and will try to help you before you leave a review.
-
 SwiftLing makes your WordPress site multilingual. It finds the texts of a page as visitors see them, wherever they come from: the block editor, a page builder, custom fields, forms, menus, your theme and your plugins. You translate them in one editor, beside the original, and each language gets an address of its own.
 
-Your content stays as it is. Translations are kept in SwiftLing's own tables, so your pages are not copied for every language, and a text without a translation simply shows in the original.
+= Why SwiftLing =
+
+* **Your pages are not duplicated.** Translations are kept in SwiftLing's own tables, so there is one page, not one copy per language, and a text without a translation simply shows in the original.
+* **It works where your content lives.** The block editor and page builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance and Avada, with no shortcodes to wrap around your texts.
 
 = What it translates =
 
@@ -59,6 +58,14 @@ Your content stays as it is. Translations are kept in SwiftLing's own tables, so
 
 * Caching plugins: when a translation changes, SwiftLing empties the pages concerned in WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze, Nginx Helper, Proxy Cache Purge and Cloudflare.
 * Networks of sites: each site has its languages and translations of its own.
+
+= SwiftLing Pro =
+
+SwiftLing itself stays free, with any number of languages. [SwiftLing Pro](https://swiftling.pro/#pricing) adds better translation and a better shop: DeepL, Claude, OpenAI and Gemini with your own key, a glossary, the whole site translated on the server with the tab closed, automatic translation when you publish, prices in a currency for each language, and import from WPML, Polylang and TranslatePress. [See what Pro adds](https://swiftling.pro/#pricing).
+
+= Support =
+
+Having a problem or a question? Please write to the [support forum](https://wordpress.org/support/plugin/swiftling/) first. I read it and will try to help you before you leave a review.
 
 == Installation ==
 
@@ -163,3 +170,11 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 = 1.0.0 =
 * First version.
+* One editor beside the original for pages, posts and custom post types, the block editor and its templates, menus, taxonomies, theme and plugin texts, images and Advanced Custom Fields.
+* Page builders that keep their content in WordPress: Elementor, Beaver Builder, Breakdance and Avada.
+* An address for each language: folder, parameter, subdomain or domain of its own, with translated slugs, hreflang links, canonical addresses and sitemaps.
+* Machine translation with Google Cloud Translation and your own key, for one page or the whole site, with an estimate first.
+* Forms of Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms, and WooCommerce products.
+* SEO titles and descriptions of Yoast SEO, Rank Math, SEOPress and All in One SEO.
+* A language switcher as a block, shortcode, widget, menu item or at the edge of the page, and an optional offer of the visitor's browser language.
+* Caches emptied in the main caching plugins when a translation changes, and networks of sites with languages of their own for each site.
