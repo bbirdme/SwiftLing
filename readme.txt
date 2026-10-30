@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,7 @@ SwiftLing makes your WordPress site multilingual. It finds the texts of a page a
 * Images: another image for a language, and the alt texts.
 * Forms of Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms: labels, choices, the message after sending, the error messages and the email to the visitor, while the notification to you stays in your language.
 * WooCommerce products: their texts, their images and the names of their attributes.
+* Tutor LMS courses: lessons, topics, announcements, and quizzes with their questions and answers. A student who types an answer in their language gets it graded as right.
 * The titles and descriptions of Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Addresses and search engines =
@@ -164,6 +165,9 @@ License: MIT, https://opensource.org/licenses/MIT
 Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
+
+= 1.0.4 =
+* Tutor LMS: courses are translated where students take them: the titles in the course's sidebar and header, the topics and announcements, the quizzes with their questions and answers, the review of an attempt, the cart and checkout of its shop, and the address of a lesson. An answer typed in the language of the page counts as right. A course, its lessons and quizzes get no separate copy, which would lose its curriculum and students.
 
 = 1.0.3 =
 * Brizy: the titles of tabs on small screens and the texts Brizy keeps in attributes, such as the message of a countdown, are translated too.

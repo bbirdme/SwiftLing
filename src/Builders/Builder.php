@@ -223,6 +223,17 @@ abstract class Builder {
 	}
 
 	/**
+	 * Returns the post types of the plugin that get no separate copy, see includes/copies.php: posts
+	 * that work only together with data a copy would not have, such as a product's stock or a
+	 * course's lessons and students. They are translated in place.
+	 *
+	 * @return string[]
+	 */
+	public function noCopyTypes(): array {
+		return array();
+	}
+
+	/**
 	 * Returns the meta keys the builder writes again by itself, such as CSS made from a page's
 	 * data, which a separate copy of the page leaves out.
 	 *
