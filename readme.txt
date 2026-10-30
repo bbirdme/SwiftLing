@@ -168,6 +168,7 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 = 1.0.4 =
 * Tutor LMS: courses are translated where students take them: the titles in the course's sidebar and header, the topics and announcements, the quizzes with their questions and answers, the review of an attempt, the cart and checkout of its shop, and the address of a lesson. An answer typed in the language of the page counts as right. A course, its lessons and quizzes get no separate copy, which would lose its curriculum and students.
+* Recording texts: a page in a language is recorded as its original, and a page with several parameters in its address is checked, so the texts of plugins are found there too. Start recording leaves you on the screen, and Stop leaves you on the page you stopped it from.
 
 = 1.0.3 =
 * Brizy: the titles of tabs on small screens and the texts Brizy keeps in attributes, such as the message of a countdown, are translated too.

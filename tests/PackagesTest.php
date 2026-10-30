@@ -485,6 +485,24 @@ PHP;
 	}
 
 	/**
+	 * The address of the page check of a recorded page carries its subject whole, also when the page
+	 * has more than one parameter in its address: the check is refused when the subject it gets is
+	 * not the one it was signed for, and a "&" in it would cut it short.
+	 */
+	public function test_probe_address_of_a_page_with_parameters() {
+		foreach ( array( '/shop/?orderby=price', '/quiz/?attempt_id=12&action=view_details', '/s/?q=a%26b&x=1#top' ) as $path ) {
+			$subject = swiftling_subject( 'record:' . $path );
+			$this->assertNotNull( $subject, $path );
+			foreach ( array( 'marked', 'control' ) as $variant ) {
+				wp_parse_str( (string) wp_parse_url( swiftling_probe_url( $subject, $variant ), PHP_URL_QUERY ), $query );
+				$this->assertSame( $subject['key'], $query['swiftling_subject'], $variant . ' of ' . $path );
+				$this->assertSame( $variant, $query['swiftling_probe'] );
+				$this->assertNotEmpty( $query['swiftling_nonce'] );
+			}
+		}
+	}
+
+	/**
 	 * A recording is the user's own, runs for 30 minutes, and can pause and stop.
 	 */
 	public function test_recording_state() {
@@ -520,6 +538,7 @@ PHP;
 	 */
 	public function test_recording_form() {
 		$this->become( 'administrator' );
+		$screen = admin_url( 'admin.php?page=swiftling-themes-plugins' );
 		$this->post_form(
 			'swiftling_recording',
 			array(
@@ -527,18 +546,86 @@ PHP;
 				'pages'     => '1',
 			)
 		);
-		$this->assertSame( home_url( '/' ), $this->redirect_of( array( Recorder::class, 'handle' ) ) );
+		$this->assertSame( add_query_arg( 'swiftling_notice', 'recording_pages', $screen ), $this->redirect_of( array( Recorder::class, 'handle' ) ), 'Starting leaves the user on the screen, which says what to do next' );
 		$this->assertTrue( Recorder::recordsPages() );
 		$this->assertFalse( Recorder::recordsAdmin() );
 
 		$this->post_form( 'swiftling_recording', array( 'operation' => 'stop' ) );
-		$this->assertStringContainsString( 'recording_stopped', $this->redirect_of( array( Recorder::class, 'handle' ) ) );
+		unset( $_SERVER['HTTP_REFERER'] );
+		$this->assertSame( add_query_arg( 'swiftling_notice', 'recording_stopped', $screen ), $this->redirect_of( array( Recorder::class, 'handle' ) ), 'Without a page to go back to, the screen' );
 		$this->assertNull( Recorder::current() );
 
 		$this->become( 'editor' );
 		$this->post_form( 'swiftling_recording', array( 'operation' => 'start' ) );
 		$this->expectException( \WPDieException::class );
 		Recorder::handle();
+	}
+
+	/**
+	 * Stopping leaves the user where the recording was stopped: on the page of the site, or the
+	 * screen of the admin, not on the screen of the recording. On the screen of the recording it
+	 * says it stopped. A page of another site is never gone back to.
+	 */
+	public function test_stopping_stays_where_you_are() {
+		$this->become( 'administrator' );
+		$screen = admin_url( 'admin.php?page=swiftling-themes-plugins' );
+		$stop   = function ( $from ) {
+			Recorder::start( true, true );
+			$this->post_form( 'swiftling_recording', array( 'operation' => 'stop' ) );
+			$_SERVER['HTTP_REFERER'] = $from;
+			$to                      = $this->redirect_of( array( Recorder::class, 'handle' ) );
+			$this->assertNull( Recorder::current() );
+			return $to;
+		};
+
+		$this->assertSame( home_url( '/kontakt/?a=1' ), $stop( home_url( '/kontakt/?a=1' ) ), 'A page of the site' );
+		$this->assertSame( home_url( '/de/kontakt/' ), $stop( add_query_arg( 'swiftling_notice', 'recording_pages', home_url( '/de/kontakt/' ) ) ), 'A notice of an earlier step is left behind' );
+		$this->assertSame( admin_url( 'plugins.php' ), $stop( admin_url( 'plugins.php' ) ), 'A screen of the admin' );
+		$this->assertSame( add_query_arg( 'swiftling_notice', 'recording_stopped', $screen ), $stop( $screen ), 'The screen of the recording says it stopped' );
+		$this->assertSame( add_query_arg( 'swiftling_notice', 'recording_stopped', $screen ), $stop( 'https://evil.example/kontakt/' ), 'Never another site' );
+	}
+
+	/**
+	 * A page in a language is recorded as its original: the address checked has the slugs of the
+	 * original, as the original knows no translated slug and would answer with its page not found,
+	 * whose texts are the theme's alone.
+	 */
+	public function test_page_in_a_language_is_recorded_as_its_original() {
+		$this->use_pretty_permalinks();
+		$this->set_languages( array( 'de_DE' => 'de' ), 'directory' );
+		$post = self::factory()->post->create(
+			array(
+				'post_name'  => 'kontakt',
+				'post_title' => 'Kontakt',
+			)
+		);
+		swiftling_save_slug( 'post:' . $post, 'de_DE', 'kontaktieren' );
+		$this->become( 'administrator' );
+		Recorder::start( true, false );
+
+		$recorded = function ( $address, $language ) use ( $post ) {
+			wp_dequeue_script( 'swiftling-recorder' );
+			wp_deregister_script( 'swiftling-recorder' );
+			$_SERVER['REQUEST_URI']    = $address;
+			$_SERVER['REQUEST_METHOD'] = 'GET';
+			$this->go_to( get_permalink( $post ) );
+			$_SERVER['REQUEST_URI'] = $address;
+			if ( '' !== $language ) {
+				$this->show_in( $language );
+			}
+			Recorder::enqueueSite();
+			$data = wp_scripts()->get_data( 'swiftling-recorder', 'before' );
+			$this->assertNotEmpty( $data, 'The recording is loaded on ' . $address );
+			preg_match( '/window\.swiftlingRecorder = (\{.*\});/', implode( '', (array) $data ), $found );
+			return json_decode( $found[1], true );
+		};
+
+		$this->assertSame( 'record:/kontakt/', $recorded( '/kontakt/', '' )['subject'], 'The original' );
+		$german = $recorded( '/de/kontaktieren/', 'de' );
+		$this->assertSame( 'record:/kontakt/', $german['subject'], 'The page in German is checked as its original, not as /kontaktieren/' );
+		$this->assertStringContainsString( 'swiftling_subject=record', $german['probes']['marked'] );
+		$this->assertStringContainsString( 'swiftling_subject=record%3A%2Fkontakt%2F&', $german['probes']['marked'] );
+		$this->assertStringNotContainsString( 'kontaktieren', $german['probes']['marked'] );
 	}
 
 	/**
