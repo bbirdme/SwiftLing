@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,13 +17,13 @@ SwiftLing makes your WordPress site multilingual. It finds the texts of a page a
 = Why SwiftLing =
 
 * **Your pages are not duplicated.** Translations are kept in SwiftLing's own tables, so there is one page, not one copy per language, and a text without a translation simply shows in the original.
-* **It works where your content lives.** The block editor and page builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada, with no shortcodes to wrap around your texts.
+* **It works where your content lives.** The block editor and page builders that keep their content in WordPress itself, such as Elementor, Bricks, Beaver Builder, Breakdance, Brizy and Avada, with no shortcodes to wrap around your texts.
 
 = What it translates =
 
 * Pages, posts and custom post types: titles, content, excerpts and fields.
 * The block editor and its templates, patterns and template parts.
-* Page builders: Elementor, and builders that keep their content in WordPress itself, such as Beaver Builder, Breakdance, Brizy and Avada.
+* Page builders: Elementor and Bricks with their templates and components, and builders that keep their content in WordPress itself, such as Beaver Builder, Breakdance, Brizy and Avada.
 * Advanced Custom Fields, options pages included.
 * Categories, tags and other taxonomies, with their addresses.
 * Menus: a label of their own for each language, and items shown only in some languages.
@@ -93,7 +93,7 @@ No. Translations are kept in SwiftLing's own tables, and every language shows th
 
 = Does it work with my page builder? =
 
-SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Beaver Builder, Breakdance, Brizy and Avada. With Brizy, the texts of its free blocks and elements are translated; its Pro elements were not checked. A builder that prints its pages past WordPress shows its texts in the original.
+SwiftLing finds texts where WordPress reads them, so it works with the block editor and with builders that keep their content in WordPress itself, such as Elementor, Bricks, Beaver Builder, Breakdance, Brizy and Avada. With Bricks, its elements, templates, components, popups and forms are translated, and its builder always edits the original; its WooCommerce templates were not checked. With Brizy, the texts of its free blocks and elements are translated; its Pro elements were not checked. A builder that prints its pages past WordPress shows its texts in the original.
 
 = What language are the emails of my forms in? =
 
@@ -165,6 +165,9 @@ License: MIT, https://opensource.org/licenses/MIT
 Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
+
+= 1.0.5 =
+* Bricks: its header, footer, popups, section templates and components are translated where they show, also popups and query loops it loads later, and its forms answer in the language of the page. Short texts it declares, such as a suffix, and the messages and emails of a form are offered too. Its builder always edits the original, also when you open it from a translated page. Machine translation keeps its dynamic data tags.
 
 = 1.0.4 =
 * Tutor LMS: courses are translated where students take them: the titles in the course's sidebar and header, the topics and announcements, the quizzes with their questions and answers, the review of an attempt, the cart and checkout of its shop, and the address of a lesson. An answer typed in the language of the page counts as right. A course, its lessons and quizzes get no separate copy, which would lose its curriculum and students.

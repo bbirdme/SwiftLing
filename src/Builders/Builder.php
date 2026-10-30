@@ -254,7 +254,9 @@ abstract class Builder {
 	}
 
 	/**
-	 * Whether the request is the preview the builder's own editor shows while a post is edited.
+	 * Whether the request is the builder's own editor on the front end, or the preview it shows
+	 * while a post is edited. Such a request reads stored values untranslated, also at a language's
+	 * address, see swiftling_start(): the editor edits the original.
 	 */
 	public function isEditorPreview(): bool {
 		return false;
