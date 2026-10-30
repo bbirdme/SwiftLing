@@ -854,7 +854,9 @@ function swiftling_filter_meta( $type, $check, $object_id, $meta_key, $single ) 
 				}
 			}
 		}
-		$result = $changed ? $raw : null;
+		// For one value WordPress takes the first of what a filter returns, so the array of every key is
+		// handed in an array, as WordPress gives it itself.
+		$result = $changed ? ( $single ? array( $raw ) : $raw ) : null;
 	} elseif ( null !== $raw && $single ) {
 		$new    = swiftling_transform( $owner, swiftling_meta_path( $meta_key, 0 ), $source . $meta_key, $raw );
 		$result = $new !== $raw ? array( $new ) : null;

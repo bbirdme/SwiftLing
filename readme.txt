@@ -170,6 +170,7 @@ Source: https://gitlab.com/catamphetamine/country-flag-icons
 = 1.0.6 =
 * LearnPress: courses are translated where students take them: the sections, what students learn, the requirements, the audience, the FAQs and the words around the price, which LearnPress reads from its own copy of the course, and the quizzes with their answers, hints, explanations and blanks. A blank typed in the language of the page counts as right, and the address of a lesson has its slug in the language. A course, its lessons, quizzes and questions get no separate copy.
 * Translated addresses: the address of a lesson inside its course keeps the lesson's translated slug instead of being sent back to the original one.
+* A plugin that reads every meta key of a post as one value, as LearnPress does on its quiz page, no longer gets a PHP warning on a translated page.
 
 = 1.0.5 =
 * Bricks: its header, footer, popups, section templates and components are translated where they show, also popups and query loops it loads later, and its forms answer in the language of the page. Short texts it declares, such as a suffix, and the messages and emails of a form are offered too. Its builder always edits the original, also when you open it from a translated page. Machine translation keeps its dynamic data tags.
