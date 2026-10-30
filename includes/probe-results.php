@@ -741,8 +741,12 @@ function swiftling_is_site_part_unit( $unit, $part ) {
 }
 
 /**
- * Whether an object is a post visitors open on its own, whose texts are translated in its editor.
- * Images, synced patterns and menus are posts too, but are translated where they are used.
+ * Whether an object is a post visitors open on its own, whose texts are translated in its editor:
+ * a post of a type the Settings screen lists, see swiftling_viewable_types(). Images, synced
+ * patterns and menus are posts too, but are translated where they are used, and so are the
+ * templates and parts of builders, such as Bricks' header or a saved section of Elementor: a builder
+ * lets its templates be opened on their own, to edit them, but leaves their type out of search or
+ * of menus. Before, such texts were found on the page and offered in no editor.
  *
  * @param string $owner Object key.
  * @return bool
@@ -752,7 +756,7 @@ function swiftling_is_post_text( $owner ) {
 		return false;
 	}
 	$post = get_post( (int) substr( $owner, 5 ) );
-	return $post && 'attachment' !== $post->post_type && is_post_type_viewable( $post->post_type );
+	return $post && isset( swiftling_viewable_types()[ $post->post_type ] );
 }
 
 /**

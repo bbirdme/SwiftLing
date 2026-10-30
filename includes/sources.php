@@ -75,6 +75,13 @@ function swiftling_start( $mode, $language = '' ) {
 	$target            = '' === $language ? null : swiftling_target_language( $language );
 	$state['locale']   = $target ? $target['locale'] : '';
 
+	// A builder's editor edits the original, also at a language's address, where Bricks opens it
+	// from a translated page: it reads every stored value as it is, so it never saves a translation
+	// over the original. The address keeps its language, so the page and its slugs are found.
+	if ( 'translate' === $mode && \SwiftLing\Builders\Registry::isEditorPreview() ) {
+		return;
+	}
+
 	\SwiftLing\Builders\Registry::start( $mode );
 
 	if ( 'control' === $mode ) {
