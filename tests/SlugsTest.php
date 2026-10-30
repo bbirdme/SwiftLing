@@ -450,6 +450,32 @@ class SlugsTest extends TestCase {
 	}
 
 	/**
+	 * An address that names a post and, after it, another post of its own by a translated slug, as a
+	 * lesson inside its course (/de/kurs/lektionen/lektion/), keeps that slug as asked: only the part
+	 * of the address that is the post's own is sent to its address now.
+	 */
+	public function test_redirect_keeps_a_translated_slug_after_the_post() {
+		$this->slug( 'kontakt', 'kontaktieren' );
+		$this->in_folder( 'de' );
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$this->go_to( 'http://example.org/de/kontaktieren/' );
+		$request = &swiftling_slug_request();
+
+		// What the request asked and what WordPress read, the translated slugs put back.
+		$request = array(
+			'asked' => '/de/kontaktieren/lessons/lektion/',
+			'read'  => '/de/kontakt/lessons/lesson/',
+		);
+		$this->assert_no_redirect( 'swiftling_redirect_to_translated_slug' );
+
+		$request = array(
+			'asked' => '/de/kontakt/lessons/lektion/',
+			'read'  => '/de/kontakt/lessons/lesson/',
+		);
+		$this->assertSame( 'http://example.org/de/kontaktieren/lessons/lektion/', $this->redirect_of( 'swiftling_redirect_to_translated_slug' ), 'The post\'s own part goes to its address now, the rest stays as asked' );
+	}
+
+	/**
 	 * The original language has no translated slugs to send anywhere.
 	 */
 	public function test_original_language_is_not_redirected() {

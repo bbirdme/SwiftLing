@@ -3,7 +3,7 @@
  * Plugin Name:       SwiftLing
  * Plugin URI:        https://swiftling.pro/
  * Description:       Lightweight but powerful and fast multilingual plugin: translate your site with your own translation API key.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Bruno Kos
@@ -20,7 +20,7 @@ namespace SwiftLing;
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SWIFTLING_VERSION', '1.0.5' );
+define( 'SWIFTLING_VERSION', '1.0.6' );
 define( 'SWIFTLING_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SWIFTLING_URL', plugin_dir_url( __FILE__ ) );
 // The version of the hooks SwiftLing offers other plugins, see docs/hooks.md. It grows when a hook

@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,6 +32,7 @@ SwiftLing makes your WordPress site multilingual. It finds the texts of a page a
 * Forms of Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms: labels, choices, the message after sending, the error messages and the email to the visitor, while the notification to you stays in your language.
 * WooCommerce products: their texts, their images and the names of their attributes.
 * Tutor LMS courses: lessons, topics, announcements, and quizzes with their questions and answers. A student who types an answer in their language gets it graded as right.
+* LearnPress courses: sections, the course's lists and FAQs, and quizzes with their answers, hints and explanations. A blank typed in the student's language counts as right.
 * The titles and descriptions of Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Addresses and search engines =
@@ -165,6 +166,10 @@ License: MIT, https://opensource.org/licenses/MIT
 Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
+
+= 1.0.6 =
+* LearnPress: courses are translated where students take them: the sections, what students learn, the requirements, the audience, the FAQs and the words around the price, which LearnPress reads from its own copy of the course, and the quizzes with their answers, hints, explanations and blanks. A blank typed in the language of the page counts as right, and the address of a lesson has its slug in the language. A course, its lessons, quizzes and questions get no separate copy.
+* Translated addresses: the address of a lesson inside its course keeps the lesson's translated slug instead of being sent back to the original one.
 
 = 1.0.5 =
 * Bricks: its header, footer, popups, section templates and components are translated where they show, also popups and query loops it loads later, and its forms answer in the language of the page. Short texts it declares, such as a suffix, and the messages and emails of a form are offered too. Its builder always edits the original, also when you open it from a translated page. Machine translation keeps its dynamic data tags.
