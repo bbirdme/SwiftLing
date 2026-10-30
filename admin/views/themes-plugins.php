@@ -119,6 +119,7 @@ $swiftling_tip      = static function ( $label, $text, $id ) {
 };
 $swiftling_messages = array(
 	'recording_stopped' => array( 'is-success', __( 'The recording stopped. What it found is listed below.', 'swiftling' ) ),
+	'recording_pages'   => array( 'is-info', __( 'Recording pages of the site: open the site as a visitor would, in a page of your own language or in another one. A panel on each page shows what SwiftLing found; stop it there or here.', 'swiftling' ) ),
 	'recording_admin'   => array( 'is-info', __( 'Recording settings screens: open the settings of a theme or plugin. A panel there shows what SwiftLing found.', 'swiftling' ) ),
 	'recording_nothing' => array( 'is-info', __( 'Choose what to record: pages of the site, settings screens, or both.', 'swiftling' ) ),
 );

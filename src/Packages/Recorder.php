@@ -388,8 +388,8 @@ final class Recorder {
 					exit;
 				}
 				self::start( $pages, $admin );
-				// Pages are recorded on the site; settings screens in the admin, from where the user is.
-				wp_safe_redirect( $pages ? home_url( '/' ) : add_query_arg( 'swiftling_notice', 'recording_admin', $screen ) );
+				// The user stays on the screen, which says what to open next and has the way to the site.
+				wp_safe_redirect( add_query_arg( 'swiftling_notice', $pages ? 'recording_pages' : 'recording_admin', $screen ) );
 				exit;
 			case 'pause':
 			case 'resume':
@@ -398,9 +398,24 @@ final class Recorder {
 				exit;
 			default:
 				self::stop();
-				wp_safe_redirect( add_query_arg( 'swiftling_notice', 'recording_stopped', $screen ) );
+				wp_safe_redirect( self::pageToStayOn( $screen ) );
 				exit;
 		}
+	}
+
+	/**
+	 * Returns where the user is left when the recording stops: the page of the site or the screen of
+	 * the admin it was stopped from, as it was, so stopping does not move anyone. The screen of the
+	 * recording says that it stopped. A page that is not of this site is never gone back to.
+	 *
+	 * @param string $screen Address of the screen of the recording.
+	 */
+	private static function pageToStayOn( string $screen ): string {
+		$from = wp_get_referer();
+		if ( ! $from || false !== strpos( $from, 'page=swiftling-themes-plugins' ) ) {
+			return add_query_arg( 'swiftling_notice', 'recording_stopped', $screen );
+		}
+		return remove_query_arg( 'swiftling_notice', $from );
 	}
 
 	/**
@@ -458,7 +473,7 @@ final class Recorder {
 			array(
 				'parent' => 'swiftling-recording',
 				'id'     => 'swiftling-recording-stop',
-				'title'  => esc_html__( 'Stop and review', 'swiftling' ),
+				'title'  => esc_html__( 'Stop recording', 'swiftling' ),
 				'href'   => self::actionUrl( 'stop' ),
 			)
 		);
@@ -486,7 +501,8 @@ final class Recorder {
 		if ( ! self::recordsPages() || ! self::isRecordablePage() ) {
 			return;
 		}
-		$url     = swiftling_current_original_url();
+		// The page as its original knows it: a translated slug in the address is a page not found there.
+		$url     = swiftling_current_slugs( swiftling_current_original_url(), '' );
 		$subject = swiftling_subject( 'record:' . self::pathOf( $url ) );
 		if ( ! $subject ) {
 			return;
@@ -560,7 +576,7 @@ final class Recorder {
 				</p>
 				<p class="swiftling-recorder__note"><?php esc_html_e( 'Visitors see nothing of this. Each page is checked separately, as the translation editor does, so this page stays as it is.', 'swiftling' ); ?></p>
 				<div class="swiftling-recorder__actions">
-					<a class="swiftling-recorder__button is-primary" href="<?php echo esc_url( self::actionUrl( 'stop' ) ); ?>"><?php esc_html_e( 'Stop and review', 'swiftling' ); ?></a>
+					<a class="swiftling-recorder__button is-primary" href="<?php echo esc_url( self::actionUrl( 'stop' ) ); ?>"><?php esc_html_e( 'Stop recording', 'swiftling' ); ?></a>
 					<a class="swiftling-recorder__button" href="<?php echo esc_url( self::actionUrl( 'pause' ) ); ?>"><?php esc_html_e( 'Pause', 'swiftling' ); ?></a>
 				</div>
 			</div>
@@ -662,7 +678,7 @@ final class Recorder {
 				</ul>
 				<p class="swiftling-recorder__note"><?php esc_html_e( 'Nothing on this screen changes, and saving works as usual.', 'swiftling' ); ?></p>
 				<div class="swiftling-recorder__actions">
-					<a class="swiftling-recorder__button" href="<?php echo esc_url( self::actionUrl( 'stop' ) ); ?>"><?php esc_html_e( 'Stop and review', 'swiftling' ); ?></a>
+					<a class="swiftling-recorder__button" href="<?php echo esc_url( self::actionUrl( 'stop' ) ); ?>"><?php esc_html_e( 'Stop recording', 'swiftling' ); ?></a>
 				</div>
 			</div>
 		</section>
