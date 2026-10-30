@@ -29,7 +29,8 @@ defined( 'ABSPATH' ) || exit;
 function swiftling_probe_url( $subject, $variant ) {
 	$args = array(
 		'swiftling_probe'   => $variant,
-		'swiftling_subject' => $subject['key'],
+		// add_query_arg() writes a value as it is: a subject such as "record:/quiz/?a=1&b=2" would end at its "&".
+		'swiftling_subject' => rawurlencode( $subject['key'] ),
 		'swiftling_nonce'   => wp_create_nonce( 'swiftling_probe_' . $subject['key'] ),
 	);
 	return add_query_arg( $args, $subject['url'] );

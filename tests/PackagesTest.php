@@ -485,6 +485,24 @@ PHP;
 	}
 
 	/**
+	 * The address of the page check of a recorded page carries its subject whole, also when the page
+	 * has more than one parameter in its address: the check is refused when the subject it gets is
+	 * not the one it was signed for, and a "&" in it would cut it short.
+	 */
+	public function test_probe_address_of_a_page_with_parameters() {
+		foreach ( array( '/shop/?orderby=price', '/quiz/?attempt_id=12&action=view_details', '/s/?q=a%26b&x=1#top' ) as $path ) {
+			$subject = swiftling_subject( 'record:' . $path );
+			$this->assertNotNull( $subject, $path );
+			foreach ( array( 'marked', 'control' ) as $variant ) {
+				wp_parse_str( (string) wp_parse_url( swiftling_probe_url( $subject, $variant ), PHP_URL_QUERY ), $query );
+				$this->assertSame( $subject['key'], $query['swiftling_subject'], $variant . ' of ' . $path );
+				$this->assertSame( $variant, $query['swiftling_probe'] );
+				$this->assertNotEmpty( $query['swiftling_nonce'] );
+			}
+		}
+	}
+
+	/**
 	 * A recording is the user's own, runs for 30 minutes, and can pause and stop.
 	 */
 	public function test_recording_state() {
@@ -606,7 +624,7 @@ PHP;
 		$german = $recorded( '/de/kontaktieren/', 'de' );
 		$this->assertSame( 'record:/kontakt/', $german['subject'], 'The page in German is checked as its original, not as /kontaktieren/' );
 		$this->assertStringContainsString( 'swiftling_subject=record', $german['probes']['marked'] );
-		$this->assertStringContainsString( 'swiftling_subject=record:/kontakt/&', $german['probes']['marked'] );
+		$this->assertStringContainsString( 'swiftling_subject=record%3A%2Fkontakt%2F&', $german['probes']['marked'] );
 		$this->assertStringNotContainsString( 'kontaktieren', $german['probes']['marked'] );
 	}
 
