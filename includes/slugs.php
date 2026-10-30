@@ -1162,7 +1162,13 @@ function swiftling_redirect_to_translated_slug() {
 	if ( $original === $now || 0 !== strpos( $read . '/', $original . '/' ) ) {
 		return;
 	}
-	$target = $now . substr( $read, strlen( $original ) );
+	// The rest of the address as asked, not as read: it can name a post of the object's own by its
+	// translated slug, as a lesson inside its course, which is its address in the language already.
+	$rest   = trim( substr( $read, strlen( $original ) ), '/' );
+	$count  = '' === $rest ? 0 : count( explode( '/', $rest ) );
+	$parts  = explode( '/', trim( (string) strtok( $asked, '?#' ), '/' ) );
+	$tail   = $count && count( $parts ) >= $count ? '/' . implode( '/', array_slice( $parts, -$count ) ) : substr( $read, strlen( $original ) );
+	$target = $now . $tail;
 	if ( untrailingslashit( $target ) === $path( $asked ) ) {
 		return;
 	}
