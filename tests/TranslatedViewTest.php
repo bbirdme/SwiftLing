@@ -379,6 +379,43 @@ class TranslatedViewTest extends TestCase {
 	}
 
 	/**
+	 * All the meta of a post read at once, as get_post_field() does with a key that is no string (a
+	 * plugin that passes a boolean), is the same array with or without a translation: WordPress reads
+	 * the first value of what a filter returns for a single value, so it is handed in an array.
+	 */
+	public function test_all_meta_at_once_is_read_as_wordpress_reads_it() {
+		$post = $this->post();
+		add_post_meta( $post->ID, 'hero', 'Veliki naslov' );
+		add_post_meta( $post->ID, 'faq', 'Prvo pitanje' );
+		$this->check(
+			'post:' . $post->ID,
+			static function () use ( $post ) {
+				get_post_meta( $post->ID, 'hero', true );
+			}
+		);
+		$this->translate( 'post:' . $post->ID, 'meta/hero', 'Veliki naslov', 'de', 'Große Überschrift' );
+
+		$original = get_post_meta( $post->ID, '', true );
+		$this->show_in( 'de' );
+		$caught = array();
+		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Catches what WordPress reads wrongly; restored below.
+			static function ( $number, $message ) use ( &$caught ) {
+				$caught[] = $message;
+				return true;
+			}
+		);
+		$single = get_post_meta( $post->ID, '', true );
+		$all    = get_post_meta( $post->ID );
+		restore_error_handler();
+
+		$this->assertSame( array(), $caught, 'Nothing is undefined in what WordPress reads' );
+		$this->assertSame( array( 'Große Überschrift' ), $single['hero'], 'The translated value, in the shape WordPress gives' );
+		$this->assertSame( $single, $all, 'One value or every value, the same array' );
+		$this->assertSame( array( 'Prvo pitanje' ), $single['faq'] );
+		$this->assertSame( array_keys( $original ), array_keys( $single ) );
+	}
+
+	/**
 	 * Bookkeeping and technical meta are never read as text.
 	 */
 	public function test_technical_meta_is_left_alone() {
