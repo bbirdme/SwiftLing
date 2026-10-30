@@ -49,7 +49,7 @@ final class Registry {
 	public static function all(): array {
 		if ( null === self::$builders ) {
 			self::$builders = array();
-			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new SeoPress(), new Aioseo() ) as $builder ) {
+			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new TutorLms(), new SeoPress(), new Aioseo() ) as $builder ) {
 				self::$builders[ $builder->id() ] = $builder;
 			}
 		}
@@ -286,6 +286,19 @@ final class Registry {
 			}
 		}
 		return $subjects;
+	}
+
+	/**
+	 * Returns the post types active builders keep from separate copies, see Builder::noCopyTypes().
+	 *
+	 * @return string[]
+	 */
+	public static function noCopyTypes(): array {
+		$types = array();
+		foreach ( self::active() as $builder ) {
+			array_push( $types, ...$builder->noCopyTypes() );
+		}
+		return array_values( array_unique( $types ) );
 	}
 
 	/**

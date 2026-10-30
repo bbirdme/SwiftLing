@@ -114,6 +114,16 @@ class WooCommerce extends Builder {
 	}
 
 	/**
+	 * Returns the products as a type that gets no separate copy: its prices and stock would have to
+	 * be kept in step with the original's.
+	 *
+	 * @return string[]
+	 */
+	public function noCopyTypes(): array {
+		return array( 'product' );
+	}
+
+	/**
 	 * Returns the routes of the plugin's Store API, which its cart and checkout blocks ask from a
 	 * page: answered in the language of that page, so the cart names its products in it.
 	 *

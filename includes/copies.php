@@ -41,8 +41,9 @@ const SWIFTLING_COPY_FROM = '_swiftling_copy_from';
 const SWIFTLING_DUPLICATE = '_swiftling_duplicate';
 
 /**
- * Whether a post may get a separate copy: a post or page of a type visitors open, other than a
- * WooCommerce product, the page of posts or a copy itself.
+ * Whether a post may get a separate copy: a post or page of a type visitors open, other than one a
+ * plugin keeps from copies, such as a WooCommerce product or a Tutor LMS course (see
+ * Builder::noCopyTypes()), the page of posts or a copy itself.
  *
  * @param WP_Post $post Post.
  * @return bool
@@ -51,7 +52,7 @@ function swiftling_can_have_copies( $post ) {
 	if ( ! $post instanceof WP_Post || swiftling_copy_original_id( $post ) ) {
 		return false;
 	}
-	$types = array_diff( array_keys( swiftling_content_types() ), array( 'product' ) );
+	$types = array_diff( array_keys( swiftling_content_types() ), \SwiftLing\Builders\Registry::noCopyTypes() );
 	return in_array( $post->post_type, $types, true ) && (int) get_option( 'page_for_posts' ) !== $post->ID;
 }
 
