@@ -24,7 +24,7 @@ class BuildersTest extends TestCase {
 	 * Every known builder is listed; without the builders installed none is active and none declares anything.
 	 */
 	public function test_registry_without_builders() {
-		$this->assertSame( array( 'elementor', 'breakdance', 'brizy', 'bricks', 'acf', 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'woocommerce', 'tutor', 'learnpress', 'the-events-calendar', 'event-tickets', 'event-organiser', 'events-manager', 'my-calendar', 'seopress', 'aioseo' ), array_keys( Registry::all() ) );
+		$this->assertSame( array( 'elementor', 'breakdance', 'brizy', 'bricks', 'acf', 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'woocommerce', 'tutor', 'learnpress', 'the-events-calendar', 'event-tickets', 'event-organiser', 'events-manager', 'my-calendar', 'cookie-notice', 'gdpr-cookie-compliance', 'complianz', 'cookieyes', 'cookiebot', 'iubenda', 'real-cookie-banner', 'seopress', 'aioseo' ), array_keys( Registry::all() ) );
 		$this->assertSame( array(), Registry::active() );
 		$this->assertNull( Registry::fieldHoldsText( 'post:1', 'meta/title' ) );
 		$this->assertFalse( Registry::declaresText( 'meta:x||title' ) );
