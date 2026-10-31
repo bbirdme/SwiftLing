@@ -254,6 +254,18 @@ abstract class Builder {
 	}
 
 	/**
+	 * Returns the address of the page being shown in a language, for the language switcher, where the
+	 * builder writes words of its own into the addresses of its pages, in the language of the page,
+	 * such as "monat" in the address of a calendar's month: the words of that language.
+	 *
+	 * @param string $url  The address in that language, as SwiftLing built it from the request.
+	 * @param string $slug Address slug of the language, or an empty string for the original.
+	 */
+	public function currentAddress( string $url, string $slug ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- A builder with words of its own in addresses overrides it.
+		return $url;
+	}
+
+	/**
 	 * Whether the request is the builder's own editor on the front end, or the preview it shows
 	 * while a post is edited. Such a request reads stored values untranslated, also at a language's
 	 * address, see swiftling_start(): the editor edits the original.
