@@ -590,14 +590,15 @@ function swiftling_unlocalized_url( $build ) {
  *
  * Built from the request, so every kind of page keeps its place: a post, an archive, a search,
  * the second page of a list. A post or a term archive gets its slug in that language, see
- * swiftling_current_slugs(). The scheme and host come from the site address, never from the
+ * swiftling_current_slugs(), and the page of a builder that writes words of its own into its
+ * addresses gets that language's words, see Builder::currentAddress(). The scheme and host come from the site address, never from the
  * request. Outside a page of the site, in the admin and in the REST API, it is the site address.
  *
  * @param string $slug Address slug of a target language, or an empty string for the original.
  * @return string
  */
 function swiftling_current_url( $slug ) {
-	return swiftling_language_url( swiftling_current_slugs( swiftling_current_original_url(), $slug ), $slug );
+	return \SwiftLing\Builders\Registry::currentAddress( swiftling_language_url( swiftling_current_slugs( swiftling_current_original_url(), $slug ), $slug ), (string) $slug );
 }
 
 /**

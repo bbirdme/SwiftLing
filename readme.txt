@@ -4,7 +4,7 @@ Tags: multilingual, translation, language switcher, translate, localization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,7 @@ SwiftLing makes your WordPress site multilingual. It finds the texts of a page a
 * WooCommerce products: their texts, their images and the names of their attributes.
 * Tutor LMS courses: lessons, topics, announcements, and quizzes with their questions and answers. A student who types an answer in their language gets it graded as right.
 * LearnPress courses: sections, the course's lists and FAQs, and quizzes with their answers, hints and explanations. A blank typed in the student's language counts as right.
+* Events of The Events Calendar, Events Manager, Event Organiser and My Calendar: venues and locations, organizers, categories, tickets of Event Tickets and Events Manager, and the calendar's own words and addresses in each language.
 * The titles and descriptions of Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Addresses and search engines =
@@ -166,6 +167,14 @@ License: MIT, https://opensource.org/licenses/MIT
 Source: https://gitlab.com/catamphetamine/country-flag-icons
 
 == Changelog ==
+
+= 1.0.7 =
+* The Events Calendar: venues and organizers are translated with each event, as are the words before and after the calendar, the formats of its dates, the excerpts in its lists, its calendar files and the link to Google Calendar. The calendar's links and pages work in every language, with the words of each in their addresses, as /de/events/monat/, and the language switcher leads to the same view. Moving to another month or page keeps the language, and the month view is no longer served from a cache of another language.
+* Event Tickets: the names and descriptions of tickets are translated on the event, in the cart, at the checkout and on the confirmation, and an order sent from a page in a language leads to the confirmation in that language.
+* Events Manager: events, locations and tickets are translated where the plugin prints them, also the tickets of recurring events, and the texts of its settings, such as the search form and the messages after a booking, have their own place on the Templates screen. Machine translation keeps its placeholders, and a translation that leaves one out shows the original. Bookings and searches answer in the language of the page.
+* Event Organiser: the address and description of a venue are translated, and its calendar loads its events in the language of the page.
+* My Calendar: events, locations and categories are translated in the calendar, in lists and on their own pages, without changing what the plugin keeps in its caches.
+* An event of any of these plugins gets no separate copy, which would lose its dates.
 
 = 1.0.6 =
 * LearnPress: courses are translated where students take them: the sections, what students learn, the requirements, the audience, the FAQs and the words around the price, which LearnPress reads from its own copy of the course, and the quizzes with their answers, hints, explanations and blanks. A blank typed in the language of the page counts as right, and the address of a lesson has its slug in the language. A course, its lessons, quizzes and questions get no separate copy.

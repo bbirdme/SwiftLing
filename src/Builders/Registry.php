@@ -49,7 +49,7 @@ final class Registry {
 	public static function all(): array {
 		if ( null === self::$builders ) {
 			self::$builders = array();
-			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new TutorLms(), new LearnPress(), new SeoPress(), new Aioseo() ) as $builder ) {
+			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new TutorLms(), new LearnPress(), new TheEventsCalendar(), new EventTickets(), new EventOrganiser(), new EventsManager(), new MyCalendar(), new SeoPress(), new Aioseo() ) as $builder ) {
 				self::$builders[ $builder->id() ] = $builder;
 			}
 		}
@@ -378,6 +378,20 @@ final class Registry {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Returns the address of the page being shown in a language as the active builders write it, see
+	 * Builder::currentAddress().
+	 *
+	 * @param string $url  The address in that language, as SwiftLing built it.
+	 * @param string $slug Address slug of the language, or an empty string for the original.
+	 */
+	public static function currentAddress( string $url, string $slug ): string {
+		foreach ( self::active() as $builder ) {
+			$url = $builder->currentAddress( $url, $slug );
+		}
+		return $url;
 	}
 
 	/**
