@@ -209,15 +209,14 @@ class RealCookieBanner extends SettingsTexts {
 		}
 		$posts = get_posts(
 			array(
-				'post_type'        => self::POST_TYPES,
-				'post_status'      => 'publish',
-				'posts_per_page'   => -1,
-				'orderby'          => array(
+				'post_type'      => self::POST_TYPES,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => array(
 					'post_type'  => 'ASC',
 					'menu_order' => 'ASC',
 					'ID'         => 'ASC',
 				),
-				'suppress_filters' => true,
 			)
 		);
 		foreach ( $posts as $post ) {
