@@ -49,7 +49,7 @@ final class Registry {
 	public static function all(): array {
 		if ( null === self::$builders ) {
 			self::$builders = array();
-			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new TutorLms(), new LearnPress(), new TheEventsCalendar(), new EventTickets(), new EventOrganiser(), new EventsManager(), new MyCalendar(), new SeoPress(), new Aioseo() ) as $builder ) {
+			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new WooCommerce(), new TutorLms(), new LearnPress(), new TheEventsCalendar(), new EventTickets(), new EventOrganiser(), new EventsManager(), new MyCalendar(), new CookieNotice(), new GdprCookieCompliance(), new Complianz(), new CookieYes(), new Cookiebot(), new Iubenda(), new RealCookieBanner(), new SeoPress(), new Aioseo() ) as $builder ) {
 				self::$builders[ $builder->id() ] = $builder;
 			}
 		}
