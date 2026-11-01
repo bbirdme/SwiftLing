@@ -69,7 +69,52 @@ class HooksTest extends TestCase {
 	 * what it needs.
 	 */
 	public function test_hooks_have_a_version() {
-		$this->assertSame( 26, SWIFTLING_HOOKS );
+		$this->assertSame( 27, SWIFTLING_HOOKS );
+	}
+
+	/**
+	 * Saving or removing translations, as the editor, machine translation or an import does, tells
+	 * other plugins once, with the locale and what was saved by place.
+	 */
+	public function test_translations_saved_are_announced() {
+		$heard = array();
+		$hear  = static function ( $lang, $items ) use ( &$heard ) {
+			$heard[] = array( $lang, $items );
+		};
+		add_action( 'swiftling_translations_saved', $hear, 10, 2 );
+		$place = swiftling_place_key( 'post:1', swiftling_path_key( 'field/post_title' ), swiftling_hash( 'Vrt' ) );
+		$items = array(
+			$place => array(
+				'text'   => 'Garten',
+				'status' => SWIFTLING_REVIEWED,
+			),
+		);
+		swiftling_save_translations( 'de_DE', $items );
+		swiftling_save_translations(
+			'de_DE',
+			array(
+				$place => array(
+					'text'   => '',
+					'status' => SWIFTLING_REVIEWED,
+				),
+			)
+		);
+		remove_action( 'swiftling_translations_saved', $hear, 10 );
+		$this->assertSame(
+			array(
+				array( 'de_DE', $items ),
+				array(
+					'de_DE',
+					array(
+						$place => array(
+							'text'   => '',
+							'status' => SWIFTLING_REVIEWED,
+						),
+					),
+				),
+			),
+			$heard
+		);
 	}
 
 	/**

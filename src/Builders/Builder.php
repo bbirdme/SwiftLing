@@ -119,6 +119,17 @@ abstract class Builder {
 	}
 
 	/**
+	 * Returns the address of the page a request of the builder's plugin was sent from, given the
+	 * address the browser names as its Referer: the same address, unless the plugin shows its form in
+	 * a frame of its own, whose requests name the frame and whose address names the page.
+	 *
+	 * @param string $referer The address the request names as its Referer.
+	 */
+	public function sentFrom( string $referer ): string {
+		return $referer;
+	}
+
+	/**
 	 * Whether the builder itself declares a value as text, such as a text field of a widget. Such a
 	 * value is checked even when it does not look like text, as "/month" or "m" beside a price, and
 	 * it counts as text also when its marker shows only in a data attribute that a script turns into
