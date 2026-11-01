@@ -85,8 +85,10 @@ abstract class Builder {
 
 	/**
 	 * Whether the current user may translate an object the builder keeps, which takes the right to
-	 * edit it: the owner key of such an object is the builder's, such as "gravityforms:7". Objects
-	 * of WordPress itself, posts, terms and options, are decided in swiftling_can_translate_object().
+	 * edit it: the owner key of such an object is the builder's, such as "gravityforms:7", or a post
+	 * of a type the plugin guards with a right of its own instead of WordPress's, such as a form of
+	 * Mailchimp for WordPress. Other objects of WordPress itself, posts, terms and options, are decided
+	 * in swiftling_can_translate_object().
 	 *
 	 * @param string $owner Object key.
 	 * @return bool|null Null when the object is not the builder's.
@@ -96,9 +98,10 @@ abstract class Builder {
 	}
 
 	/**
-	 * Returns the actions of admin-ajax.php with which the builder's plugin receives a form a visitor
-	 * sends from a page. Such a request runs in the language of the page it was sent from, so its
-	 * answer is in that language, see swiftling_sent_form_language(); other Ajax requests do not.
+	 * Returns the actions of admin-ajax.php or admin-post.php with which the builder's plugin receives
+	 * a form a visitor sends from a page. Such a request runs in the language of the page it was sent
+	 * from, so its answer is in that language, see swiftling_sent_form_language(); other Ajax and
+	 * admin-post requests do not.
 	 *
 	 * @return string[]
 	 */

@@ -1003,6 +1003,12 @@ function swiftling_can_translate_object( $owner ) {
 	if ( swiftling_is_translator() ) {
 		return true;
 	}
+	// Objects a builder keeps, such as the forms of a form plugin, and posts a plugin guards with a
+	// right of its own rather than WordPress's: the right the plugin asks.
+	$can = \SwiftLing\Builders\Registry::canTranslate( $owner );
+	if ( null !== $can ) {
+		return $can;
+	}
 	if ( 0 === strpos( $owner, 'post:' ) ) {
 		return current_user_can( 'edit_post', (int) substr( $owner, 5 ) );
 	}
@@ -1014,11 +1020,6 @@ function swiftling_can_translate_object( $owner ) {
 	}
 	if ( 'options' === $owner || 0 === strpos( $owner, 'gettext:' ) ) {
 		return current_user_can( 'manage_options' );
-	}
-	// Objects a builder keeps, such as the forms of a form plugin: the right to edit them.
-	$can = \SwiftLing\Builders\Registry::canTranslate( $owner );
-	if ( null !== $can ) {
-		return $can;
 	}
 	return current_user_can( 'edit_theme_options' );
 }

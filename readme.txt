@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Events:** The Events Calendar, Events Manager, Event Organiser and My Calendar, with venues, organizers, categories and tickets, and the calendar's own words and addresses in each language.
 * **Bookings:** LatePoint, Amelia, Bookly, Simply Schedule Appointments and Booking Calendar: services, staff, the booking form and the emails to your customers in the language they booked in, while the emails to you and your staff stay in your language.
 * **Cookie banners:** Complianz, CookieYes, Cookie Notice, GDPR Cookie Compliance, Real Cookie Banner, Cookiebot and iubenda.
+* **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Multilingual SEO and addresses =
@@ -180,6 +181,13 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.10 =
+* Popup Maker: each popup has its own place on the Templates screen, with its title, content and close button, and shows translated on every page in the language. The close texts of the popup themes are translated too.
+* Mailchimp for WordPress: each form is on the Forms screen with its labels, placeholders and button one by one, and the messages after signing up. Mailchimp is told the language a visitor signed up in.
+* MailPoet: each form is on the Forms screen with the texts of its blocks and the message after subscribing, translated wherever MailPoet shows it: in a page, below the content, or as a popup, bar or slide-in. Signing up answers in the language of the page, also without JavaScript, so the email asking to confirm is in that language.
+* Newsletter: the texts of its settings, such as the form, the messages and the welcome email, are translated. A subscriber keeps the language they signed up in, and the emails and the page after a link in an email are in that language.
+* A form sent to admin-post.php by a plugin SwiftLing works with is answered in the language of the page, as one sent through Ajax.
 
 = 1.0.9 =
 * LatePoint: services, categories, agents, locations, bundles and the texts of the booking steps are translated, and the booking form loads its steps in the language of the page.
