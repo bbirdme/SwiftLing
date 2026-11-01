@@ -104,12 +104,13 @@ function swiftling_decide_translation_language() {
 }
 
 /**
- * Returns the language of a form a visitor sends through admin-ajax.php or the REST API: the
- * language of the page it was sent from. Neither is under a language's address, so without it the
- * plugin would answer in the original: the message after sending, the errors it finds, the email
- * to the visitor. Only the sending of a form of a plugin SwiftLing works with counts, see
- * Builder::sendingActions() and Builder::sendingRoutes(); other Ajax and REST requests stay in
- * the original, as they read and save settings that must not take a translation.
+ * Returns the language of a form a visitor sends through admin-ajax.php, admin-post.php or the REST
+ * API: the language of the page it was sent from. None of them is under a language's address, so
+ * without it the plugin would answer in the original: the message after sending, the errors it finds,
+ * the email to the visitor. Only the sending of a form of a plugin SwiftLing works with counts, see
+ * Builder::sendingActions() and Builder::sendingRoutes(); other Ajax, admin-post and REST requests
+ * stay in the original, as they read and save settings that must not take a translation. A plugin
+ * sends a form to admin-post.php where it works without JavaScript, as MailPoet does.
  *
  * The page is the one the form names in _wp_http_referer, which a form with a nonce field sends,
  * or else the one the browser names in the Referer header, or the page that address names where a
@@ -122,7 +123,7 @@ function swiftling_decide_translation_language() {
  */
 function swiftling_sent_form_language() {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only which action the request asks for; the plugin that receives it verifies it.
-	$action = wp_doing_ajax() && isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : '';
+	$action = ( wp_doing_ajax() || swiftling_is_admin_post() ) && isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : '';
 	$route  = '' === $action ? swiftling_rest_route() : '';
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only whether a page check was asked for; probe.php verifies it.
 	if ( ( '' === $action && '' === $route ) || isset( $_GET['swiftling_probe'] ) ) {
@@ -133,6 +134,16 @@ function swiftling_sent_form_language() {
 	}
 	$sends = '' !== $action ? \SwiftLing\Builders\Registry::sendsForm( $action ) : \SwiftLing\Builders\Registry::sendsFormTo( $route );
 	return $sends ? swiftling_address_language( \SwiftLing\Builders\Registry::sentFrom( (string) wp_get_raw_referer() ) ) : '';
+}
+
+/**
+ * Whether the request goes to admin-post.php, where a plugin receives a form sent without Ajax, as
+ * WordPress names the screen of the request before plugins load.
+ *
+ * @return bool
+ */
+function swiftling_is_admin_post() {
+	return isset( $GLOBALS['pagenow'] ) && 'admin-post.php' === $GLOBALS['pagenow'];
 }
 
 /**

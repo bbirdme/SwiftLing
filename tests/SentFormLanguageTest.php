@@ -147,6 +147,32 @@ class SentFormLanguageTest extends TestCase {
 	}
 
 	/**
+	 * A form sent through admin-post.php, as a plugin sends one without JavaScript, runs in the
+	 * language of its page like one sent through admin-ajax.php; another action of admin-post.php,
+	 * and the same action at another address, stay in the original.
+	 */
+	public function test_form_sent_through_admin_post() {
+		$this->with_form_plugin();
+		$pagenow = $GLOBALS['pagenow'] ?? null;
+		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The screen WordPress names the request; put back below.
+		foreach ( array(
+			array( 'admin-post.php', 'frm_entries_create', 'de' ),
+			array( 'admin-post.php', 'export_entries', '' ),
+			array( 'index.php', 'frm_entries_create', '' ),
+		) as $case ) {
+			$GLOBALS['pagenow']      = $case[0];
+			$_REQUEST['action']      = $case[1];
+			$_SERVER['HTTP_REFERER'] = 'http://example.org/kontakt/?lang=de';
+			$_SERVER['REQUEST_URI']  = '/wp-admin/' . $case[0];
+			$decided                 = &swiftling_decided_language();
+			$decided                 = null;
+			$this->assertSame( $case[2], swiftling_sent_form_language(), implode( ' ', $case ) );
+		}
+		$GLOBALS['pagenow'] = $pagenow;
+		// phpcs:enable
+	}
+
+	/**
 	 * Other Ajax requests stay in the original, from any page: they read and save settings.
 	 */
 	public function test_other_ajax_requests_stay_in_the_original() {

@@ -204,10 +204,11 @@ abstract class Provider extends Builder implements FormPlugin {
 
 		$keys   = $this->metaKeys();
 		$leaves = swiftling_collect(
-			static function () use ( $form, $keys ): void {
+			function () use ( $form, $keys ): void {
 				foreach ( $keys as $key ) {
 					get_post_meta( $form->ID, $key, true );
 				}
+				$this->readMoreTexts( $form );
 			}
 		);
 
@@ -223,6 +224,15 @@ abstract class Provider extends Builder implements FormPlugin {
 			);
 		}
 		return $texts;
+	}
+
+	/**
+	 * Reads texts of a form kept outside its meta, such as the form itself in the content of its post,
+	 * while swiftling_collect() notes them, as the plugin reads them.
+	 *
+	 * @param WP_Post $form Form.
+	 */
+	protected function readMoreTexts( WP_Post $form ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- A plugin with such texts overrides it.
 	}
 
 	/**
