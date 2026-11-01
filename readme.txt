@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Forms:** Contact Form 7, Forminator, Gravity Forms, Ninja Forms, Fluent Forms, WPForms and Formidable Forms: labels, choices, messages, errors and the email to the visitor, while the notification to you stays in your language.
 * **Shops and courses:** WooCommerce products (texts, images and the names of their attributes), and Tutor LMS and LearnPress courses with their quizzes. A student who types an answer in their language gets it graded as right.
 * **Events:** The Events Calendar, Events Manager, Event Organiser and My Calendar, with venues, organizers, categories and tickets, and the calendar's own words and addresses in each language.
+* **Bookings:** LatePoint, Amelia, Bookly, Simply Schedule Appointments and Booking Calendar: services, staff, the booking form and the emails to your customers in the language they booked in, while the emails to you and your staff stay in your language.
 * **Cookie banners:** Complianz, CookieYes, Cookie Notice, GDPR Cookie Compliance, Real Cookie Banner, Cookiebot and iubenda.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
@@ -179,6 +180,15 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.9 =
+* LatePoint: services, categories, agents, locations, bundles and the texts of the booking steps are translated, and the booking form loads its steps in the language of the page.
+* Amelia: services, categories, employees, locations, extras, events and custom fields are translated in the booking forms and the catalog. The translations are also kept where Amelia reads them for its emails.
+* Bookly: the labels of the form, services, categories and staff are translated, and the form loads in the language of the page.
+* Simply Schedule Appointments: the names, descriptions and instructions of the appointment types are translated in its booking form.
+* Booking Calendar: the texts of the booking forms, their placeholders and buttons, the message after a booking and the summary of a booking are translated.
+* Emails of all five: an email to the customer goes out in the language the customer booked in, also a reminder or an approval sent later, written from the translation of its template. An email to you or your staff stays in your language. Only the templates of emails to customers are offered for translation, and machine translation keeps their placeholders.
+* For developers: the action swiftling_translations_saved (hooks 27) fires once translations are saved or removed.
 
 = 1.0.8 =
 * Complianz: the texts of the cookie banner are translated, and what the legal documents name of your organisation, such as its name and address. What a consent area shows once a visitor consents is offered with the page's fields and loads in the language of the page. The banner's link to the cookie policy shows its translated title as soon as you save it.

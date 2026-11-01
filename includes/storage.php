@@ -562,6 +562,15 @@ function swiftling_save_translations( $lang, $items ) {
 	}
 
 	swiftling_flush_cache();
+
+	/**
+	 * Fires once translations were saved or removed, for a plugin that keeps a copy of them where
+	 * another plugin reads them, as the emails of a booking plugin.
+	 *
+	 * @param string $lang  Locale.
+	 * @param array  $items Place key => array( 'text' => string, 'status' => int ); an empty text was removed.
+	 */
+	do_action( 'swiftling_translations_saved', $lang, $items );
 }
 
 /**

@@ -279,6 +279,15 @@ Action. Fires once the languages some posts are translated into were written aga
 
 - `int[] $post_ids`
 
+### `swiftling_translations_saved`
+
+Action, since hooks 27. Fires once translations were saved or removed, by the editor, by machine
+translation or by an import: for a plugin that keeps a copy of them where another plugin reads them.
+The keys are place keys, see `swiftling_place_key()`.
+
+- `string $lang`: the locale.
+- `array<string, array{text: string, status: int}> $items`: place key => the translation; an empty `text` was removed.
+
 ### `swiftling_translate_all_modes`
 
 Filter, since hooks 7. The ways the Translate everything screen runs, keyed by mode, shown as cards:

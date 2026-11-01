@@ -112,8 +112,9 @@ function swiftling_decide_translation_language() {
  * the original, as they read and save settings that must not take a translation.
  *
  * The page is the one the form names in _wp_http_referer, which a form with a nonce field sends,
- * or else the one the browser names in the Referer header. A site that tells browsers to send no
- * Referer leaves such forms in the original.
+ * or else the one the browser names in the Referer header, or the page that address names where a
+ * plugin shows its form in a frame of its own, see Builder::sentFrom(). A site that tells browsers
+ * to send no Referer leaves such forms in the original.
  *
  * @return string|null Address slug, an empty string when the request is no such sending or comes
  *                     from a page in the original, or null before the plugins have loaded, when
@@ -131,7 +132,7 @@ function swiftling_sent_form_language() {
 		return null;
 	}
 	$sends = '' !== $action ? \SwiftLing\Builders\Registry::sendsForm( $action ) : \SwiftLing\Builders\Registry::sendsFormTo( $route );
-	return $sends ? swiftling_address_language( (string) wp_get_raw_referer() ) : '';
+	return $sends ? swiftling_address_language( \SwiftLing\Builders\Registry::sentFrom( (string) wp_get_raw_referer() ) ) : '';
 }
 
 /**
