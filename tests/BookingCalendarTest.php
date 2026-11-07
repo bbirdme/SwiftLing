@@ -87,6 +87,7 @@ class BookingCalendarTest extends TestCase {
 	public function tear_down() {
 		self::reset_static( Registry::class, 'builders' );
 		self::reset_static( Registry::class, 'active' );
+		swiftling_keep_folder( '' );
 		parent::tear_down();
 	}
 
@@ -209,5 +210,31 @@ class BookingCalendarTest extends TestCase {
 		$this->show_in( 'de' );
 		$this->assertSame( 'Odobrite: <b>Ime</b>: Eva', apply_filters( 'wpbc_email_api_get_content_after', 'Odobrite: <b>Vorname</b>: Eva', 'new_admin', 'html' ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- As above.
 		$this->assertSame( 'Hvala: <b>Vorname</b>: Eva', apply_filters( 'wpbc_email_api_get_content_after', 'Hvala: <b>Vorname</b>: Eva', 'new_visitor', 'html' ), 'The email to the visitor' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- As above.
+	}
+
+	/**
+	 * The email to the owner about a booking sent from a page in a language leads to the site in the
+	 * original: the plugin fills [siteurl] with the address of the home page in the language of the
+	 * request. The link to its admin stays; the email to the visitor keeps the language.
+	 */
+	public function test_owner_email_links_to_the_original() {
+		$this->set_languages( array( 'de_DE' => 'de' ), 'directory' );
+		$this->use_pretty_permalinks();
+		$site = untrailingslashit( (string) get_option( 'home' ) );
+		$this->show_in( 'de' );
+		swiftling_keep_folder( 'de' );
+		$this->assertSame( $site . '/de', home_url(), 'The address the plugin puts in [siteurl]' );
+		// As the plugin writes the email: its template with [moderatelink] and [siteurl] filled in.
+		$admin   = admin_url( 'admin.php?page=wpbc&tab=vm_booking_listing&wh_booking_id=5' );
+		$written = static function ( string $home ) use ( $admin ): string {
+			return 'Odobrite: <a href="' . esc_url( $admin ) . '">' . $admin . '</a><br/>Hvala<br/><a href="' . esc_url( $home ) . '">' . $home . '</a>';
+		};
+		// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The plugin's own filter, as it runs it.
+		$this->assertSame( $written( $site ), apply_filters( 'wpbc_email_api_get_content_after', $written( home_url() ), 'new_admin', 'html' ) );
+		$this->assertSame( 'Hvala ' . $site, apply_filters( 'wpbc_email_api_get_content_after', 'Hvala ' . home_url(), 'new_admin', 'plain' ) );
+		$this->assertSame( $written( home_url() ), apply_filters( 'wpbc_email_api_get_content_after', $written( home_url() ), 'new_visitor', 'html' ), 'The email to the visitor' );
+		$this->reset_state();
+		$this->assertSame( $written( $site ), apply_filters( 'wpbc_email_api_get_content_after', $written( $site ), 'new_admin', 'html' ), 'A booking in the original' );
+		// phpcs:enable
 	}
 }

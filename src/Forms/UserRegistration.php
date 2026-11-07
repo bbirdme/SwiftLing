@@ -22,7 +22,9 @@ defined( 'ABSPATH' ) || exit;
  *   writes its own words into a form when it creates it. It hands the fields of each part of a form to
  *   the filter user_registration_handle_form_fields before it prints them, where they are translated,
  *   see translateFields(), under the post's own object at paths such as "ur/fields/user_login/label".
- * - The word of the button is the meta "user_registration_form_setting_form_submit_label".
+ * - The word of the button is the meta "user_registration_form_setting_form_submit_label". A form whose
+ *   settings were never saved has none, and the plugin prints a "Submit" of its own: that word is
+ *   offered and translated at the place of the meta, see defaultButton().
  *
  * The form is sent through admin-ajax.php, answered in the language of the page it was sent from, see
  * SwiftLing\Builders\UserRegistration, with the messages and emails of the plugin's settings.
@@ -41,6 +43,13 @@ final class UserRegistration extends Provider {
 	 * The texts of a field a visitor reads, as the plugin names them.
 	 */
 	const FIELD_TEXTS = array( 'label', 'placeholder', 'description' );
+
+	/**
+	 * The meta that holds the word of a form's button, and the word the plugin prints when there is none,
+	 * see ur_admin_form_settings_fields().
+	 */
+	const BUTTON         = 'user_registration_form_setting_form_submit_label';
+	const DEFAULT_BUTTON = 'Submit';
 
 	/**
 	 * Returns the provider's ID.
@@ -74,14 +83,14 @@ final class UserRegistration extends Provider {
 	 * Returns the meta key that holds the word of a form's button.
 	 */
 	protected function metaKeys(): array {
-		return array( 'user_registration_form_setting_form_submit_label' );
+		return array( self::BUTTON );
 	}
 
 	/**
 	 * Returns what the editor calls that key.
 	 */
 	protected function metaLabels(): array {
-		return array( 'user_registration_form_setting_form_submit_label' => __( 'Button', 'swiftling' ) );
+		return array( self::BUTTON => __( 'Button', 'swiftling' ) );
 	}
 
 	/**
@@ -96,6 +105,38 @@ final class UserRegistration extends Provider {
 	 */
 	public function register(): void {
 		add_filter( 'user_registration_handle_form_fields', array( $this, 'translateFields' ), 100, 2 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The plugin's own filter.
+		// After swiftling_filter_post_meta(), which translates a word that is stored.
+		add_filter( 'get_post_metadata', array( $this, 'defaultButton' ), 101, 4 );
+	}
+
+	/**
+	 * Returns the word of the button of a form that has none stored, in a language or a page check: the
+	 * plugin's own "Submit", translated at the place of a stored one, so it is offered, and its
+	 * translation stays once the settings are saved with it. In the original nothing is returned, and the
+	 * plugin prints its own word.
+	 *
+	 * @param mixed  $check     Value from an earlier filter, or null.
+	 * @param int    $object_id Post ID.
+	 * @param string $meta_key  Meta key.
+	 * @param bool   $single    Whether one value was asked for.
+	 * @return mixed
+	 */
+	public function defaultButton( $check, $object_id, $meta_key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress takes the first value for one.
+		if ( null !== $check || self::BUTTON !== $meta_key || ! in_array( swiftling_mode(), array( 'probe', 'translate' ), true ) ) {
+			return $check;
+		}
+		$state = &swiftling_state();
+		if ( $state['guard'] || null === $this->form( (int) $object_id ) ) {
+			return $check;
+		}
+		$state['guard'] = true;
+		$stored         = metadata_exists( 'post', (int) $object_id, self::BUTTON );
+		$state['guard'] = false;
+		if ( $stored ) {
+			return $check;
+		}
+		$word = swiftling_transform_text( swiftling_post_owner( (int) $object_id ), swiftling_meta_path( self::BUTTON, 0 ), 'meta:' . self::BUTTON, self::DEFAULT_BUTTON );
+		return array( is_string( $word ) ? $word : self::DEFAULT_BUTTON );
 	}
 
 	/**
@@ -172,6 +213,6 @@ final class UserRegistration extends Provider {
 		if ( 0 !== strpos( $owner, 'post:' ) || null === $this->form( (int) substr( $owner, 5 ) ) ) {
 			return null;
 		}
-		return 0 === strpos( $path, self::BASE . '/' ) || 'meta/user_registration_form_setting_form_submit_label' === $path ? true : null;
+		return 0 === strpos( $path, self::BASE . '/' ) || swiftling_meta_path( self::BUTTON, 0 ) === $path ? true : null;
 	}
 }

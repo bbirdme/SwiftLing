@@ -396,7 +396,8 @@ class BookingCalendar extends SettingsTexts {
 	/**
 	 * Returns the email to the site's owner about a booking sent from a page in another language with
 	 * the labels of the booking's summary in the original: the plugin writes the summary once, in the
-	 * language of the page, for the visitor and the owner alike.
+	 * language of the page, for the visitor and the owner alike. The addresses of the site's pages lead
+	 * to the original too, as [siteurl], which the plugin fills with the home page in the language.
 	 *
 	 * @param mixed $content  The email, written.
 	 * @param mixed $email_id The plugin's ID of the email.
@@ -410,7 +411,7 @@ class BookingCalendar extends SettingsTexts {
 		foreach ( $this->summaryLabels() as $translated => $original ) {
 			$content = 'html' === $type ? str_replace( '>' . $translated . '<', '>' . $original . '<', $content ) : str_replace( $translated, $original, $content );
 		}
-		return $content;
+		return swiftling_addresses_in( $content, '' );
 	}
 
 	/**

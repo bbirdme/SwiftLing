@@ -173,7 +173,9 @@ class GravityFormsTest extends TestCase {
 
 	/**
 	 * A page in another language gets the translations, in the form the plugin goes on with; what
-	 * is not a text stays as it was.
+	 * is not a text stays as it was. The title is the one the plugin keeps in its table of forms,
+	 * put back after the filter by GFAPI::get_form(), so it is translated where the plugin prints
+	 * the form (gform_pre_render) and works with one sent (gform_pre_process).
 	 */
 	public function test_translated_page_shows_the_translations() {
 		$this->set_languages();
@@ -203,9 +205,11 @@ class GravityFormsTest extends TestCase {
 			}
 		}
 
+		$provider->register();
 		$this->show_in( 'de' );
 		$form = $provider->fresh( 7 );
-		$this->assertSame( 'Angebotsanfrage', $form['title'] );
+		$this->assertSame( 'Angebotsanfrage', $provider->render( 7 )['title'], 'On the page' );
+		$this->assertSame( 'Angebotsanfrage', $provider->process( 7 )['title'], 'In a form sent, for the confirmation and the visitor\'s email' );
 		$this->assertSame( 'Anfrage senden', $form['button']['text'] );
 		$this->assertSame( 'Ihr Name', $form['fields'][0]['label'] );
 		$this->assertSame( 'Ivan Horvat', $form['fields'][0]['placeholder'], 'Not translated yet: the original' );
@@ -219,9 +223,11 @@ class GravityFormsTest extends TestCase {
 		$this->assertSame( 'wide', $form['fields'][0]['cssClass'] );
 
 		$this->show_in( 'fr' );
-		$this->assertSame( 'Upit za ponudu', $provider->fresh( 7 )['title'], 'No French translation yet' );
+		$this->assertSame( 'Upit za ponudu', $provider->render( 7 )['title'], 'No French translation yet' );
+		$this->assertSame( 'Pošalji upit', $provider->render( 7 )['button']['text'] );
 		$this->reset_state();
-		$this->assertSame( 'Upit za ponudu', $provider->fresh( 7 )['title'], 'The original language' );
+		$this->assertSame( 'Upit za ponudu', $provider->render( 7 )['title'], 'The original language' );
+		$this->assertSame( 'Upit za ponudu', $provider->process( 7 )['title'] );
 	}
 
 	/**
@@ -290,10 +296,12 @@ class GravityFormsTest extends TestCase {
 				$this->translate( 'gravityforms:7', $leaf['p'], $leaf['v'], 'de', $german[ $leaf['v'] ] );
 			}
 		}
+		$provider->register();
 		$_GET['lang'] = 'de';
 		swiftling_maybe_start_translation();
-		$form = $provider->fresh( 7 );
+		$form = $provider->process( 7 );
 		$this->assertSame( 'Ihr Name', $form['fields'][0]['label'] );
+		$this->assertSame( 'Angebotsanfrage', $form['title'], 'The visitor\'s email and the confirmation get the translated title' );
 
 		$owner = $provider->startNotification( $form['notifications']['n1'], $form, array() );
 		$this->assertSame( 'Vaše ime', $form['fields'][0]['label'], 'The owner\'s email lists the original label' );
