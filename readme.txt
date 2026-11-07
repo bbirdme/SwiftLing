@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Cookie banners:** Complianz, CookieYes, Cookie Notice, GDPR Cookie Compliance, Real Cookie Banner, Cookiebot and iubenda.
 * **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
 * **Memberships:** Paid Memberships Pro, Ultimate Member, WP-Members, User Registration & Membership and Simple Membership: levels, registration forms, messages for restricted content, and the emails to members in the language they registered in, also those sent later.
+* **Tables and charts:** TablePress, Ninja Tables, wpDataTables, WP Table Builder and Visualizer: every text of a table, its name and description, and the titles and labels of charts, translated once for the whole table. Numbers and dates are left as they are.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Multilingual SEO and addresses =
@@ -182,6 +183,14 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.12 =
+* TablePress: the cells, name and description of every table are translated, each table on the Templates screen. Formulas are not offered, only what they give, and the copy of a table TablePress keeps for visitors is kept for each language.
+* Ninja Tables: the rows and the names of the columns are translated, also when the table loads its rows after the page, and the copy of a table's HTML it can keep is not shared between languages.
+* wpDataTables: the cells are translated where the plugin prints them, also those read from a CSV or Excel file or a Google Sheet, with the titles of the columns and the title and description of the table.
+* WP Table Builder: a table is translated text by text, with the texts of its images, instead of as one field of code.
+* Visualizer: the cells, the labels of the series, and the title of a table or chart and of its axes are translated.
+* The same text in a table is translated once, wherever it is in the table, and a row added or moved keeps the translations of the others. A cell without letters, as a price or a date, is not offered. A link in a cell to a page of the site leads to the page in the language.
 
 = 1.0.11 =
 * Paid Memberships Pro: the names, descriptions and confirmation messages of the levels are translated on the levels, checkout, account and confirmation pages, and so are its messages for visitors without a membership. Every email to members, and the header and footer of every email, has its place on the Templates screen, also those you never changed, as its language packs lack their texts.
