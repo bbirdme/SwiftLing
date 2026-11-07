@@ -92,6 +92,22 @@ class FakeFormidable extends Formidable {
 	}
 
 	/**
+	 * Returns what the plugin lists as the texts of a field of a type, as Formidable Forms 6.35 does for
+	 * the types of the tests.
+	 *
+	 * @param string $type The field's type.
+	 * @return string[]
+	 */
+	protected function pluginTexts( string $type ): array {
+		$texts = array( 'name', 'description', 'default_value', 'placeholder', 'required_indicator', 'invalid', 'blank', 'unique_msg' );
+		$more  = array(
+			'name' => array( 'first_desc', 'middle_desc', 'last_desc' ),
+			'gdpr' => array( 'gdpr_agreement_text' ),
+		);
+		return array_merge( $texts, isset( $more[ $type ] ) ? $more[ $type ] : array() );
+	}
+
+	/**
 	 * Returns the plugin's global settings.
 	 */
 	protected function globalSettings() {

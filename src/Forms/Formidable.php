@@ -15,7 +15,10 @@ defined( 'ABSPATH' ) || exit;
  * Formidable Forms. A form is a row of its own table, frm_forms, and its fields are rows of
  * frm_fields. While it shows a form, the plugin hands the form to the filter frm_pre_display_form
  * (its title, description and button) and each field, prepared for the page, to
- * frm_setup_new_fields_vars. The texts are translated there, see TableProvider.
+ * frm_setup_new_fields_vars. The texts are translated there, see TableProvider. Of a field, those the
+ * plugin lists as its texts for plugins of languages (translatable_strings() of its type), as the
+ * labels and placeholders of the parts of a Name field and the text of a GDPR field, except the value
+ * it starts with, which is sent.
  *
  * The message after sending: since Formidable 6.0 a form keeps it in On Submit actions, posts of
  * the type frm_form_actions with their settings as JSON in post_content, and moves an older form's
@@ -61,6 +64,12 @@ class Formidable extends TableProvider {
 	const FIELD_TEXTS = array( 'name', 'description', 'placeholder', 'blank', 'invalid', 'unique_msg' );
 
 	/**
+	 * What the plugin lists as texts of every field (FrmFieldType::translatable_strings()) that is no text
+	 * a visitor reads: the value a field starts with, which is sent, and the mark of a required field.
+	 */
+	const NOT_TEXTS = array( 'default_value', 'required_indicator' );
+
+	/**
 	 * The texts of the form, by their name in its options.
 	 */
 	const FORM_OPTIONS = array( 'submit_value', 'success_msg' );
@@ -98,6 +107,13 @@ class Formidable extends TableProvider {
 	 * @var array<int, array{action: object, settings: array}|string|null>
 	 */
 	private $mails = array();
+
+	/**
+	 * What the plugin lists as the texts of a field, by type, see pluginTexts().
+	 *
+	 * @var array<string, string[]>
+	 */
+	private $plugin_texts = array();
 
 	/**
 	 * Fields whose name the form does not show; an HTML field's description is its content.
@@ -207,6 +223,17 @@ class Formidable extends TableProvider {
 		foreach ( self::FIELD_TEXTS as $name ) {
 			if ( 'name' !== $name || ! in_array( $type, self::NO_LABEL, true ) ) {
 				self::addPlace( $places, $field, array( $name ), $id . '/' . $name );
+			}
+		}
+		// What the plugin lists as texts of a field of the type beyond those: the labels of the parts of
+		// a Name or an Address field, the agreement of a GDPR field.
+		foreach ( array_diff( $this->pluginTexts( $type ), self::FIELD_TEXTS, self::NOT_TEXTS ) as $name ) {
+			self::addPlace( $places, $field, array( (string) $name ), $id . '/' . $name );
+		}
+		// A field of parts has a placeholder for each.
+		if ( isset( $field['placeholder'] ) && is_array( $field['placeholder'] ) ) {
+			foreach ( array_keys( $field['placeholder'] ) as $part ) {
+				self::addPlace( $places, $field, array( 'placeholder', $part ), $id . '/placeholder/' . $part );
 			}
 		}
 		$options = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
@@ -536,6 +563,22 @@ class Formidable extends TableProvider {
 	}
 
 	/**
+	 * Returns what the plugin lists as the texts of a field of a type, for plugins of languages: the
+	 * usual ones, and those of the type, such as the labels of the parts of a Name field. Kept for the
+	 * request, by type.
+	 *
+	 * @param string $type The field's type.
+	 * @return string[]
+	 */
+	protected function pluginTexts( string $type ): array {
+		if ( ! isset( $this->plugin_texts[ $type ] ) ) {
+			$object                      = '' !== $type && class_exists( 'FrmFieldFactory' ) ? \FrmFieldFactory::get_field_type( $type ) : null;
+			$this->plugin_texts[ $type ] = is_object( $object ) && method_exists( $object, 'translatable_strings' ) ? array_filter( (array) $object->translatable_strings(), 'is_string' ) : array();
+		}
+		return $this->plugin_texts[ $type ];
+	}
+
+	/**
 	 * Returns the actions of a form of a type, the published ones the plugin runs.
 	 *
 	 * @param int    $form_id Form ID.
@@ -676,6 +719,16 @@ class Formidable extends TableProvider {
 		}
 		if ( 'description' === $parts[2] ) {
 			return $title . ' › ' . $names['description'];
+		}
+		// A part of a field of parts, as "first" of a Name field: its label or its placeholder.
+		if ( 'placeholder' === $parts[2] && isset( $parts[3] ) ) {
+			return $title . ' › ' . ucfirst( $parts[3] ) . ' › ' . $names['placeholder'];
+		}
+		if ( '_desc' === substr( $parts[2], -5 ) ) {
+			return $title . ' › ' . ucfirst( substr( $parts[2], 0, -5 ) ) . ' › ' . $names['name'];
+		}
+		if ( 'gdpr_agreement_text' === $parts[2] ) {
+			return $title . ' › ' . __( 'Agreement text', 'swiftling' );
 		}
 		return $title . ' › ' . ( isset( $names[ $parts[2] ] ) ? $names[ $parts[2] ] : $parts[2] );
 	}

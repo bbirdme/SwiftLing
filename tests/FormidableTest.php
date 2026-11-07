@@ -243,6 +243,92 @@ class FormidableTest extends TestCase {
 	}
 
 	/**
+	 * A field of a type for which the plugin lists more texts than the usual ones (translatable_strings()):
+	 * the label and placeholder of each part of a Name field, the agreement of a GDPR field. They are
+	 * offered with the field and translated where the page shows it. Not the value a field starts with,
+	 * which is sent, nor the mark of a required field.
+	 */
+	public function test_texts_the_plugin_lists_for_a_field_type() {
+		$this->set_languages();
+		$provider           = $this->provider();
+		$provider->forms[7] = array(
+			'form'   => (object) array(
+				'id'          => 7,
+				'name'        => 'Kontakt',
+				'description' => '',
+				'options'     => array(),
+			),
+			'fields' => array(
+				array(
+					'id'                 => 71,
+					'form_id'            => 7,
+					'type'               => 'name',
+					'name'               => 'Vaše ime',
+					'first_desc'         => 'Ime',
+					'middle_desc'        => 'Srednje ime',
+					'last_desc'          => 'Prezime',
+					'placeholder'        => array(
+						'first'  => 'npr. Ana',
+						'middle' => '',
+						'last'   => '',
+					),
+					'default_value'      => 'Gost',
+					'required_indicator' => '*',
+					'name_layout'        => 'first_last',
+				),
+				array(
+					'id'                  => 72,
+					'form_id'             => 7,
+					'type'                => 'gdpr',
+					'name'                => 'Privola',
+					'gdpr_agreement_text' => 'Slažem se s uvjetima.',
+				),
+			),
+		);
+
+		$subject = $provider->subject( 'formidable-form:7' );
+		swiftling_save_field_list( $subject );
+		$texts = array();
+		foreach ( $provider->listTexts( $subject ) as $text ) {
+			$texts[ $text['v'] ] = $text;
+		}
+		foreach ( array( 'Ime', 'Srednje ime', 'Prezime', 'npr. Ana', 'Slažem se s uvjetima.' ) as $text ) {
+			$this->assertArrayHasKey( $text, $texts );
+		}
+		$this->assertArrayNotHasKey( 'Gost', $texts, 'The value a field starts with is sent' );
+		$this->assertSame( 'Vaše ime › First › Label', $texts['Ime']['place'] );
+		$this->assertSame( 'Vaše ime › First › Placeholder', $texts['npr. Ana']['place'] );
+		$this->assertSame( 'Privola › Agreement text', $texts['Slažem se s uvjetima.']['place'] );
+		$german = array(
+			'Ime'                   => 'Vorname',
+			'Prezime'               => 'Nachname',
+			'npr. Ana'              => 'z. B. Anna',
+			'Slažem se s uvjetima.' => 'Ich stimme den Bedingungen zu.',
+		);
+		foreach ( $german as $original => $text ) {
+			$this->translate( 'formidable:7', $texts[ $original ]['p'], $original, 'de', $text );
+		}
+
+		$this->show_in( 'de' );
+		$name = $provider->filterField( $provider->forms[7]['fields'][0] );
+		$this->assertSame( 'Vorname', $name['first_desc'] );
+		$this->assertSame( 'Nachname', $name['last_desc'] );
+		$this->assertSame( 'Srednje ime', $name['middle_desc'], 'Not translated yet: the original' );
+		$this->assertSame(
+			array(
+				'first'  => 'z. B. Anna',
+				'middle' => '',
+				'last'   => '',
+			),
+			$name['placeholder']
+		);
+		$this->assertSame( 'Gost', $name['default_value'] );
+		$this->assertSame( 'Ich stimme den Bedingungen zu.', $provider->filterField( $provider->forms[7]['fields'][1] )['gdpr_agreement_text'] );
+		$this->reset_state();
+		$this->assertSame( $provider->forms[7]['fields'][0], $provider->filterField( $provider->forms[7]['fields'][0] ), 'The original' );
+	}
+
+	/**
 	 * A page check finds every text a visitor reads under an owner of its own, not what a program
 	 * reads: the place of a label, a CSS class, the HTML around a field, a value of its own.
 	 */

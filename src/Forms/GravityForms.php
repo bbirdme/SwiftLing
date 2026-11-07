@@ -18,9 +18,11 @@ defined( 'ABSPATH' ) || exit;
  * there, see TableProvider. Because Gravity keeps the form for the request after the filter, the
  * texts are in it translated (or marked, in a page check) wherever the plugin uses the form
  * afterwards: the page, the validation, the confirmation and the emails to the visitor of a form
- * sent from a page in the language. A form sent through Ajax arrives through admin-ajax.php, with
- * the action gform_submit_form, and runs in the language of its page too, see
- * swiftling_sent_form_language().
+ * sent from a page in the language. Only the title is not: GFAPI::get_form() puts the one from
+ * the plugin's table of forms back over it, so it is translated again where the plugin prints a
+ * form (gform_pre_render) and works with one sent (gform_pre_process). A form sent through Ajax
+ * arrives through admin-ajax.php, with the action gform_submit_form, and runs in the language of its
+ * page too, see swiftling_sent_form_language().
  *
  * Only the emails to the visitor are texts of the form: sent to a field ("toType" field), or every
  * address a field's merge tag such as {Email:4}. Any other email is the site owner's: its texts
@@ -94,6 +96,9 @@ class GravityForms extends TableProvider {
 	 */
 	public function register(): void {
 		add_filter( 'gform_form_post_get_meta', array( $this, 'filterForm' ) );
+		// Early, so the title is the one the plugin keeps, before others change it on its way out.
+		add_filter( 'gform_pre_render', array( $this, 'translateTitle' ), 5 );
+		add_filter( 'gform_pre_process', array( $this, 'translateTitle' ), 5 );
 		add_filter( 'gform_notification', array( $this, 'startNotification' ), 5, 3 );
 		add_action( 'gform_after_email', array( $this, 'endEmail' ), PHP_INT_MIN );
 		add_action( 'gform_pre_handle_confirmation', array( $this, 'endEmail' ), PHP_INT_MIN );
@@ -204,6 +209,22 @@ class GravityForms extends TableProvider {
 			$this->keepOriginals( (int) $form['id'], $form, $before, $translated, $places );
 		}
 		return $translated;
+	}
+
+	/**
+	 * Translates the title of a form the plugin is about to print, or to work with once it is sent:
+	 * GFAPI::get_form() puts the title from the plugin's table of forms back over the form after
+	 * the filter of filterForm(), so there it is the original again. Translated under the same
+	 * object and path as in filterForm(), so it is one text.
+	 *
+	 * @param mixed $form The form.
+	 * @return mixed The form, with its title changed, or as it was.
+	 */
+	public function translateTitle( $form ) {
+		if ( ! is_array( $form ) || empty( $form['id'] ) || ! isset( $form['title'] ) || ! is_string( $form['title'] ) ) {
+			return $form;
+		}
+		return $this->translate( (int) $form['id'], $form, array( 'title' => array( 'title' ) ) );
 	}
 
 	/**

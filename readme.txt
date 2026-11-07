@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.12
+Stable tag: 1.0.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -183,6 +183,12 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.13 =
+* Gravity Forms: the title above a form is translated. Gravity Forms put its stored title back over the translated one, so it stayed in the original. In an email to the visitor, {form_title} is translated too; in the email to the site's owner it stays the original.
+* User Registration & Membership: the word of a form's button is offered and translated also when the form's settings were never saved, and the plugin shows its own "Submit".
+* Formidable Forms: the labels and placeholders of the parts of a Name field, such as First Name and Last Name, and the text of a GDPR field are offered and translated.
+* Booking Calendar: the email to the site's owner about a booking from a page in another language links to the site in the original language.
 
 = 1.0.12 =
 * TablePress: the cells, name and description of every table are translated, each table on the Templates screen. Formulas are not offered, only what they give, and the copy of a table TablePress keeps for visitors is kept for each language.

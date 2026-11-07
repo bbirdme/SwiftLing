@@ -122,6 +122,35 @@ class UserRegistrationTest extends TestCase {
 	}
 
 	/**
+	 * A form whose settings were never saved has no word of its button stored, and the plugin prints a
+	 * "Submit" of its own, see ur_admin_form_settings_fields(). That word is offered and translated as
+	 * a saved one, at the same place, so its translation stays once the settings are saved with it. In
+	 * the original nothing is made up: the plugin prints its own word.
+	 */
+	public function test_button_never_saved() {
+		$key = 'user_registration_form_setting_form_submit_label';
+		delete_post_meta( $this->form, $key );
+		$units = $this->units( 'ur-form:' . $this->form );
+		$this->assertArrayHasKey( 'Submit', $units );
+		$this->assertSame( 'meta/' . $key, $units['Submit']['p'] );
+		$this->translate( $units['Submit']['o'], $units['Submit']['p'], 'Submit', 'de', 'Absenden' );
+
+		$this->show_in( 'de' );
+		$this->assertSame( array( 'Absenden' ), get_post_meta( $this->form, $key, false ), 'As the plugin reads it, in ur_get_single_post_meta()' );
+		$this->assertSame( 'Absenden', get_post_meta( $this->form, $key, true ) );
+		$this->reset_state();
+		$this->assertSame( array(), get_post_meta( $this->form, $key, false ), 'The original: nothing stored, the plugin\'s own word' );
+
+		update_post_meta( $this->form, $key, 'Submit' );
+		$this->show_in( 'de' );
+		$this->assertSame( 'Absenden', get_post_meta( $this->form, $key, true ), 'Saved later with the same word, the translation stays' );
+		$this->reset_state();
+		update_post_meta( $this->form, $key, 'Registriraj me' );
+		$this->show_in( 'de' );
+		$this->assertSame( 'Registriraj me', get_post_meta( $this->form, $key, true ), 'A word of its own is the one stored, not yet translated' );
+	}
+
+	/**
 	 * The settings offer the messages and the emails to members, not those to the site's owner. An email
 	 * to a member who registered in German is written from the translation of its template, also from the
 	 * admin, with the addresses of German pages; a member in the original gets the original.

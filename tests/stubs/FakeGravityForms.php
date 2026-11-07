@@ -53,8 +53,9 @@ class FakeGravityForms extends GravityForms {
 	}
 
 	/**
-	 * Returns a form as the plugin gives it each time it has read it from its tables: new field
-	 * objects every time, not the ones of an earlier read, run through the filter.
+	 * Returns a form as GFAPI::get_form() gives it each time it has read it from its tables: new
+	 * field objects every time, not the ones of an earlier read, run through the filter, and then
+	 * the title from the plugin's table of forms put back over the form's own.
 	 *
 	 * @param int $form_id Form ID.
 	 */
@@ -63,6 +64,29 @@ class FakeGravityForms extends GravityForms {
 		foreach ( $form['fields'] as $index => $field ) {
 			$form['fields'][ $index ] = is_object( $field ) ? clone $field : $field;
 		}
-		return $this->filterForm( $form );
+		$form          = $this->filterForm( $form );
+		$form['title'] = $this->forms[ $form_id ]['title'];
+		return $form;
+	}
+
+	/**
+	 * Returns a form as the plugin prints it on a page: read, then handed to gform_pre_render.
+	 *
+	 * @param int $form_id Form ID.
+	 */
+	public function render( int $form_id ): array {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The plugin's own filter.
+		return apply_filters( 'gform_pre_render', $this->fresh( $form_id ), false, array(), 'form_display' );
+	}
+
+	/**
+	 * Returns a form as the plugin works with it once it is sent: read, then handed to
+	 * gform_pre_process, before the validation, the confirmation and the emails.
+	 *
+	 * @param int $form_id Form ID.
+	 */
+	public function process( int $form_id ): array {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The plugin's own filter.
+		return apply_filters( 'gform_pre_process', $this->fresh( $form_id ) );
 	}
 }
