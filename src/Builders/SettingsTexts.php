@@ -289,18 +289,6 @@ abstract class SettingsTexts extends Builder {
 	}
 
 	/**
-	 * Whether a table of the plugin is in the database, before reading it: a plugin creates its tables
-	 * when it is activated, and some only for what it offers.
-	 *
-	 * @param string $table The table's name, with the prefix.
-	 */
-	protected function hasTable( string $table ): bool {
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Whether another plugin's table exists, once where it is read.
-		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) === $table;
-	}
-
-	/**
 	 * Whether SwiftLing changes the request: a page check or a page in a language.
 	 */
 	protected static function inMode(): bool {
