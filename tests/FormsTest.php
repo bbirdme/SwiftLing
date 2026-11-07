@@ -182,7 +182,7 @@ class FormsTest extends TestCase {
 	 * Both form plugins are known, and without them nothing of theirs is offered.
 	 */
 	public function test_providers_without_the_plugins() {
-		$this->assertSame( array( 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'mc4wp', 'mailpoet' ), array_keys( Registry::forms() ) );
+		$this->assertSame( array( 'cf7', 'forminator', 'gravityforms', 'ninjaforms', 'fluentforms', 'wpforms', 'formidable', 'mc4wp', 'mailpoet', 'um', 'ur' ), array_keys( Registry::forms() ) );
 		foreach ( Registry::forms() as $provider ) {
 			$this->assertFalse( $provider->isActive(), $provider->name() );
 			$this->assertSame( array(), $provider->forms() );

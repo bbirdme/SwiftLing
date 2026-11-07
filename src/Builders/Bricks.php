@@ -486,22 +486,7 @@ class Bricks extends Builder {
 	 * @return mixed
 	 */
 	public function keepDynamicData( $items ) {
-		if ( ! is_array( $items ) ) {
-			return $items;
-		}
-		foreach ( $items as $key => $item ) {
-			if ( ! is_array( $item ) || ! isset( $item['text'] ) || ! is_string( $item['text'] ) ) {
-				continue;
-			}
-			preg_match_all( self::DYNAMIC_DATA, $item['text'], $tags );
-			preg_match_all( self::COUNTDOWN_UNITS, $item['text'], $units );
-			$found = array_merge( $tags[0], $units[0] );
-			if ( $found ) {
-				$keep                  = isset( $item['keep'] ) && is_array( $item['keep'] ) ? $item['keep'] : array();
-				$items[ $key ]['keep'] = array_values( array_unique( array_merge( $keep, $found ) ) );
-			}
-		}
-		return $items;
+		return Templates::keepPlaceholders( Templates::keepPlaceholders( $items, self::DYNAMIC_DATA ), self::COUNTDOWN_UNITS );
 	}
 
 	/**

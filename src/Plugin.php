@@ -34,7 +34,7 @@ final class Plugin {
 	 * The files of includes/ loaded on every request: the probe and the translated view run on the
 	 * front end, and the functions of includes/api.php from the REST API, WP-CLI and WP-Cron.
 	 */
-	public const INCLUDES = array( 'tables', 'rights', 'languages', 'kept-languages', 'urls', 'hosts', 'slugs', 'bases', 'storage', 'log', 'requests', 'segmenter', 'sources', 'subjects', 'terms', 'comments', 'menus', 'menu-languages', 'probe', 'server-check', 'translate', 'visibility', 'copies', 'hreflang', 'seo', 'search', 'sitemaps', 'cache', 'cache-plugins', 'admin-bar', 'rest', 'rest-languages', 'api', 'packages', 'switcher' );
+	public const INCLUDES = array( 'tables', 'rights', 'languages', 'kept-languages', 'urls', 'hosts', 'slugs', 'bases', 'storage', 'log', 'requests', 'segmenter', 'sources', 'subjects', 'terms', 'comments', 'menus', 'menu-languages', 'probe', 'server-check', 'translate', 'visibility', 'copies', 'members', 'hreflang', 'seo', 'search', 'sitemaps', 'cache', 'cache-plugins', 'admin-bar', 'rest', 'rest-languages', 'api', 'packages', 'switcher' );
 
 	/**
 	 * The files of includes/ the translation editor renders with, see loadEditor().
