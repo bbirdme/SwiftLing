@@ -713,16 +713,7 @@ class TutorLms extends Builder {
 	 * @return mixed
 	 */
 	public function keepBlanks( $items ) {
-		if ( ! is_array( $items ) ) {
-			return $items;
-		}
-		foreach ( $items as $key => $item ) {
-			if ( is_array( $item ) && isset( $item['text'] ) && is_string( $item['text'] ) && false !== strpos( $item['text'], '{dash}' ) ) {
-				$keep                  = isset( $item['keep'] ) && is_array( $item['keep'] ) ? $item['keep'] : array();
-				$items[ $key ]['keep'] = array_values( array_unique( array_merge( $keep, array( '{dash}' ) ) ) );
-			}
-		}
-		return $items;
+		return Templates::keepPlaceholders( $items, '/\{dash\}/' );
 	}
 
 	/**

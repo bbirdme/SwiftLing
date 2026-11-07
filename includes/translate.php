@@ -272,7 +272,8 @@ add_filter( 'locale', 'swiftling_filter_locale', 100 );
 
 /**
  * Puts a translated request in the original for a while, until swiftling_resume_translation():
- * texts are read untranslated and WordPress, the theme and plugins run in the site's own locale.
+ * texts are read untranslated, WordPress, the theme and plugins run in the site's own locale, and
+ * the addresses WordPress builds lead to the original.
  * For what a request in another language makes for the site's owner, such as the email a form
  * plugin sends the owner when a visitor sends a form. Pauses nest; each needs its resume.
  *
@@ -285,6 +286,7 @@ function swiftling_pause_translation() {
 	$paused[] = array(
 		'state'    => $state,
 		'switched' => isset( $GLOBALS['wp_locale_switcher'] ) && switch_to_locale( swiftling_site_locale() ),
+		'address'  => swiftling_keep_address_of( '' ),
 	);
 	$state    = array_merge(
 		$state,
@@ -299,10 +301,10 @@ function swiftling_pause_translation() {
 
 /**
  * Translates into a language for a while, until swiftling_resume_translation(): stored values, texts
- * from code and links are read in the language, and WordPress, the theme and plugins run in its
- * locale. For what is written outside the reader's page, such as an email to a customer sent from
- * the admin or by a scheduled task in the language of the customer's order. Switches nest with
- * pauses; each needs its resume.
+ * from code and links are read in the language, with its folder or host, and WordPress, the theme
+ * and plugins run in its locale. For what is written outside the reader's page, such as an email to
+ * a customer sent from the admin or by a scheduled task in the language of the customer's order.
+ * Switches nest with pauses; each needs its resume.
  *
  * The filters that translate are added where the request has none, as in the admin, and taken off
  * again on resume. A slug that is not one of the site's languages is the original, as a pause.
@@ -328,6 +330,7 @@ function swiftling_switch_translation( $slug ) {
 		'state'    => $state,
 		'switched' => isset( $GLOBALS['wp_locale_switcher'] ) && switch_to_locale( $language['wp_locale'] ),
 		'added'    => $added,
+		'address'  => swiftling_keep_address_of( (string) $slug ),
 	);
 	// Read anew in the language: what the request read so far is another language's.
 	$state = array_merge(
@@ -362,13 +365,16 @@ function swiftling_resume_translation() {
 	foreach ( $last['added'] ?? array() as $hook ) {
 		remove_filter( $hook[0], $hook[1], $hook[2] );
 	}
+	if ( isset( $last['address'] ) ) {
+		swiftling_restore_kept_address( $last['address'] );
+	}
 }
 
 /**
  * Returns the pauses and switches swiftling_pause_translation() and swiftling_switch_translation()
  * started, the last one last. A reference, so the tests can start a new request.
  *
- * @return array<int, array{state: array, switched: bool, added?: array}>
+ * @return array<int, array{state: array, switched: bool, added?: array, address?: array}>
  */
 function &swiftling_paused_translations() {
 	static $paused = array();

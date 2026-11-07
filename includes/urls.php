@@ -486,6 +486,50 @@ function swiftling_keep_folder( $slug ) {
 }
 
 /**
+ * Makes the addresses WordPress builds lead to a language for a while, for what is written in it
+ * outside its page, as an email to a member: its folder or host, or none for the original, as the
+ * original's pages have. Returns what was kept before, for swiftling_restore_kept_address().
+ *
+ * @param string $slug Address slug of a target language, or an empty string for the original.
+ * @return array{folder: string, host: string}
+ */
+function swiftling_keep_address_of( $slug ) {
+	$saved = array(
+		'folder' => swiftling_kept_folder(),
+		'host'   => swiftling_kept_host(),
+	);
+	if ( swiftling_is_host_format() ) {
+		if ( '' === $slug ) {
+			$host = &swiftling_kept_host();
+			$host = '';
+		} else {
+			swiftling_keep_host( $slug );
+		}
+	} elseif ( 'directory' === swiftling_url_format() ) {
+		$folder = '' === $slug ? swiftling_source_folder() : $slug;
+		if ( '' === $folder ) {
+			$kept = &swiftling_kept_folder();
+			$kept = '';
+		} else {
+			swiftling_keep_folder( $folder );
+		}
+	}
+	return $saved;
+}
+
+/**
+ * Puts back what swiftling_keep_address_of() changed.
+ *
+ * @param array $saved What it returned.
+ */
+function swiftling_restore_kept_address( $saved ) {
+	$folder = &swiftling_kept_folder();
+	$host   = &swiftling_kept_host();
+	$folder = (string) ( $saved['folder'] ?? '' );
+	$host   = (string) ( $saved['host'] ?? '' );
+}
+
+/**
  * Returns the folder swiftling_keep_folder() keeps for this request.
  *
  * @return string Address slug, or an empty string.
@@ -547,6 +591,10 @@ function swiftling_filter_home_url( $url, $path, $scheme, $blog_id ) {
 	}
 	if ( '' !== swiftling_kept_host() ) {
 		return swiftling_to_kept_host( $url );
+	}
+	// No folder while something is written in the original, see swiftling_keep_address_of().
+	if ( '' === swiftling_kept_folder() ) {
+		return $url;
 	}
 
 	$path   = ltrim( is_string( $path ) ? $path : '', '/' );

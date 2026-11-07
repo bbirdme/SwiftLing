@@ -532,15 +532,6 @@ class LatePoint extends SettingsTexts {
 	 * @return mixed
 	 */
 	public function keepPlaceholders( $items ) {
-		if ( ! is_array( $items ) ) {
-			return $items;
-		}
-		foreach ( $items as $key => $item ) {
-			if ( is_array( $item ) && isset( $item['text'] ) && is_string( $item['text'] ) && preg_match_all( '/\{\{[a-z0-9_]+\}\}/i', $item['text'], $found ) ) {
-				$keep                  = isset( $item['keep'] ) && is_array( $item['keep'] ) ? $item['keep'] : array();
-				$items[ $key ]['keep'] = array_values( array_unique( array_merge( $keep, $found[0] ) ) );
-			}
-		}
-		return $items;
+		return Templates::keepPlaceholders( $items, '/\{\{[a-z0-9_]+\}\}/i' );
 	}
 }

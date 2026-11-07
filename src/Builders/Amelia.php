@@ -245,36 +245,7 @@ class Amelia extends SettingsTexts {
 	 * @return string|null The text in the language; null when the text was not written from the template.
 	 */
 	public static function refill( string $original, string $translated, string $written ): ?string {
-		$parts   = preg_split( '/(' . trim( self::PLACEHOLDER, '/i' ) . ')/i', $original, -1, PREG_SPLIT_DELIM_CAPTURE );
-		$pattern = '';
-		$seen    = array();
-		foreach ( (array) $parts as $index => $part ) {
-			if ( 0 === $index % 2 ) {
-				$pattern .= preg_quote( $part, '#' );
-				continue;
-			}
-			$name = 'p' . substr( md5( strtolower( $part ) ), 0, 16 );
-			if ( isset( $seen[ $name ] ) ) {
-				$pattern .= '(?P=' . $name . ')';
-			} else {
-				$pattern      .= '(?P<' . $name . '>.*?)';
-				$seen[ $name ] = $part;
-			}
-		}
-		if ( ! preg_match( '#^' . $pattern . '$#s', $written, $values ) ) {
-			return null;
-		}
-		if ( $translated === $original ) {
-			return $written;
-		}
-		return (string) preg_replace_callback(
-			self::PLACEHOLDER,
-			static function ( $found ) use ( $values ) {
-				$name = 'p' . substr( md5( strtolower( $found[0] ) ), 0, 16 );
-				return isset( $values[ $name ] ) ? $values[ $name ] : $found[0];
-			},
-			$translated
-		);
+		return Templates::refill( $original, $translated, $written, self::PLACEHOLDER );
 	}
 
 	/**
@@ -598,15 +569,6 @@ class Amelia extends SettingsTexts {
 	 * @return mixed
 	 */
 	public function keepPlaceholders( $items ) {
-		if ( ! is_array( $items ) ) {
-			return $items;
-		}
-		foreach ( $items as $key => $item ) {
-			if ( is_array( $item ) && isset( $item['text'] ) && is_string( $item['text'] ) && preg_match_all( self::PLACEHOLDER, $item['text'], $found ) ) {
-				$keep                  = isset( $item['keep'] ) && is_array( $item['keep'] ) ? $item['keep'] : array();
-				$items[ $key ]['keep'] = array_values( array_unique( array_merge( $keep, $found[0] ) ) );
-			}
-		}
-		return $items;
+		return Templates::keepPlaceholders( $items, self::PLACEHOLDER );
 	}
 }

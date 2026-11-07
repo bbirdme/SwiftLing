@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Bookings:** LatePoint, Amelia, Bookly, Simply Schedule Appointments and Booking Calendar: services, staff, the booking form and the emails to your customers in the language they booked in, while the emails to you and your staff stay in your language.
 * **Cookie banners:** Complianz, CookieYes, Cookie Notice, GDPR Cookie Compliance, Real Cookie Banner, Cookiebot and iubenda.
 * **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
+* **Memberships:** Paid Memberships Pro, Ultimate Member, WP-Members, User Registration & Membership and Simple Membership: levels, registration forms, messages for restricted content, and the emails to members in the language they registered in, also those sent later.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
 = Multilingual SEO and addresses =
@@ -181,6 +182,15 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.11 =
+* Paid Memberships Pro: the names, descriptions and confirmation messages of the levels are translated on the levels, checkout, account and confirmation pages, and so are its messages for visitors without a membership. Every email to members, and the header and footer of every email, has its place on the Templates screen, also those you never changed, as its language packs lack their texts.
+* Ultimate Member: the labels, placeholders and help texts of its forms and the words of their buttons are on the Forms screen. Its messages, the message of a restricted post, and the subjects and texts of its emails to members are translated.
+* WP-Members: its messages, the labels of its fields and its emails to members, also those you never changed, are translated.
+* User Registration & Membership: the labels and placeholders of its forms, which it writes into a form in English, are on the Forms screen; its messages and emails are translated, and a form sent from a page in a language is answered in it.
+* Simple Membership: the names of its levels and its emails, which it saves in English when it is installed, are translated, and the emails lead to its pages in the member's language.
+* Emails to members: a member's language is kept when they register from a page in a language, and an email the plugin sends them later, as when you approve their account or a membership changes, is written in it. Emails to you stay in your language and lead to your pages in the original.
+* What SwiftLing writes in a language outside its page, as an email from the admin to a customer, now leads to the pages in that language with their folder or host, and what it writes in the original from a page in a language leads to the original.
 
 = 1.0.10 =
 * Popup Maker: each popup has its own place on the Templates screen, with its title, content and close button, and shows translated on every page in the language. The close texts of the popup themes are translated too.
