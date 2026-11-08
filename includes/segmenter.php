@@ -238,9 +238,10 @@ function swiftling_walk_node( $value, $callback, $path, $source, $type, $rel, $i
  */
 function swiftling_walk_string( $value, $callback, $path, $source, $type, $rel ) {
 	// A value the user chose as one text on the Themes & plugins screen, such as a tracking script
-	// in a plugin's settings, is one leaf: what it holds is never split into JSON, shortcodes or
-	// attributes, so its translation replaces it as a whole.
-	if ( \SwiftLing\Packages\Settings::isWhole( $path ) ) {
+	// in a plugin's settings, or one a builder declares whole, as a template of an email with the
+	// plugin's shortcodes for placeholders, is one leaf: what it holds is never split into JSON,
+	// shortcodes or attributes, so its translation replaces it as a whole.
+	if ( \SwiftLing\Packages\Settings::isWhole( $path ) || \SwiftLing\Builders\Registry::isWhole( $path ) ) {
 		return call_user_func( $callback, $value, $path, swiftling_rule_key( $source, $type, $rel ) );
 	}
 

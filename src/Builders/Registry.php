@@ -13,6 +13,7 @@ use SwiftLing\Forms\ContactForm7;
 use SwiftLing\Forms\Forminator;
 use SwiftLing\Forms\FluentForms;
 use SwiftLing\Forms\Formidable;
+use SwiftLing\Forms\GiveWP as GiveWPForms;
 use SwiftLing\Forms\GravityForms;
 use SwiftLing\Forms\NinjaForms;
 use SwiftLing\Forms\WPForms;
@@ -53,7 +54,7 @@ final class Registry {
 	public static function all(): array {
 		if ( null === self::$builders ) {
 			self::$builders = array();
-			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new MailchimpForWp(), new MailPoet(), new UltimateMemberForms(), new UserRegistrationForms(), new WooCommerce(), new TutorLms(), new LearnPress(), new TheEventsCalendar(), new EventTickets(), new EventOrganiser(), new EventsManager(), new MyCalendar(), new SimplyScheduleAppointments(), new Amelia(), new BookingCalendar(), new LatePoint(), new Bookly(), new PopupMaker(), new Newsletter(), new PaidMembershipsPro(), new UltimateMember(), new WpMembers(), new UserRegistration(), new SimpleMembership(), new TablePress(), new NinjaTables(), new WpDataTables(), new WpTableBuilder(), new Visualizer(), new CookieNotice(), new GdprCookieCompliance(), new Complianz(), new CookieYes(), new Cookiebot(), new Iubenda(), new RealCookieBanner(), new SeoPress(), new Aioseo() ) as $builder ) {
+			foreach ( array( new Elementor(), new Breakdance(), new Brizy(), new Bricks(), new Acf(), new ContactForm7(), new Forminator(), new GravityForms(), new NinjaForms(), new FluentForms(), new WPForms(), new Formidable(), new MailchimpForWp(), new MailPoet(), new UltimateMemberForms(), new UserRegistrationForms(), new GiveWPForms(), new WooCommerce(), new TutorLms(), new LearnPress(), new TheEventsCalendar(), new EventTickets(), new EventOrganiser(), new EventsManager(), new MyCalendar(), new SimplyScheduleAppointments(), new Amelia(), new BookingCalendar(), new LatePoint(), new Bookly(), new PopupMaker(), new Newsletter(), new PaidMembershipsPro(), new UltimateMember(), new WpMembers(), new UserRegistration(), new SimpleMembership(), new GiveWP(), new Charitable(), new PayPalDonations(), new EasyPayPalDonation(), new WcDonationPlatform(), new TablePress(), new NinjaTables(), new WpDataTables(), new WpTableBuilder(), new Visualizer(), new CookieNotice(), new GdprCookieCompliance(), new Complianz(), new CookieYes(), new Cookiebot(), new Iubenda(), new RealCookieBanner(), new SeoPress(), new Aioseo() ) as $builder ) {
 				self::$builders[ $builder->id() ] = $builder;
 			}
 		}
@@ -186,6 +187,20 @@ final class Registry {
 	public static function holdsNoText( string $path ): bool {
 		foreach ( self::active() as $builder ) {
 			if ( $builder->holdsNoText( $path ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether an active builder declares a value one text as a whole, see Builder::isWhole().
+	 *
+	 * @param string $path Path of the value inside its object.
+	 */
+	public static function isWhole( string $path ): bool {
+		foreach ( self::active() as $builder ) {
+			if ( $builder->isWhole( $path ) ) {
 				return true;
 			}
 		}
