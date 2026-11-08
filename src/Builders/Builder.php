@@ -84,6 +84,18 @@ abstract class Builder {
 	}
 
 	/**
+	 * Whether a value of the builder's plugin is one text as a whole, with what it holds: a template
+	 * whose placeholders are shortcodes of the plugin's own, as the text of an email, is translated
+	 * whole, so a translator writes the sentence around them in the order of the language, see
+	 * swiftling_walk_string(). Any other value is split into the texts between its shortcodes.
+	 *
+	 * @param string $path Path of the value inside its object, as "option/<name>/<key>".
+	 */
+	public function isWhole( string $path ): bool { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- A builder whose values are whole texts overrides it.
+		return false;
+	}
+
+	/**
 	 * Whether the current user may translate an object the builder keeps, which takes the right to
 	 * edit it: the owner key of such an object is the builder's, such as "gravityforms:7", or a post
 	 * of a type the plugin guards with a right of its own instead of WordPress's, such as a form of

@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.13
+Stable tag: 1.0.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Cookie banners:** Complianz, CookieYes, Cookie Notice, GDPR Cookie Compliance, Real Cookie Banner, Cookiebot and iubenda.
 * **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
 * **Memberships:** Paid Memberships Pro, Ultimate Member, WP-Members, User Registration & Membership and Simple Membership: levels, registration forms, messages for restricted content, and the emails to members in the language they registered in, also those sent later.
+* **Donations:** GiveWP, Charitable, Donations via PayPal, Accept Donations with PayPal & Stripe and Donation Platform for WooCommerce: donation forms, campaigns, the page after a donation and the emails to donors, each in the language the donor gave in. The emails to you stay in your language.
 * **Tables and charts:** TablePress, Ninja Tables, wpDataTables, WP Table Builder and Visualizer: every text of a table, its name and description, and the titles and labels of charts, translated once for the whole table. Numbers and dates are left as they are.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
@@ -183,6 +184,14 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.14 =
+* GiveWP: the texts of its donation forms (questions, fields, amounts, terms and buttons), the heading and text after a donation, the titles and short descriptions of campaigns, and the emails to donors are translated. Each donation keeps the language it was made in: its donor gets every email in it, also one sent later, and you get yours in your language.
+* Charitable: a donation made on a page in another language leads to the receipt in that language, with the names of the campaigns, the payment method and the emails in it. The descriptions of suggested amounts are offered with the campaign, and the texts of the emails to donors are translated whole, with Charitable's shortcodes in them.
+* Donations via PayPal: the purpose and reference are translated, and on a page in another language the button, PayPal's pages and the page PayPal sends the donor back to are in that language.
+* Accept Donations with PayPal & Stripe: each button's name and the names of its amounts are on the Templates screen, and PayPal's language and the pages it sends the donor back to follow the page's language.
+* Donation Platform for WooCommerce: the titles of its donation form and leaderboard are translated.
+* For developers: a builder class can declare a value one text as a whole, with the plugin's own shortcodes in it (Builder::isWhole()).
 
 = 1.0.13 =
 * Gravity Forms: the title above a form is translated. Gravity Forms put its stored title back over the translated one, so it stayed in the original. In an email to the visitor, {form_title} is translated too; in the email to the site's owner it stays the original.
