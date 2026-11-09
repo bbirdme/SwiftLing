@@ -24,12 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * A cell without letters, as a price or a date, and a formula are no text and are never offered.
  */
-abstract class TablePlugin extends Builder {
-	/**
-	 * How many tables the Templates screen lists.
-	 */
-	const LIMIT = 200;
-
+abstract class TablePlugin extends ListedObjects {
 	/**
 	 * Returns the plugin's tables for the Templates screen: their titles, by ID.
 	 *
@@ -46,13 +41,6 @@ abstract class TablePlugin extends Builder {
 	abstract protected function readTable( string $table ): void;
 
 	/**
-	 * Returns the right the plugin asks to edit its tables.
-	 */
-	protected function capability(): string {
-		return 'manage_options';
-	}
-
-	/**
 	 * Returns what the plugin calls a table, for the Templates screen and the editor.
 	 */
 	protected function tableNoun(): string {
@@ -60,12 +48,60 @@ abstract class TablePlugin extends Builder {
 	}
 
 	/**
-	 * Whether a post is built with the plugin: none is.
+	 * Returns the tables as the objects of the Templates screen.
 	 *
-	 * @param int $post_id Post ID.
+	 * @return array<string, string>
 	 */
-	public function isUsed( int $post_id ): bool { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- The plugin builds no posts.
-		return false;
+	protected function objects(): array {
+		return $this->tables();
+	}
+
+	/**
+	 * Reads every text of a table, see readTable().
+	 *
+	 * @param string $id The table's ID.
+	 */
+	protected function readObject( string $id ): void {
+		$this->readTable( $id );
+	}
+
+	/**
+	 * Returns what the plugin calls a table.
+	 */
+	protected function objectNoun(): string {
+		return $this->tableNoun();
+	}
+
+	/**
+	 * Returns the sentence the Templates screen shows under the plugin's name.
+	 */
+	protected function objectsDescription(): string {
+		return __( 'Tables, shown on the pages that hold them.', 'swiftling' );
+	}
+
+	/**
+	 * Returns what the editor says a table is.
+	 */
+	protected function objectType(): string {
+		/* translators: %s: name of a plugin of tables, e.g. TablePress. */
+		return sprintf( __( 'Table of %s', 'swiftling' ), $this->name() );
+	}
+
+	/**
+	 * Returns the sentence the editor shows above the texts of a table.
+	 */
+	protected function objectNote(): string {
+		return __( 'Every text of this table: its name, its headers and its cells, each text once, wherever it is in the table. Numbers and dates are not offered. The table is translated once and shows translated on every page that holds it.', 'swiftling' );
+	}
+
+	/**
+	 * Whether a text read for a table is one of its own: under the table's object.
+	 *
+	 * @param string $id   The table's ID.
+	 * @param array  $leaf The text.
+	 */
+	protected function ownsText( string $id, array $leaf ): bool {
+		return $this->owner( $id ) === $leaf['o'];
 	}
 
 	/**
@@ -117,104 +153,6 @@ abstract class TablePlugin extends Builder {
 	protected static function isText( string $value ): bool {
 		$value = trim( $value );
 		return '' !== $value && '=' !== $value[0] && 1 === preg_match( '/\p{L}/u', wp_strip_all_tags( html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
-	}
-
-	/**
-	 * Returns the tables as subjects of the Templates screen.
-	 *
-	 * @return array
-	 */
-	public function subjects(): array {
-		$subjects = array();
-		foreach ( $this->tables() as $table => $title ) {
-			$subjects[] = array(
-				'key'         => $this->id() . ':' . $table,
-				'title'       => '' !== trim( $title ) ? $title : __( 'No title', 'swiftling' ),
-				'description' => $this->tableNoun(),
-			);
-		}
-		if ( ! $subjects ) {
-			return array();
-		}
-		return array(
-			array(
-				'title'       => $this->name(),
-				'description' => __( 'Tables, shown on the pages that hold them.', 'swiftling' ),
-				'subjects'    => $subjects,
-			),
-		);
-	}
-
-	/**
-	 * Returns a subject of the editor: one table.
-	 *
-	 * @param string $key Subject key.
-	 */
-	public function subject( string $key ): ?array {
-		$table = $this->tableOf( $key );
-		if ( null === $table ) {
-			return null;
-		}
-		$title = $this->tables()[ $table ];
-		return array(
-			'key'   => $key,
-			'kind'  => 'fields',
-			'title' => '' !== trim( $title ) ? $title : __( 'No title', 'swiftling' ),
-			/* translators: %s: name of a plugin of tables, e.g. TablePress. */
-			'type'  => sprintf( __( 'Table of %s', 'swiftling' ), $this->name() ),
-			'url'   => '',
-			'probe' => false,
-			'post'  => null,
-			'cap'   => $this->capability(),
-			'note'  => __( 'Every text of this table: its name, its headers and its cells, each text once, wherever it is in the table. Numbers and dates are not offered. The table is translated once and shows translated on every page that holds it.', 'swiftling' ),
-		);
-	}
-
-	/**
-	 * Returns the table a subject names.
-	 *
-	 * @param string $key Subject key.
-	 * @return string|null Null when the key names no table of the plugin.
-	 */
-	private function tableOf( string $key ): ?string {
-		$prefix = $this->id() . ':';
-		if ( 0 !== strpos( $key, $prefix ) ) {
-			return null;
-		}
-		$table = substr( $key, strlen( $prefix ) );
-		return '' !== $table && isset( $this->tables()[ $table ] ) ? $table : null;
-	}
-
-	/**
-	 * Returns the texts of a table for its subject.
-	 *
-	 * @param array $subject Subject, see swiftling_subject().
-	 */
-	public function listTexts( array $subject ): array {
-		$table = $this->tableOf( (string) $subject['key'] );
-		if ( null === $table ) {
-			return array();
-		}
-		$owner = $this->owner( $table );
-		$texts = array();
-		foreach ( swiftling_collect(
-			function () use ( $table ): void {
-				$this->readTable( $table );
-			}
-		) as $leaf ) {
-			if ( $owner !== $leaf['o'] ) {
-				continue;
-			}
-			$texts[] = array(
-				'o'     => $leaf['o'],
-				'p'     => $leaf['p'],
-				'v'     => $leaf['v'],
-				'r'     => $leaf['r'],
-				'kind'  => 'text',
-				'place' => $this->fieldLabel( $leaf['o'], $leaf['p'] ),
-			);
-		}
-		return $texts;
 	}
 
 	/**
