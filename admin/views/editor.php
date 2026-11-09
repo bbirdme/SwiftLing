@@ -73,6 +73,14 @@ if ( $swiftling_is_package ) {
 	$swiftling_back = array( __( 'Menus', 'swiftling' ), admin_url( 'admin.php?page=swiftling-menus' ) );
 } elseif ( 'comments' === $swiftling_subject['kind'] ) {
 	$swiftling_back = array( __( 'Comments', 'swiftling' ), admin_url( 'admin.php?page=swiftling-comments' ) );
+} elseif ( ! $swiftling_is_post ) {
+	// A form is listed on the Forms screen: its plugin knows the subject.
+	foreach ( \SwiftLing\Builders\Registry::forms() as $swiftling_form_plugin ) {
+		if ( null !== $swiftling_form_plugin->subject( (string) $swiftling_subject['key'] ) ) {
+			$swiftling_back = array( __( 'Forms', 'swiftling' ), admin_url( 'admin.php?page=swiftling-forms' ) );
+			break;
+		}
+	}
 }
 $swiftling_languages = swiftling_languages();
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen parameter.

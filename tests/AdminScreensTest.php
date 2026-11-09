@@ -8,6 +8,13 @@
 namespace SwiftLing\Tests;
 
 use SwiftLing\Admin\Menu;
+use SwiftLing\Builders\Registry;
+use SwiftLing\Builders\WcDonationPlatform;
+use SwiftLing\Forms\GravityForms;
+
+require_once __DIR__ . '/stubs/FakeGravityField.php';
+require_once __DIR__ . '/stubs/FakeGravityForms.php';
+require_once __DIR__ . '/stubs/FakeWcDonationPlatform.php';
 
 /**
  * Every SwiftLing screen, rendered as an administrator sees it, without a notice or a warning.
@@ -80,6 +87,51 @@ class AdminScreensTest extends TestCase {
 		);
 		$this->assertStringContainsString( 'Vijesti', $this->render_screen( 'editor' ) );
 		set_current_screen( 'front' );
+	}
+
+	/**
+	 * The editor leads back to the screen its subject is listed on: a form to the Forms screen, the
+	 * settings of a plugin to the Templates screen.
+	 */
+	public function test_editor_leads_back_to_its_screen() {
+		$this->become( 'administrator' );
+		$this->set_languages();
+		$forms           = new FakeGravityForms();
+		$forms->forms[7] = array(
+			'id'     => 7,
+			'title'  => 'Upit',
+			'fields' => array(),
+		);
+		$settings        = new FakeWcDonationPlatform();
+		$builders        = array();
+		foreach ( Registry::all() as $id => $builder ) {
+			$builders[ $id ] = $builder instanceof GravityForms ? $forms : ( $builder instanceof WcDonationPlatform ? $settings : $builder );
+		}
+		self::set_static( Registry::class, 'builders', $builders );
+		self::reset_static( Registry::class, 'active' );
+		update_option( 'wcdp_contribution_title', 'Vaš dar' );
+
+		$_GET = array(
+			'subject' => 'gravityforms-form:7',
+			'lang'    => 'de',
+		);
+		$this->assertSame( array( admin_url( 'admin.php?page=swiftling-forms' ), 'Forms' ), self::back_link( $this->render_screen( 'editor' ) ) );
+		$_GET['subject'] = 'wc-donation-platform-settings';
+		$this->assertSame( array( admin_url( 'admin.php?page=swiftling-templates' ), 'Templates' ), self::back_link( $this->render_screen( 'editor' ) ) );
+
+		self::reset_static( Registry::class, 'builders' );
+		self::reset_static( Registry::class, 'active' );
+	}
+
+	/**
+	 * Returns the address and the label of the editor's link back.
+	 *
+	 * @param string $html The editor.
+	 * @return array{0: string, 1: string}
+	 */
+	private static function back_link( $html ) {
+		preg_match( '#<a class="[^"]*\bis-back\b[^"]*" href="([^"]*)">(?:<span[^>]*></span>)?([^<]*)</a>#', $html, $found );
+		return array( html_entity_decode( $found[1] ?? '' ), $found[2] ?? '' );
 	}
 
 	/**
