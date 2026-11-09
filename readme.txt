@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.14
+Stable tag: 1.0.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
 * **Memberships:** Paid Memberships Pro, Ultimate Member, WP-Members, User Registration & Membership and Simple Membership: levels, registration forms, messages for restricted content, and the emails to members in the language they registered in, also those sent later.
 * **Donations:** GiveWP, Charitable, Donations via PayPal, Accept Donations with PayPal & Stripe and Donation Platform for WooCommerce: donation forms, campaigns, the page after a donation and the emails to donors, each in the language the donor gave in. The emails to you stay in your language.
+* **Galleries and sliders:** FooGallery, MetaSlider, Modula, Envira Gallery, NextGEN Gallery, Photo Gallery, Master Slider and Smart Slider 3: captions, descriptions, alt texts and the texts of slides. An image of the media library is translated once and shows translated in every gallery that holds it.
 * **Tables and charts:** TablePress, Ninja Tables, wpDataTables, WP Table Builder and Visualizer: every text of a table, its name and description, and the titles and labels of charts, translated once for the whole table. Numbers and dates are left as they are.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
 
@@ -184,6 +185,13 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.15 =
+* Galleries and sliders: FooGallery, MetaSlider, Modula, Envira Gallery, NextGEN Gallery, Photo Gallery by 10Web, Master Slider and Smart Slider 3 are translated. Each gallery and slider is on the Templates screen. The title, caption, description and alt text of an image of the media library are translated once for the image and show translated in every gallery that holds it. The texts a plugin keeps itself, as a slide's own caption, the layers of a Smart Slider slide or the descriptions of NextGEN and Photo Gallery, are translated once for the plugin. Photo Gallery's lightbox, which loads after the page, is in the page's language too.
+* Envira Gallery: a gallery opened first on a page in another language showed that language on the pages in the original for up to a day, and one opened first in the original stayed in the original on the translated pages. Envira keeps what it read for a day; SwiftLing now leaves only the original there and translates what Envira prints.
+* NextGEN Gallery keeps a copy of each gallery it printed: SwiftLing keeps one per language and empties them once a translation of one of its texts is saved, so a changed translation shows at once.
+* The editor of a form leads back to the Forms screen. It led back to the Templates screen.
+* For developers: a plugin whose objects are each a subject of the Templates screen can extend ListedObjects, as TablePlugin and the new GalleryPlugin do.
 
 = 1.0.14 =
 * GiveWP: the texts of its donation forms (questions, fields, amounts, terms and buttons), the heading and text after a donation, the titles and short descriptions of campaigns, and the emails to donors are translated. Each donation keeps the language it was made in: its donor gets every email in it, also one sent later, and you get yours in your language.
