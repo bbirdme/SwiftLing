@@ -30,13 +30,20 @@ defined( 'ABSPATH' ) || exit;
  * - A listing gets no separate copy: its plan and payments are kept by its ID. It is translated in
  *   place, see noCopyTypes().
  *
- * Not reached: the plugin writes the emails to a listing's owner and to the site's owner together, in
- * the language of the request.
+ * - A listing keeps the language of the page it was posted on, see keepLanguage(). The plugin writes
+ *   its emails in the actions it hooks, one to the site's owner and one to the listing's owner often
+ *   in the same action: around each, see openWindow(), the email the plugin writes next is put in the
+ *   language of its reader where the plugin reads the setting that decides who gets it, see
+ *   decideReader(): the site's owner in the original, the listing's owner in the listing's language.
+ *   A message a visitor sends a listing's owner from its page is written in the listing's language,
+ *   see contactTemplate(). The subjects and texts of the emails are values of the plugin's settings,
+ *   read before SwiftLing starts: put in place where the plugin asks for one, see translateTemplate(),
+ *   and offered with the fields.
  *
  * Checked against the code of Business Directory Plugin 6.4 (the free plugin), in tests/JobBoardsTest.php,
  * and by hand on a site with the plugin. Its premium modules were not checked.
  */
-class BusinessDirectory extends Builder {
+class BusinessDirectory extends SettingsTexts {
 	/**
 	 * The plugin's type of post.
 	 */
@@ -56,6 +63,49 @@ class BusinessDirectory extends Builder {
 	 * The subject of the plugin's fields on the Templates screen.
 	 */
 	const SUBJECT = 'business-directory-fields';
+
+	/**
+	 * Where a listing keeps the language it was posted in.
+	 */
+	const LANGUAGE_META = 'swiftling_language';
+
+	/**
+	 * The option of the plugin's settings.
+	 */
+	const SETTINGS = 'wpbdp_settings';
+
+	/**
+	 * The plugin's emails to the owners of listings and to visitors, by their setting: each a subject
+	 * and a text.
+	 */
+	const TEMPLATES = array( 'email-confirmation-message', 'email-templates-listing-published', 'email-templates-contact', 'email-templates-payment-completed', 'email-templates-payment-abandoned' );
+
+	/**
+	 * The setting with the plugin's notices before and after a listing expires, each a subject and a text.
+	 */
+	const NOTICES = 'expiration-notices';
+
+	/**
+	 * The actions the plugin writes its emails in, by what its first argument is: a listing, a post, the
+	 * ID of a listing, a payment, or "site" for those with an email to the site's owner only.
+	 */
+	const WINDOWS = array(
+		'transition_post_status'              => 'post',
+		'wpbdp_listing_status_change'         => 'listing',
+		'wpbdp_listing_renewed'               => 'listing',
+		'wpbdp_listing_maybe_send_notices'    => 'notice',
+		'WPBDP_Payment::status_change'        => 'payment',
+		'wpbdp_edit_listing'                  => 'site',
+		'wpbdp_listing_maybe_flagging_notice' => 'site',
+	);
+
+	/**
+	 * The actions the plugin is writing emails in: the listing of each, and whether this class changed
+	 * the language.
+	 *
+	 * @var array<int, array{listing: int, changed: bool, inert?: bool, saving?: bool}>
+	 */
+	private $windows = array();
 
 	/**
 	 * Returns the class's ID.
@@ -104,7 +154,289 @@ class BusinessDirectory extends Builder {
 		add_filter( 'wpbdp_url_base_url', array( $this, 'ruleBase' ), 10, 3 );
 		add_filter( 'wpbdp_form_field_args', array( $this, 'translateField' ), 10, 1 );
 		add_filter( 'wpbdp_form_field_value', array( $this, 'translateValue' ), 10, 3 );
+		add_filter( 'wpbdp_get_option', array( $this, 'translateTemplate' ), 10, 2 );
+		add_filter( 'wpbdp_get_option_email-templates-contact', array( $this, 'contactTemplate' ), 10, 1 );
+		add_action( 'WPBDP_Listing::set_field_values', array( $this, 'keepLanguage' ), 10, 1 );
+		foreach ( self::WINDOWS as $action => $kind ) {
+			add_action( $action, array( $this, 'openWindow' ), 9, 3 );
+			add_action( $action, array( $this, 'closeWindow' ), 11, 0 );
+		}
+		// The notice that a listing is published, which the plugin sends at the end of saving the post.
+		add_action( 'save_post', array( $this, 'openPublishedWindow' ), PHP_INT_MAX - 1, 2 );
+		add_action( 'wp_after_insert_post', array( $this, 'closePublishedWindow' ), 0, 0 );
+		// Who gets the email the plugin writes next.
+		add_filter( 'wpbdp_get_option_admin-notifications', array( $this, 'decideReader' ), 10, 1 );
+		add_filter( 'wpbdp_get_option_user-notifications', array( $this, 'decideReader' ), 10, 1 );
+		add_filter( 'wpbdp_get_option_' . self::NOTICES, array( $this, 'decideReader' ), 10, 1 );
 		// phpcs:enable
+		add_filter( 'swiftling_machine_items', array( $this, 'keepPlaceholders' ) );
+	}
+
+	/**
+	 * Returns the values of the plugin's settings that hold text: the subject and text of each email to
+	 * a listing's owner or a visitor. Those of the notices are declared by fieldHoldsText().
+	 *
+	 * @return array<string, string[]>
+	 */
+	protected function textOptions(): array {
+		$paths = array();
+		foreach ( self::TEMPLATES as $template ) {
+			$paths[] = $template . '/subject';
+			$paths[] = $template . '/body';
+		}
+		return array( self::SETTINGS => $paths );
+	}
+
+	/**
+	 * Returns the sentence the editor shows above the texts of the plugin's settings.
+	 */
+	protected function settingsNote(): string {
+		return __( 'The subjects and texts of the emails to the owners of listings, in the language each listing was posted in, and to visitors. Keep every placeholder, such as [listing]: the plugin fills it in.', 'swiftling' );
+	}
+
+	/**
+	 * Whether a value is one text as a whole: the text of an email, with the plugin's placeholders.
+	 *
+	 * @param string $path Path of the value.
+	 */
+	public function isWhole( string $path ): bool {
+		return 1 === preg_match( '#^option/' . self::SETTINGS . '/(' . implode( '|', array_map( 'preg_quote', self::TEMPLATES ) ) . '|' . self::NOTICES . '/\d+)/body$#', $path );
+	}
+
+	/**
+	 * Keeps the placeholders of the plugin's emails, as [listing], as they are when a text goes to
+	 * machine translation.
+	 *
+	 * @param mixed $items Texts sent, by key.
+	 * @return mixed
+	 */
+	public function keepPlaceholders( $items ) {
+		return Templates::keepPlaceholders( $items, '/\[[a-z][a-z_-]*\]/' );
+	}
+
+	/**
+	 * Returns an email of the plugin's settings the plugin asks for in the mode of the moment: it read
+	 * its settings before SwiftLing started.
+	 *
+	 * @param mixed $value      The setting: a subject and a text, or the list of notices.
+	 * @param mixed $setting_id Which setting.
+	 * @return mixed
+	 */
+	public function translateTemplate( $value, $setting_id = '' ) {
+		if ( ! is_array( $value ) || ! self::inMode() ) {
+			return $value;
+		}
+		if ( in_array( $setting_id, self::TEMPLATES, true ) ) {
+			return $this->templateIn( (string) $setting_id, $value );
+		}
+		if ( self::NOTICES === $setting_id ) {
+			foreach ( $value as $index => $notice ) {
+				if ( is_array( $notice ) ) {
+					$value[ $index ] = $this->templateIn( self::NOTICES . '/' . $index, $notice );
+				}
+			}
+		}
+		return $value;
+	}
+
+	/**
+	 * Returns an email's subject and text in the mode of the moment.
+	 *
+	 * @param string $path  Where the email is in the plugin's settings.
+	 * @param array  $email The email: its subject and text.
+	 */
+	private function templateIn( string $path, array $email ): array {
+		foreach ( array( 'subject', 'body' ) as $part ) {
+			if ( isset( $email[ $part ] ) && is_string( $email[ $part ] ) ) {
+				$email[ $part ] = $this->optionText( self::SETTINGS, $path . '/' . $part, $email[ $part ] );
+			}
+		}
+		return $email;
+	}
+
+	/**
+	 * Returns the email a visitor sends a listing's owner from the listing's page in the language of the
+	 * listing, with its title in it: the plugin works the title out in the language of the page first.
+	 *
+	 * @param mixed $value The email: its subject and text.
+	 * @return mixed
+	 */
+	public function contactTemplate( $value ) {
+		$listing = isset( $_REQUEST['listing_id'] ) ? absint( $_REQUEST['listing_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The plugin checks its form; only the listing's ID is read.
+		if ( ! is_array( $value ) || ! $listing || self::POST_TYPE !== get_post_type( $listing ) || $this->windows ) {
+			return $value;
+		}
+		$slug = self::listingLanguage( $listing );
+		if ( swiftling_writing_language() === $slug ) {
+			return $value;
+		}
+		$stored = swiftling_raw_option( self::SETTINGS );
+		$email  = is_array( $stored ) && isset( $stored['email-templates-contact'] ) && is_array( $stored['email-templates-contact'] ) ? $stored['email-templates-contact'] : $value;
+		swiftling_write_in( $slug );
+		try {
+			$email = $this->templateIn( 'email-templates-contact', $email );
+			$title = (string) get_the_title( $listing );
+		} finally {
+			swiftling_resume_translation();
+		}
+		foreach ( array( 'subject', 'body' ) as $part ) {
+			if ( isset( $email[ $part ] ) && is_string( $email[ $part ] ) ) {
+				$email[ $part ] = str_replace( '[listing]', $title, $email[ $part ] );
+			}
+		}
+		return $email;
+	}
+
+	/**
+	 * Keeps the language of the page a listing was posted or edited on; one in the original keeps none.
+	 * Saved in the admin, a listing keeps the language it had.
+	 *
+	 * @param mixed $listing The plugin's object of the listing.
+	 */
+	public function keepLanguage( $listing ): void {
+		$id = is_object( $listing ) && method_exists( $listing, 'get_id' ) ? (int) $listing->get_id() : 0;
+		if ( ! $id || self::POST_TYPE !== get_post_type( $id ) || ( is_admin() && ! wp_doing_ajax() ) ) {
+			return;
+		}
+		$slug = swiftling_writing_language();
+		if ( '' === $slug ) {
+			delete_post_meta( $id, self::LANGUAGE_META );
+		} else {
+			update_post_meta( $id, self::LANGUAGE_META, $slug );
+		}
+	}
+
+	/**
+	 * Before the plugin writes the emails of one of its actions: notes the listing they are about, until
+	 * closeWindow(). An action with an email to the site's owner only is in the original; in the others,
+	 * each email is put in its reader's language once the plugin decides who gets it, see decideReader().
+	 *
+	 * @param mixed $first  The action's first argument.
+	 * @param mixed $second Its second.
+	 * @param mixed $third  Its third.
+	 */
+	public function openWindow( $first = null, $second = null, $third = null ): void {
+		$kind    = self::WINDOWS[ current_action() ] ?? '';
+		$listing = 0;
+		if ( 'listing' === $kind || 'site' === $kind ) {
+			$listing = self::listingOf( $first );
+		} elseif ( 'notice' === $kind ) {
+			$listing = self::listingOf( $third );
+		} elseif ( 'payment' === $kind ) {
+			$listing = is_object( $first ) && isset( $first->listing_id ) ? (int) $first->listing_id : 0;
+		} elseif ( 'post' === $kind ) {
+			// Only a listing that is published now sends anything: to its owner.
+			$listing = $first !== $second && 'publish' === $first && $third instanceof \WP_Post && self::POST_TYPE === $third->post_type ? $third->ID : 0;
+		}
+		$this->windows[] = array(
+			'listing' => $listing,
+			'changed' => false,
+			// Another post's status: the plugin sends nothing.
+			'inert'   => 'post' === $kind && ! $listing,
+		);
+		if ( 'site' === $kind ) {
+			$this->writeFor( '' );
+		} elseif ( 'post' === $kind && $listing ) {
+			$this->writeFor( self::listingLanguage( $listing ) );
+		}
+	}
+
+	/**
+	 * After one of the plugin's actions: the request goes on in its own language.
+	 */
+	public function closeWindow(): void {
+		$window = array_pop( $this->windows );
+		if ( null !== $window && $window['changed'] ) {
+			swiftling_resume_translation();
+		}
+	}
+
+	/**
+	 * When the plugin sends the notice that a listing is published at the end of saving its post, as for a
+	 * listing published in the admin: in the listing's language, until closePublishedWindow().
+	 *
+	 * @param mixed $post_id The post.
+	 * @param mixed $post    Its post.
+	 */
+	public function openPublishedWindow( $post_id, $post = null ): void {
+		global $wpbdp;
+		$sender = is_object( $wpbdp ) && isset( $wpbdp->listing_email_notification ) ? $wpbdp->listing_email_notification : null;
+		if ( ! $post instanceof \WP_Post || self::POST_TYPE !== $post->post_type || ! $sender || false === has_action( 'save_post', array( $sender, 'send_listing_published_notification' ) ) ) {
+			return;
+		}
+		$this->windows[] = array(
+			'listing' => (int) $post_id,
+			'changed' => false,
+			'saving'  => true,
+		);
+		$this->writeFor( self::listingLanguage( (int) $post_id ) );
+	}
+
+	/**
+	 * After WordPress saved a post: the notice that a listing is published is sent.
+	 */
+	public function closePublishedWindow(): void {
+		$last = count( $this->windows ) - 1;
+		if ( $last >= 0 && ! empty( $this->windows[ $last ]['saving'] ) ) {
+			$this->closeWindow();
+		}
+	}
+
+	/**
+	 * Puts the email the plugin writes next in the language of its reader, where the plugin reads the
+	 * setting that decides who gets it: the site's owner in the original, the listing's owner in the
+	 * listing's language. Outside the plugin's actions, nothing changes.
+	 *
+	 * @param mixed $value The setting.
+	 * @return mixed
+	 */
+	public function decideReader( $value ) {
+		$last = count( $this->windows ) - 1;
+		if ( $last < 0 || ! empty( $this->windows[ $last ]['inert'] ) ) {
+			return $value;
+		}
+		$owner = 'wpbdp_get_option_admin-notifications' !== current_filter();
+		$this->writeFor( $owner ? self::listingLanguage( $this->windows[ $last ]['listing'] ) : '' );
+		return $value;
+	}
+
+	/**
+	 * Puts the request in a language for the email the plugin writes next, in the action it writes in.
+	 *
+	 * @param string $slug Address slug of the language, or an empty string for the original.
+	 */
+	private function writeFor( string $slug ): void {
+		$last = count( $this->windows ) - 1;
+		if ( $this->windows[ $last ]['changed'] ) {
+			swiftling_resume_translation();
+			$this->windows[ $last ]['changed'] = false;
+		}
+		if ( swiftling_writing_language() !== $slug ) {
+			swiftling_write_in( $slug );
+			$this->windows[ $last ]['changed'] = true;
+		}
+	}
+
+	/**
+	 * Returns the ID of a listing an action of the plugin is about: its object or its ID.
+	 *
+	 * @param mixed $listing The listing.
+	 */
+	private static function listingOf( $listing ): int {
+		if ( is_object( $listing ) && method_exists( $listing, 'get_id' ) ) {
+			return (int) $listing->get_id();
+		}
+		return is_numeric( $listing ) ? (int) $listing : 0;
+	}
+
+	/**
+	 * Returns the language a listing was posted in, or an empty string for the original.
+	 *
+	 * @param int $listing The listing.
+	 */
+	private static function listingLanguage( int $listing ): string {
+		$slug = $listing ? (string) get_post_meta( $listing, self::LANGUAGE_META, true ) : '';
+		return null !== swiftling_target_language( $slug ) ? $slug : '';
 	}
 
 	/**
@@ -193,7 +525,14 @@ class BusinessDirectory extends Builder {
 	 * @return bool|null Null for values of nothing of the plugin.
 	 */
 	public function fieldHoldsText( string $owner, string $path ): ?bool {
-		return self::FIELDS === $owner && 0 === strpos( $path, 'fields/' ) ? true : null;
+		if ( self::FIELDS === $owner && 0 === strpos( $path, 'fields/' ) ) {
+			return true;
+		}
+		$notices = 'option/' . self::SETTINGS . '/' . self::NOTICES;
+		if ( 'options' === $owner && 0 === strpos( $path, $notices . '/' ) ) {
+			return 1 === preg_match( '#^' . preg_quote( $notices, '#' ) . '/\d+/(subject|body)$#', $path );
+		}
+		return parent::fieldHoldsText( $owner, $path );
 	}
 
 	/**
@@ -203,8 +542,11 @@ class BusinessDirectory extends Builder {
 	 * @param string $path  Path of the value inside its object.
 	 */
 	public function fieldLabel( string $owner, string $path ): string {
+		if ( 'options' === $owner && preg_match( '#/' . self::NOTICES . '/\d+/(subject|body)$#', $path, $part ) ) {
+			return 'subject' === $part[1] ? __( 'Notice about expiring › Subject', 'swiftling' ) : __( 'Notice about expiring › Text', 'swiftling' );
+		}
 		if ( self::FIELDS !== $owner || ! preg_match( '#^fields/(\d+)/(label|description|options)#', $path, $found ) ) {
-			return '';
+			return parent::fieldLabel( $owner, $path );
 		}
 		$names = array(
 			'label'       => __( 'Name', 'swiftling' ),
@@ -222,7 +564,7 @@ class BusinessDirectory extends Builder {
 	 */
 	public function subject( string $key ): ?array {
 		if ( self::SUBJECT !== $key ) {
-			return null;
+			return parent::subject( $key );
 		}
 		return array(
 			'key'   => $key,
@@ -243,22 +585,25 @@ class BusinessDirectory extends Builder {
 	 * @return array
 	 */
 	public function subjects(): array {
-		if ( ! $this->rows() ) {
-			return array();
+		$groups = parent::subjects();
+		// The plugin keeps an email in its settings only once the site's owner changed it.
+		$stored = swiftling_raw_option( self::SETTINGS );
+		$kept   = is_array( $stored ) && array_intersect_key( $stored, array_flip( array_merge( self::TEMPLATES, array( self::NOTICES ) ) ) );
+		if ( ! $kept ) {
+			$groups[0]['subjects'] = array();
 		}
-		return array(
-			array(
-				'title'       => $this->name(),
-				'description' => __( 'The fields of its listings.', 'swiftling' ),
-				'subjects'    => array(
-					array(
-						'key'         => self::SUBJECT,
-						'title'       => __( 'Fields', 'swiftling' ),
-						'description' => __( 'Names, descriptions and choices', 'swiftling' ),
-					),
-				),
-			),
-		);
+		if ( $this->rows() ) {
+			array_unshift(
+				$groups[0]['subjects'],
+				array(
+					'key'         => self::SUBJECT,
+					'title'       => __( 'Fields', 'swiftling' ),
+					'description' => __( 'Names, descriptions and choices', 'swiftling' ),
+				)
+			);
+		}
+		$groups[0]['description'] = __( 'The fields of its listings, and its emails.', 'swiftling' );
+		return $groups[0]['subjects'] ? $groups : array();
 	}
 
 	/**
@@ -269,7 +614,7 @@ class BusinessDirectory extends Builder {
 	 */
 	public function listTexts( array $subject ): array {
 		if ( self::SUBJECT !== $subject['key'] ) {
-			return array();
+			return parent::listTexts( $subject );
 		}
 		$rows  = $this->rows();
 		$texts = array();
