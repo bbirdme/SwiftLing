@@ -396,4 +396,80 @@ class JobBoardsTest extends TestCase {
 		$this->assertSame( 'Telefon', $bdp->translateField( array( 'id' => $field, 'label' => 'Telefon' ) )['label'] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- One field.
 		unregister_post_type( 'wpbdp_listing' );
 	}
+
+	/**
+	 * Business Directory Plugin's emails: in an action the plugin writes emails in, the email to the
+	 * site's owner is in the original and the one to the listing's owner in the listing's language, each
+	 * decided where the plugin reads who gets it; another post's status changes nothing; a visitor's
+	 * message to a listing's owner is written in the listing's language, with its title; an email the
+	 * site's owner wrote in the settings is translated.
+	 */
+	public function test_business_directory_emails() {
+		$bdp = Registry::get( 'business-directory' );
+		$bdp->register();
+		register_post_type( 'wpbdp_listing', array( 'public' => true ) );
+		$listing = self::factory()->post->create(
+			array(
+				'post_type'  => 'wpbdp_listing',
+				'post_title' => 'Imanje u dolini',
+			)
+		);
+		update_post_meta( $listing, 'swiftling_language', 'de' );
+		$object = new \Rtcl\Emails\Listing( $listing );
+		$seen   = array();
+		$writes = static function () use ( &$seen ) {
+			apply_filters( 'wpbdp_get_option_admin-notifications', array() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.ValidHookName.UseUnderscores -- The plugin's own filter, as it runs it.
+			$seen[] = swiftling_writing_language();
+			apply_filters( 'wpbdp_get_option_user-notifications', array() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.ValidHookName.UseUnderscores -- As above.
+			$seen[] = swiftling_writing_language();
+		};
+		add_action( 'wpbdp_listing_status_change', $writes, 10, 0 );
+		do_action( 'wpbdp_listing_status_change', $object, 'incomplete', 'complete' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- As above.
+		$this->assertSame( array( '', 'de' ), $seen, 'The site\'s owner\'s email, then the listing\'s owner\'s' );
+		$this->assertSame( '', swiftling_writing_language() );
+
+		$this->show_in( 'de' );
+		$seen = array();
+		do_action( 'wpbdp_listing_status_change', $object, 'incomplete', 'complete' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- As above.
+		$this->assertSame( array( '', 'de' ), $seen, 'Also from a page in German' );
+		$this->assertSame( 'de', swiftling_writing_language() );
+		$other = static function () use ( &$seen ) {
+			apply_filters( 'wpbdp_get_option_admin-notifications', array() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.ValidHookName.UseUnderscores -- As above.
+			$seen[] = swiftling_writing_language();
+		};
+		$seen  = array();
+		add_action( 'transition_post_status', $other, 10, 0 );
+		wp_update_post(
+			array(
+				'ID'          => self::factory()->post->create( array( 'post_status' => 'draft' ) ),
+				'post_status' => 'publish',
+			)
+		);
+		$this->assertSame( array( 'de' ), array_values( array_unique( $seen ) ), 'Another post\'s status changes nothing' );
+
+		// A visitor on a page in German writes to the owner of a listing in the original.
+		update_post_meta( $listing, 'swiftling_language', '' );
+		update_option(
+			'wpbdp_settings',
+			array(
+				'email-templates-contact' => array(
+					'subject' => 'Poruka za [listing]',
+					'body'    => 'Netko je pisao.',
+				),
+			)
+		);
+		$_REQUEST['listing_id'] = (string) $listing;
+		$email                  = $bdp->contactTemplate(
+			array(
+				'subject' => 'Nachricht für [listing]',
+				'body'    => 'Jemand hat geschrieben.',
+			)
+		);
+		unset( $_REQUEST['listing_id'] );
+		$this->assertSame( 'Poruka za Imanje u dolini', $email['subject'], 'In the listing\'s language, with its title' );
+		$this->assertTrue( $bdp->isWhole( 'option/wpbdp_settings/email-templates-contact/body' ) );
+		$this->assertTrue( $bdp->fieldHoldsText( 'options', 'option/wpbdp_settings/expiration-notices/0/body' ) );
+		$this->assertFalse( $bdp->fieldHoldsText( 'options', 'option/wpbdp_settings/expiration-notices/0/event' ) );
+		unregister_post_type( 'wpbdp_listing' );
+	}
 }
