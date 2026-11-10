@@ -469,10 +469,12 @@ function swiftling_example_pages() {
 
 	// The newest post of every public post type that uses no page template of its own, and the
 	// newest one of every page template in use.
-	$latest = null;
+	$latest  = null;
+	$visited = \SwiftLing\Builders\Registry::visitorTypes();
 	foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $type ) {
-		// Types a site does not link to, such as the saved templates of a page builder.
-		if ( 'attachment' === $type->name || ( ! in_array( $type->name, array( 'post', 'page' ), true ) && ! $type->show_in_nav_menus ) ) {
+		// Types a site does not link to, such as the saved templates of a page builder, unless a
+		// plugin's class names one visitors open, see Builder::visitorTypes().
+		if ( 'attachment' === $type->name || ( ! in_array( $type->name, array( 'post', 'page' ), true ) && ! $type->show_in_nav_menus && ! in_array( $type->name, $visited, true ) ) ) {
 			continue;
 		}
 		$posts = get_posts(

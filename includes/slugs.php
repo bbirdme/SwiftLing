@@ -491,6 +491,20 @@ function &swiftling_link_locale_override() {
 }
 
 /**
+ * Whether WordPress or a plugin registers or builds the rules of the site's addresses now: on init,
+ * where plugins add rules made from the addresses of their pages, as a directory's listings under
+ * its main page, and while WordPress builds the rules. A rule made from a page's translated slug
+ * changed with the language of the request, so plugins that compare their rules with the saved ones,
+ * as many do, wrote them again on every request, and an address under the page was not found in the
+ * other language.
+ *
+ * @return bool
+ */
+function swiftling_builds_rules() {
+	return doing_action( 'init' ) || doing_action( 'generate_rewrite_rules' ) || doing_filter( 'rewrite_rules_array' );
+}
+
+/**
  * Returns the language of the links WordPress builds now: the one swiftling_in_link_language()
  * asks for, otherwise the language the page is shown in.
  *
@@ -499,12 +513,19 @@ function &swiftling_link_locale_override() {
  * lead to the original, so they keep its slugs; the switcher, hreflang and sitemaps ask for a
  * language and add it.
  *
+ * While WordPress and plugins register the rules of the site's addresses, on init, and while
+ * WordPress builds them, links keep the original slugs, see swiftling_builds_rules(): the rules are
+ * the same in every language, and a translated slug is put back before WordPress reads an address.
+ *
  * @return string Locale, or an empty string for the original.
  */
 function swiftling_link_locale() {
 	$override = &swiftling_link_locale_override();
 	if ( null !== $override ) {
 		return $override;
+	}
+	if ( swiftling_builds_rules() ) {
+		return '';
 	}
 	$state = &swiftling_state();
 	return 'translate' === $state['mode'] && ( 'directory' === swiftling_url_format() || swiftling_is_host_format() ) ? (string) $state['locale'] : '';

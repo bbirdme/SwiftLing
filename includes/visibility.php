@@ -98,16 +98,19 @@ function swiftling_is_never_translated_owner( $owner ) {
 }
 
 /**
- * Returns the post types visitors can open on their own, which the Settings screen lists.
+ * Returns the post types visitors can open on their own, which the Settings screen lists: also one
+ * a plugin leaves out of search or of menus when its class names it, see Builder::visitorTypes().
  *
  * @return array<string, WP_Post_Type> Keyed by name.
  */
 function swiftling_viewable_types() {
-	$types = array();
+	$types   = array();
+	$visited = \SwiftLing\Builders\Registry::visitorTypes();
 	foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $name => $type ) {
 		// Media files open as files, and builders keep their templates and parts in types that are
-		// left out of search or of menus.
-		if ( 'attachment' !== $name && ! $type->exclude_from_search && $type->show_in_nav_menus ) {
+		// left out of search or of menus. A plugin's class can name a type visitors open all the same,
+		// as the job listings of a job board.
+		if ( 'attachment' !== $name && ( ( ! $type->exclude_from_search && $type->show_in_nav_menus ) || in_array( $name, $visited, true ) ) ) {
 			$types[ $name ] = $type;
 		}
 	}
