@@ -158,7 +158,9 @@ class JobBoardsTest extends TestCase {
 		$wpjm->startEmail( 'employer@example.org', $email );
 		$this->assertSame( 'de', swiftling_writing_language() );
 		$property = new \ReflectionProperty( \WP_Job_Manager_Email::class, 'args' );
-		$property->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$property->setAccessible( true );
+		}
 		$this->assertSame( 'Gärtner', $property->getValue( $email )['job']->post_title, 'The title the plugin prints from the post' );
 		$wpjm->endEmail( true );
 		$this->assertSame( '', swiftling_writing_language() );
