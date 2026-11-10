@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.15
+Stable tag: 1.0.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 * **Newsletters and popups:** Popup Maker, Mailchimp for WordPress, MailPoet and Newsletter: popups, sign-up forms, the messages after signing up and the emails to subscribers in the language they signed up in.
 * **Memberships:** Paid Memberships Pro, Ultimate Member, WP-Members, User Registration & Membership and Simple Membership: levels, registration forms, messages for restricted content, and the emails to members in the language they registered in, also those sent later.
 * **Donations:** GiveWP, Charitable, Donations via PayPal, Accept Donations with PayPal & Stripe and Donation Platform for WooCommerce: donation forms, campaigns, the page after a donation and the emails to donors, each in the language the donor gave in. The emails to you stay in your language.
+* **Job boards and directories:** WP Job Manager, WP Job Openings, Classified Listing, GeoDirectory and Business Directory Plugin: listings, their fields, descriptions and the names of their fields, and each email in the language of its reader. The emails to you stay in your language.
 * **Galleries and sliders:** FooGallery, MetaSlider, Modula, Envira Gallery, NextGEN Gallery, Photo Gallery, Master Slider and Smart Slider 3: captions, descriptions, alt texts and the texts of slides. An image of the media library is translated once and shows translated in every gallery that holds it.
 * **Tables and charts:** TablePress, Ninja Tables, wpDataTables, WP Table Builder and Visualizer: every text of a table, its name and description, and the titles and labels of charts, translated once for the whole table. Numbers and dates are left as they are.
 * **SEO titles and descriptions:** Yoast SEO, Rank Math, SEOPress and All in One SEO.
@@ -185,6 +186,12 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.16 =
+* Job boards and directories: WP Job Manager, WP Job Openings, Classified Listing, GeoDirectory and Business Directory Plugin are translated. A job's description in WP Job Manager, the names of WP Job Openings' job specifications, the values of GeoDirectory's custom fields and the fields of Business Directory Plugin, with their names and choices, were left in the original and are translated now. Job listings of WP Job Manager are on the Translations lists, as pages visitors open.
+* The emails of these plugins go out in the language of their reader: to an applicant in the language of the page they applied on, to an employer or the owner of a listing in the language the listing was posted in, and to you in your language. Business Directory Plugin's emails are not reached yet.
+* Plugins that build the rules of their addresses from the address of one of their pages, as directories do with their main page, got that page's translated slug on a page in another language: their rules changed with the language, many plugins wrote them again on every request, and a listing under the page was not found in the other language. While rules are built, a page's address now keeps its original slug.
+* For developers: a builder class can name post types of its plugin that visitors open although the plugin leaves them out of search or menus (Builder::visitorTypes()).
 
 = 1.0.15 =
 * Galleries and sliders: FooGallery, MetaSlider, Modula, Envira Gallery, NextGEN Gallery, Photo Gallery by 10Web, Master Slider and Smart Slider 3 are translated. Each gallery and slider is on the Templates screen. The title, caption, description and alt text of an image of the media library are translated once for the image and show translated in every gallery that holds it. The texts a plugin keeps itself, as a slide's own caption, the layers of a Smart Slider slide or the descriptions of NextGEN and Photo Gallery, are translated once for the plugin. Photo Gallery's lightbox, which loads after the page, is in the page's language too.

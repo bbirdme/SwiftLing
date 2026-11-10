@@ -260,6 +260,17 @@ abstract class Builder {
 	}
 
 	/**
+	 * Returns the post types of the plugin that visitors open although the plugin leaves them out of
+	 * search or of menus, as the job listings of a job board, see swiftling_viewable_types(). They are
+	 * translated as any page a visitor opens, and listed and counted with them.
+	 *
+	 * @return string[]
+	 */
+	public function visitorTypes(): array {
+		return array();
+	}
+
+	/**
 	 * Returns the meta keys the builder writes again by itself, such as CSS made from a page's
 	 * data, which a separate copy of the page leaves out.
 	 *
