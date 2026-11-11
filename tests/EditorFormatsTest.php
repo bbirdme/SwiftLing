@@ -78,12 +78,18 @@ class EditorFormatsTest extends TestCase {
 		$this->assertFalse( $this->editor_has_formats( $built ), 'A page builder' );
 		$this->assertFalse( $this->editor_has_formats( 0 ), 'No post' );
 
-		// Breakdance and Oxygen show their own data, also where blocks are left in the content.
-		foreach ( array( '_breakdance_data', '_oxygen_data', 'ct_builder_shortcodes', 'ct_builder_json' ) as $key ) {
+		// Breakdance, Oxygen and Brizy show their own data, also where blocks are left in the content.
+		foreach ( array( '_breakdance_data', '_oxygen_data', 'ct_builder_shortcodes', 'ct_builder_json', 'brizy' ) as $key ) {
 			$post = self::factory()->post->create( array( 'post_content' => self::HEADING ) );
 			add_post_meta( $post, $key, '{"tree":{}}' );
 			$this->assertFalse( $this->editor_has_formats( $post ), $key );
 		}
+		// Beaver Builder and SiteOrigin keep a whole layout in one block.
+		$beaver = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:fl-builder/layout -->\n<p>Raspored.</p>\n<!-- /wp:fl-builder/layout -->" ) );
+		$this->assertSame( 'Beaver Builder', swiftling_live_builder( $beaver ) );
+		$this->assertFalse( $this->editor_has_formats( $beaver->ID ) );
+		$origin = self::factory()->post->create_and_get( array( 'post_content' => '<!-- wp:siteorigin-panels/layout-block {"panelsData":{}} /-->' ) );
+		$this->assertSame( 'SiteOrigin Page Builder', swiftling_live_builder( $origin ) );
 	}
 
 	/**
