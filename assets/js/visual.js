@@ -285,6 +285,8 @@
 	const textsBy = {};
 	const placed = new Set();
 	const READ_ONLY = [ 'core/html', 'core/shortcode', 'core/freeform', 'core/missing' ];
+	// The blocks the texts beside the page are of, where the page shows them as they are.
+	const sideAs = {};
 	data.texts.forEach( ( text ) => {
 		( textsBy[ text.object ] = textsBy[ text.object ] || [] ).push( text );
 	} );
@@ -347,6 +349,14 @@
 			// cannot change as SwiftLing keeps it are fields beside the page; the page shows them
 			// as they are.
 			if ( 'code' === text.type || READ_ONLY.includes( node.blockName ) ) {
+				if ( READ_ONLY.includes( node.blockName ) ) {
+					sideAs[ text.key ] = node.blockName;
+				}
+				return;
+			}
+			// An address in an attribute of a block, as the link of a plugin's button, has no control
+			// on the page.
+			if ( where.attrPath && 'url' === text.type ) {
 				return;
 			}
 			node.swl = node.swl || [];
@@ -403,7 +413,7 @@
 	const annotate = ( block, original, node ) => {
 		// A block that did not load, as one of a plugin whose script failed, shows as it is saved;
 		// its texts are fields beside the page.
-		if ( 'core/missing' === block.name ) {
+		if ( 'core/missing' === block.name || false === block.isValid ) {
 			const forget = ( raw ) => {
 				( raw.swl || [] ).forEach( ( unit ) => placed.delete( unit.key ) );
 				raw.innerBlocks.forEach( forget );
@@ -451,6 +461,15 @@
 		} );
 	};
 	const buildBlocks = () => {
+		const blocks = buildTree();
+		// Every text is reachable: the texts of blocks on the page, and all others beside it. A text
+		// that found no block, as one of a block that did not load or changed its form, is beside it.
+		const attached = new Set();
+		walkBlocks( blocks, ( block ) => ( block.attributes.swl ? block.attributes.swl.units : [] ).forEach( ( unit ) => attached.add( unit.key ) ) );
+		[ ...placed ].filter( ( key ) => ! attached.has( key ) ).forEach( ( key ) => placed.delete( key ) );
+		return blocks;
+	};
+	const buildTree = () => {
 		const blocks = [];
 		rawTreeOf( PAGE, data.post.content, 0 ).forEach( ( node ) => {
 			const parsed = parse( serializeRawBlock( fillRaw( node ) ) );
@@ -832,7 +851,7 @@
 			const value = other.value.startsWith( prefix ) && other.value.endsWith( suffix ) && other.value.length >= prefix.length + suffix.length ? other.value.slice( prefix.length, other.value.length - suffix.length ) : other.value;
 			field = h( HtmlField, { id, value, original: middle, onChange: ( text ) => onChange( isBlank( text ) ? '' : prefix + text + suffix ) } );
 		} else {
-			field = h( isUrl ? 'input' : 'textarea', { id, type: isUrl ? 'text' : undefined, rows: isUrl ? undefined : isCode ? 5 : 2, className: isUrl || isCode ? 'swiftling-mono' : undefined, value: other.value, placeholder: isCode ? undefined : unit.original, onChange: ( event ) => onChange( event.target.value ) } );
+			field = h( isUrl ? 'input' : 'textarea', { id, type: isUrl ? 'text' : undefined, rows: isUrl ? undefined : isCode ? 5 : 2, className: isUrl || isCode ? 'swiftling-mono' : undefined, value: other.value, placeholder: unit.original, onChange: ( event ) => onChange( event.target.value ) } );
 		}
 		return h(
 			'div',
@@ -890,6 +909,26 @@
 				)
 			)
 		);
+
+	// The keys saved while the screen is open, with what was saved: machine translation leaves alone
+	// what has a translation now.
+	const savedNow = new Map();
+	// A note to show once the screen loads again, as after machine translation.
+	const LATER = 'swiftling-visual-note';
+	const noteLater = ( text, status ) => {
+		try {
+			window.sessionStorage.setItem( LATER, JSON.stringify( { text, status, post: data.post.id } ) );
+		} catch ( error ) {}
+	};
+	const noteNow = () => {
+		try {
+			const later = JSON.parse( window.sessionStorage.getItem( LATER ) || 'null' );
+			window.sessionStorage.removeItem( LATER );
+			return later && later.post === data.post.id ? { text: later.text, status: later.status } : null;
+		} catch ( error ) {
+			return null;
+		}
+	};
 
 	/* The layout stays as it is. */
 
@@ -1047,10 +1086,15 @@
 		}
 		const reloading = useRef( false );
 		const [ title, setTitle ] = useState( () => ( titleUnit ? { unit: titleUnit, value: '' === titleUnit.translation ? titleUnit.original : titleUnit.translation, state: titleUnit.state, dirty: false } : null ) );
-		const [ others, setOthers ] = useState( () => data.texts.filter( ( text ) => ! placed.has( text.key ) && text !== titleUnit && ! text.follows ).map( ( unit ) => ( { unit, value: unit.translation, dirty: false } ) ) );
+		const [ others, setOthers ] = useState( () =>
+			data.texts
+				.filter( ( text ) => ! placed.has( text.key ) && text !== titleUnit && ! text.follows )
+				.map( ( text ) => ( sideAs[ text.key ] ? { ...text, type: 'code', label: blockTitle( sideAs[ text.key ] ) } : text ) )
+				.map( ( unit ) => ( { unit, value: unit.translation, dirty: false } ) )
+		);
 		const [ address, setAddress ] = useState( data.address );
 		const [ saving, setSaving ] = useState( false );
-		const [ notice, setNotice ] = useState( null );
+		const [ notice, setNotice ] = useState( noteNow );
 		const [ highlight, setHighlight ] = useState( false );
 		const [ machining, setMachining ] = useState( false );
 		// The sidebar, shown or hidden for more room; remembered in this browser.
@@ -1151,6 +1195,7 @@
 			try {
 				const result = await apiFetch( { path: 'swiftling/v1/translations', method: 'POST', data: { subject: PAGE, lang: data.lang, status: state, items } } );
 				const states = result.states || {};
+				items.forEach( ( item ) => savedNow.set( item.key, item.text ) );
 				const saved = settle( blocks, states );
 				setBlocks( saved );
 				// Undo starts again from what is saved.
@@ -1186,7 +1231,9 @@
 					return;
 				}
 			}
-			const found = data.texts.filter( ( text ) => '' === text.translation && ! text.follows && ! [ 'url', 'code' ].includes( text.type ) && '' !== text.original.trim() );
+			// The texts empty now: not those saved since the screen opened, as the changes just saved.
+			const empty = ( text ) => ( savedNow.has( text.key ) ? '' === savedNow.get( text.key ) : '' === text.translation );
+			const found = data.texts.filter( ( text ) => empty( text ) && ! text.follows && ! [ 'url', 'code' ].includes( text.type ) && '' !== text.original.trim() );
 			if ( ! found.length ) {
 				note( __( 'Every text field is filled in. Empty a field to translate it again.', 'swiftling' ), 'info' );
 				return;
@@ -1216,6 +1263,7 @@
 					if ( saveItems.length ) {
 						const saved = await apiFetch( { path: 'swiftling/v1/translations', method: 'POST', data: { subject: PAGE, lang: data.lang, status: 'machine', items: saveItems } } );
 						translated += Object.keys( saved.states || {} ).length;
+						saveItems.forEach( ( item ) => savedNow.set( item.key, item.text ) );
 					}
 					if ( result.error ) {
 						stopped = result.error;
@@ -1234,13 +1282,17 @@
 			}
 			if ( stopped ) {
 				parts.push( stopped );
+			}
+			if ( ! translated ) {
 				note( parts.join( ' ' ), 'error' );
 				setSaving( false );
 				setMachining( false );
 				return;
 			}
-			// The page again, with the translations: nothing is left unsaved, so leaving asks nothing.
-			note( parts.join( ' ' ), 'success' );
+			// The page again, with what was saved, also when the service stopped part of the way: the
+			// page, the counts and translating again then start from there. Nothing is left unsaved,
+			// so leaving asks nothing; what happened shows once it is back.
+			noteLater( parts.join( ' ' ), stopped ? 'error' : 'success' );
 			reloading.current = true;
 			window.location.reload();
 		};

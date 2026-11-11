@@ -634,22 +634,30 @@ final class Menu {
 			wp_enqueue_script( 'swiftling-page-check', SWIFTLING_URL . 'assets/js/page-check.js', array(), SWIFTLING_VERSION, true );
 			$dependencies[] = 'swiftling-page-check';
 		}
-		if ( ! empty( $screen['blocks'] ) ) {
+		// The block editor of the visual editor, for a post it can lay out; otherwise its screen only
+		// says why not.
+		if ( ! empty( $screen['blocks'] ) && ( 'swiftling-visual' !== ( $screen['slug'] ?? '' ) || swiftling_visual_editor_requested() ) ) {
 			// The block editor with every core block and the inline formats, as the editor of a post
 			// loads it, and the media utilities for the image of a language.
 			foreach ( array( 'wp-components', 'wp-block-editor', 'wp-block-editor-content', 'wp-block-library', 'wp-edit-blocks', 'wp-format-library', 'wp-reset-editor-styles' ) as $style ) {
 				wp_enqueue_style( $style );
 			}
 			$dependencies = array_merge( $dependencies, array( 'wp-blocks', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-media-utils', 'wp-components', 'wp-element', 'wp-data', 'wp-hooks', 'wp-api-fetch', 'wp-block-serialization-default-parser', 'wp-dom-ready' ) );
-			// The blocks of other plugins too, as the block editor loads them, so the page shows them
-			// as they are. A script of theirs that needs more of the block editor than this screen has
-			// fails on its own; a block that does not load shows as it is saved, see assets/js/visual.js.
+			// The blocks of other plugins too, so the page shows them as they are: the scripts their
+			// blocks name, and only for a block no script names, everything a plugin loads into the
+			// block editor, which can bring tours and panels of its own (assets/css/visual.css hides
+			// them). A script of theirs that needs more of the block editor than this screen has fails
+			// on its own; a block that does not load shows as it is saved, see assets/js/visual.js.
 			foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $type ) {
 				array_map( 'wp_enqueue_script', $type->editor_script_handles );
 				array_map( 'wp_enqueue_style', $type->editor_style_handles );
 			}
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own action, as the block editor fires it.
-			do_action( 'enqueue_block_editor_assets' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen parameter.
+			$post = isset( $_GET['post'] ) ? get_post( absint( $_GET['post'] ) ) : null;
+			if ( $post && swiftling_visual_scripted_blocks( $post ) ) {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own action, as the block editor fires it.
+				do_action( 'enqueue_block_editor_assets' );
+			}
 		}
 		if ( ! empty( $screen['machine'] ) ) {
 			wp_enqueue_script( 'swiftling-machine', SWIFTLING_URL . 'assets/js/machine.js', array(), SWIFTLING_VERSION, true );

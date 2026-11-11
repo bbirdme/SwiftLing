@@ -199,6 +199,10 @@ if ( $swiftling_is_post ) {
 		},
 		array_values( Registry::forPost( $swiftling_subject['post']->ID ) )
 	);
+	// A builder SwiftLing tells by the page's data, see swiftling_visual_builder().
+	if ( ! $swiftling_built && '' !== swiftling_visual_builder( $swiftling_subject['post'] ) ) {
+		$swiftling_built = array( swiftling_visual_builder( $swiftling_subject['post'] ) );
+	}
 	if ( $swiftling_built ) {
 		/* translators: 1: kind of content, e.g. Page, 2: builders, e.g. Elementor. */
 		$swiftling_subtitle = sprintf( __( '%1$s, built with %2$s', 'swiftling' ), $swiftling_subject['type'], wp_sprintf( '%l', $swiftling_built ) );

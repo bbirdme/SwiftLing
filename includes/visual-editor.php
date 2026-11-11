@@ -54,7 +54,7 @@ function swiftling_remember_editor() {
 
 /**
  * Whether the visual editor can lay a post out and translate it into a language: made of blocks
- * only, with no block this site does not know, no classic block and no HTML between the blocks,
+ * only, with no classic block and no HTML between the blocks or loose in a block of the layout,
  * built with no page builder SwiftLing knows (the translation editor knows the builder's fields),
  * and the language shows the post translated here, not as a separate copy or the original kept.
  * A page of a builder SwiftLing does not tell by its class is told by its data, see
@@ -80,14 +80,8 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 	if ( ! has_blocks( $post->post_content ) || swiftling_visual_loose_html( $blocks ) ) {
 		return new WP_Error( 'swiftling_visual_classic', __( 'This page is not made of blocks. Translate it in the translation editor.', 'swiftling' ) );
 	}
-	$registry = WP_Block_Type_Registry::get_instance();
-	foreach ( swiftling_visual_block_names( $blocks ) as $name ) {
-		// The core blocks that only the block editor's scripts register are known all the same.
-		if ( ! $registry->is_registered( $name ) && 0 !== strpos( $name, 'core/' ) ) {
-			/* translators: %s: name of a block, e.g. acme/slider. */
-			return new WP_Error( 'swiftling_visual_block', sprintf( __( 'This page holds a block this site does not know (%s). Translate it in the translation editor.', 'swiftling' ), $name ) );
-		}
-	}
+	// A block of a plugin is laid out by the plugin's own script; one that does not load shows as it
+	// is saved, its texts beside the page, see assets/js/visual.js.
 	$language = '' === $lang ? null : swiftling_target_language( $lang );
 	if ( $language && 'translation' !== swiftling_language_mode( (int) $post->ID, $language['locale'] ) ) {
 		return new WP_Error( 'swiftling_visual_mode', __( 'This language shows a separate copy of this page or keeps the original. See the translation editor.', 'swiftling' ) );
@@ -129,15 +123,24 @@ function swiftling_visual_builder( $post ) {
 
 /**
  * Whether a tree of blocks holds content that is no block of its own, which the visual editor
- * cannot lay out: a classic block, or HTML between the blocks.
+ * cannot lay out: a classic block, HTML between the blocks, or text in a block of the layout, as a
+ * group or a column, outside the blocks inside it.
  *
  * @param array $blocks Parsed blocks.
  * @return bool
  */
 function swiftling_visual_loose_html( $blocks ) {
+	$layout = array( 'core/group', 'core/columns', 'core/column', 'core/buttons', 'core/social-links', 'core/row', 'core/stack' );
 	foreach ( $blocks as $block ) {
 		if ( 'core/freeform' === $block['blockName'] || ( null === $block['blockName'] && '' !== trim( (string) $block['innerHTML'] ) ) ) {
 			return true;
+		}
+		if ( in_array( $block['blockName'], $layout, true ) ) {
+			foreach ( $block['innerContent'] as $part ) {
+				if ( is_string( $part ) && '' !== trim( html_entity_decode( wp_strip_all_tags( $part ) ) ) ) {
+					return true;
+				}
+			}
 		}
 		if ( ! empty( $block['innerBlocks'] ) && swiftling_visual_loose_html( $block['innerBlocks'] ) ) {
 			return true;
@@ -209,6 +212,40 @@ function swiftling_visual_pattern_refs( $blocks ) {
 		}
 	}
 	return array_values( array_unique( $refs ) );
+}
+
+/**
+ * Whether the visual editor of the request can lay its post out, so its screen loads the block
+ * editor; one it cannot lay out says so and leads to the translation editor.
+ *
+ * @return bool
+ */
+function swiftling_visual_editor_requested() {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only screen parameters.
+	$post = isset( $_GET['post'] ) ? get_post( absint( $_GET['post'] ) ) : null;
+	$lang = isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '';
+	// phpcs:enable
+	if ( ! swiftling_target_language( $lang ) ) {
+		$lang = (string) array_key_first( swiftling_languages()['targets'] );
+	}
+	return '' !== $lang && true === swiftling_visual_editor_supports( $post, $lang );
+}
+
+/**
+ * Whether a post holds a block that only a script of the block editor registers, as many plugins'
+ * blocks are, so the visual editor loads what the block editor loads for plugins.
+ *
+ * @param WP_Post $post Post.
+ * @return bool
+ */
+function swiftling_visual_scripted_blocks( $post ) {
+	$registry = WP_Block_Type_Registry::get_instance();
+	foreach ( swiftling_visual_block_names( parse_blocks( $post->post_content ) ) as $name ) {
+		if ( 0 !== strpos( $name, 'core/' ) && ! $registry->is_registered( $name ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**

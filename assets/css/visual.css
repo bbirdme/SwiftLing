@@ -533,3 +533,8 @@
 	font-size: 12px;
 	white-space: pre-wrap;
 }
+
+/* The tours and welcome guides of plugins, which the block editor loads for them: not here. */
+body.swiftling-screen .components-modal__screen-overlay {
+	display: none !important;
+}

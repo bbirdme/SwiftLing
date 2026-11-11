@@ -118,8 +118,11 @@ class VisualEditorTest extends TestCase {
 		$classic = self::factory()->post->create_and_get( array( 'post_content' => '<p>Priče iz povijesti.</p>' ) );
 		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $classic )->get_error_code() );
 
-		$unknown = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:acme/slider /-->" ) );
-		$this->assertSame( 'swiftling_visual_block', swiftling_visual_editor_supports( $unknown )->get_error_code() );
+		// A block only a plugin's script registers is laid out by that script, or shows as it is.
+		$scripted = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:acme/slider /-->" ) );
+		$this->assertTrue( swiftling_visual_editor_supports( $scripted ) );
+		$this->assertTrue( swiftling_visual_scripted_blocks( $scripted ) );
+		$this->assertFalse( swiftling_visual_scripted_blocks( $this->post ) );
 
 		$built = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT ) );
 		add_post_meta( $built->ID, '_fake_builder', '1' );
@@ -404,6 +407,10 @@ class VisualEditorTest extends TestCase {
 		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $freeform )->get_error_code() );
 		$loose = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<p>HTML između blokova.</p>" ) );
 		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $loose )->get_error_code() );
+		$in_group = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:group -->\n<div class=\"wp-block-group\">Tekst u grupi<!-- wp:paragraph -->\n<p>Odlomak.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->" ) );
+		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $in_group )->get_error_code(), 'Text loose in a group' );
+		$group = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:group -->\n<div class=\"wp-block-group\"><!-- wp:paragraph -->\n<p>Odlomak.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->" ) );
+		$this->assertTrue( swiftling_visual_editor_supports( $group ), 'A group of blocks' );
 
 		foreach ( array(
 			'_breakdance_data'      => 'Breakdance',
@@ -420,6 +427,14 @@ class VisualEditorTest extends TestCase {
 		register_block_type( 'fl-builder/layout', array() );
 		$beaver = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:fl-builder/layout -->\n<p>Raspored.</p>\n<!-- /wp:fl-builder/layout -->" ) );
 		$this->assertStringContainsString( 'Beaver Builder', swiftling_visual_editor_supports( $beaver )->get_error_message() );
+
+		// The translation editor names the builder too.
+		set_current_screen( 'toplevel_page_swiftling' );
+		$_GET = array(
+			'post' => (string) $beaver->ID,
+			'lang' => 'fr',
+		);
+		$this->assertStringContainsString( 'built with Beaver Builder', $this->render_screen( 'editor' ) );
 		unregister_block_type( 'fl-builder/layout' );
 	}
 
@@ -483,10 +498,31 @@ class VisualEditorTest extends TestCase {
 		$GLOBALS['wp_scripts'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A fresh queue of scripts.
 		wp_register_script( 'swiftling-test-block-editor', 'https://example.org/block.js', array(), '1', true );
 		register_block_type( 'swiftling-test/card', array( 'editor_script_handles' => array( 'swiftling-test-block-editor' ) ) );
+		$fired = 0;
+		$count = static function () use ( &$fired ) {
+			++$fired;
+		};
+		add_action( 'enqueue_block_editor_assets', $count );
+
+		// A page it cannot lay out: no block editor, only the reason.
+		$_GET = array( 'post' => (string) self::factory()->post->create( array( 'post_content' => '<p>Klasično.</p>' ) ) );
 		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-visual'] + array( 'slug' => 'swiftling-visual' ) );
+		$this->assertFalse( wp_script_is( 'swiftling-test-block-editor' ) );
+
+		// A page of blocks: their scripts; what plugins load into the block editor only for a block
+		// only a script registers.
+		$GLOBALS['wp_scripts'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A fresh queue of scripts.
+		wp_register_script( 'swiftling-test-block-editor', 'https://example.org/block.js', array(), '1', true );
+		$_GET = array( 'post' => (string) $this->post->ID );
+		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-visual'] + array( 'slug' => 'swiftling-visual' ) );
+		$this->assertSame( 0, $fired );
 		$this->assertTrue( wp_script_is( 'swiftling-test-block-editor' ) );
 		$this->assertTrue( wp_script_is( 'swiftling-machine' ), 'Machine translation, in batches' );
 		$this->assertContains( 'wp-dom-ready', wp_scripts()->registered['swiftling-visual']->deps );
+		$_GET = array( 'post' => (string) self::factory()->post->create( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:acme/slider /-->" ) ) );
+		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-visual'] + array( 'slug' => 'swiftling-visual' ) );
+		$this->assertSame( 1, $fired );
+		remove_action( 'enqueue_block_editor_assets', $count );
 		unregister_block_type( 'swiftling-test/card' );
 		$GLOBALS['wp_scripts'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A fresh queue of scripts.
 	}
