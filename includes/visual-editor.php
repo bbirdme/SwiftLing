@@ -282,10 +282,17 @@ function swiftling_visual_plugin_blocks( $post, $patterns ) {
 	$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- As the page renders its blocks; put back below.
 	setup_postdata( $post );
 	$handles = array();
+	$owners  = array();
 	foreach ( $found as $place => $block ) {
 		$rendered['html'][ $place ] = render_block( $block );
 		$type                       = WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] );
 		$handles                    = array_merge( $handles, $type ? $type->style_handles : array() );
+		// Who the block is of: its namespace, and the prefixes of the handles of its styles and
+		// scripts, as "kadence", "uagb" or "ugb".
+		$names = $type ? array_merge( $type->style_handles, $type->editor_style_handles, $type->view_style_handles, $type->script_handles, $type->editor_script_handles, $type->view_script_handles ) : array();
+		foreach ( array_merge( array( strtok( $block['blockName'], '/' ) ), $names ) as $name ) {
+			$owners[] = (string) preg_replace( '~[^a-z0-9].*$~is', '', (string) $name );
+		}
 	}
 	$handles = array_filter(
 		array_unique( array_merge( $handles, array_diff( $styles->queue, $before[0] ) ) ),
@@ -300,7 +307,7 @@ function swiftling_visual_plugin_blocks( $post, $patterns ) {
 	list( $styles->queue, $styles->done, $scripts->queue ) = $before;
 	// Many plugins write the styles of a page's blocks only as the page loads, into files of their
 	// own or the page's head: those of the page as visitors see it.
-	$rendered['styles'] .= swiftling_visual_page_styles( $post );
+	$rendered['styles'] .= swiftling_visual_page_styles( $post, $owners );
 	$GLOBALS['post']     = $current; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Put back as it was.
 	if ( $current instanceof WP_Post ) {
 		setup_postdata( $current );
@@ -309,29 +316,48 @@ function swiftling_visual_plugin_blocks( $post, $patterns ) {
 }
 
 /**
- * Returns the stylesheets of plugins and the styles in the head of a post's page as visitors see
- * it, as the server checks pages (see swiftling_server_check()): those the visual editor needs to
- * show the blocks of plugins as the page does. Not WordPress's own, which the editor has.
+ * Returns the stylesheets and the styles in the head of a post's page as visitors see it, as the
+ * server checks pages (see swiftling_server_check()), that the visual editor needs to show the
+ * blocks of plugins as the page does: those of the plugins whose blocks it shows, by the IDs the
+ * page gives them, which start with the plugin's prefix, as "kadence-blocks-accordion-css" or
+ * "uagb-style-frontend-12". Not WordPress's own, which the editor has, nor the theme's or another
+ * plugin's, which could restyle the whole editor.
  *
- * @param WP_Post $post Post.
+ * The page is the one the editor's page check read (see swiftling_checked_page()); only without it
+ * is the site asked again, briefly: a page that is slow to come shows the blocks with less style.
+ *
+ * @param WP_Post  $post   Post.
+ * @param string[] $owners The prefixes of the plugins, as "kadence" or "uagb".
  * @return string The link and style elements; '' when the page could not be read.
  */
-function swiftling_visual_page_styles( $post ) {
+function swiftling_visual_page_styles( $post, $owners ) {
 	$subject = swiftling_subject( 'post:' . $post->ID );
-	if ( ! $subject || '' === (string) $subject['url'] ) {
+	$owners  = array_diff( array_unique( array_map( 'strtolower', $owners ) ), array( 'wp', 'core', 'global', 'admin', 'block', 'blocks', 'style', 'swiftling' ) );
+	if ( ! $subject || '' === (string) $subject['url'] || ! $owners ) {
 		return '';
 	}
-	$page = swiftling_fetch_check_page( swiftling_check_page_url( $subject, 'control', get_current_user_id() ) );
+	$page = swiftling_checked_page( $subject['key'], get_current_user_id() );
+	if ( null === $page ) {
+		$page = swiftling_fetch_check_page( swiftling_check_page_url( $subject, 'control', get_current_user_id() ), 200, 10 );
+	}
 	if ( is_wp_error( $page ) ) {
 		return '';
 	}
 	preg_match_all( '~<link\b[^>]*\brel=["\']stylesheet["\'][^>]*>|<style\b[^>]*>.*?</style>~is', $page, $found );
 	$styles = '';
 	foreach ( $found[0] as $element ) {
-		if ( 0 === stripos( $element, '<link' ) ) {
-			$keep = 1 === preg_match( '~href=["\'][^"\']*/wp-content/(?:plugins|uploads)/~i', $element ) && false === stripos( $element, '/plugins/swiftling/' );
-		} else {
-			$keep = 1 !== preg_match( '~\bid=["\'](?:global-styles|wp-|swiftling|admin-bar)~i', $element );
+		$tag = substr( $element, 0, (int) strpos( $element, '>' ) );
+		if ( ! preg_match( '~\sid=["\']([a-z0-9]+)~i', $tag, $id ) || strlen( $id[1] ) < 3 ) {
+			continue;
+		}
+		$prefix = strtolower( $id[1] );
+		$keep   = false;
+		foreach ( $owners as $owner ) {
+			// "uag-style-12-css" is Spectra's as "uagb/" blocks are.
+			$keep = $keep || ( strlen( $owner ) >= 3 && ( 0 === strpos( $owner, $prefix ) || 0 === strpos( $prefix, $owner ) ) );
+		}
+		if ( $keep && 0 === stripos( $element, '<link' ) ) {
+			$keep = 1 === preg_match( '~href=["\'][^"\']*/wp-content/(?:plugins|uploads)/~i', $tag ) && false === stripos( $tag, '/plugins/swiftling/' );
 		}
 		$styles .= $keep ? $element : '';
 	}

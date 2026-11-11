@@ -650,4 +650,71 @@ class VisualEditorTest extends TestCase {
 		$this->assertSame( $queue, wp_styles()->queue );
 		unregister_block_type( 'acme/card' );
 	}
+
+	/**
+	 * The styles in the head of the page come from the page the page check read, without asking the
+	 * site again, and are only those of the plugins whose blocks the editor shows: not the theme's,
+	 * WordPress's or another plugin's, which could restyle the whole editor.
+	 */
+	public function test_styles_of_the_page_only_of_the_plugins_of_its_blocks() {
+		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- A page as the site sends it.
+		$page = '<html><head>'
+			. '<link rel="stylesheet" id="kadence-blocks-accordion-css" href="http://example.org/wp-content/plugins/kadence-blocks/dist/accordion.css" media="all" />'
+			. '<link rel="stylesheet" id="uag-style-12-css" href="http://example.org/wp-content/uploads/uag-plugin/assets/0/uag-css-12.css" media="all" />'
+			. '<link rel="stylesheet" id="evil-css" href="http://example.org/wp-content/plugins/evil/evil.css" media="all" />'
+			. '<style id="uagb-style-frontend-12">.uagb-block-1{color:blue}</style>'
+			. '<style id="theme-inline-css">body{background:lime!important}</style>'
+			. '<style>html{color:red}</style>'
+			. '<style id="global-styles-inline-css">:root{--a:1}</style>'
+			. '<style data-id="kadence-x">body{color:green}</style>'
+			. '</head><body></body></html>';
+		// phpcs:enable
+		$asked = 0;
+		$count = static function ( $response ) use ( &$asked ) {
+			++$asked;
+			return $response;
+		};
+		add_filter( 'pre_http_request', $count );
+		swiftling_checked_page( 'post:' . $this->post->ID, get_current_user_id(), $page );
+		$styles = swiftling_visual_page_styles( $this->post, array( 'kadence', 'uagb' ) );
+		remove_filter( 'pre_http_request', $count );
+
+		$this->assertSame( 0, $asked );
+		$this->assertStringContainsString( 'kadence-blocks/dist/accordion.css', $styles );
+		$this->assertStringContainsString( 'uag-css-12.css', $styles );
+		$this->assertStringContainsString( '.uagb-block-1{color:blue}', $styles );
+		$this->assertStringNotContainsString( 'evil', $styles );
+		$this->assertStringNotContainsString( 'lime', $styles );
+		$this->assertStringNotContainsString( 'red', $styles );
+		$this->assertStringNotContainsString( '--a:1', $styles );
+		$this->assertStringNotContainsString( 'green', $styles );
+		$this->assertSame( '', swiftling_visual_page_styles( $this->post, array( 'core', 'wp' ) ) );
+	}
+
+	/**
+	 * Without the page of a page check, the site is asked for it again, but not for long: a page
+	 * slow to come leaves the blocks with less style, not the editor waiting.
+	 */
+	public function test_styles_of_the_page_asked_for_briefly() {
+		swiftling_checked_page( 'post:0', 0, '' );
+		$timeout = null;
+		$answer  = static function ( $response, $args ) use ( &$timeout ) {
+			$timeout = $args['timeout'];
+			return array(
+				'headers'  => array(),
+				'body'     => '<style id="acme-inline-css">.acme{color:red}</style>',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $answer, 10, 2 );
+		$styles = swiftling_visual_page_styles( $this->post, array( 'acme' ) );
+		remove_filter( 'pre_http_request', $answer, 10 );
+
+		$this->assertSame( 10, $timeout );
+		$this->assertStringContainsString( '.acme{color:red}', $styles );
+	}
 }
