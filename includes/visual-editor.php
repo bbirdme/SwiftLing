@@ -12,13 +12,45 @@
  * page builder, and a language that shows a separate copy or keeps the original stay with the
  * translation editor.
  *
- * Which of the two Translate opens for a page it can lay out is a choice of the General settings,
- * see swiftling_settings(); each editor has a link to the other.
+ * Which of the two Translate opens for a page it can lay out is the one the user last chose with
+ * Table view or Visual view, the links each editor has to the other; until they choose, the one of
+ * the General settings, see swiftling_editor_choice().
  *
  * @package SwiftLing
  */
 
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * User meta: the editor the user last chose with Table view or Visual view, table or visual.
+ */
+define( 'SWIFTLING_EDITOR_CHOICE', 'swiftling_editor' );
+
+/**
+ * Returns which editor Translate opens for a user, for a page the visual editor lays out: the one
+ * they last chose with Table view or Visual view, or else the one of the General settings.
+ *
+ * @param int $user_id User ID; the current user by default.
+ * @return string table or visual.
+ */
+function swiftling_editor_choice( $user_id = 0 ) {
+	$user_id = $user_id ? (int) $user_id : get_current_user_id();
+	$chosen  = $user_id ? get_user_meta( $user_id, SWIFTLING_EDITOR_CHOICE, true ) : '';
+	return in_array( $chosen, array( 'table', 'visual' ), true ) ? $chosen : swiftling_settings()['editor'];
+}
+
+/**
+ * Remembers the editor the current user chose with Table view or Visual view, whose links name it
+ * (editor=table, editor=visual), so Translate opens it from now on. It only changes how the editor
+ * opens for that user, so a link is enough, for whoever may translate.
+ */
+function swiftling_remember_editor() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only which editor opens for this user.
+	$editor = isset( $_GET['editor'] ) ? sanitize_key( wp_unslash( $_GET['editor'] ) ) : '';
+	if ( in_array( $editor, array( 'table', 'visual' ), true ) && current_user_can( SWIFTLING_TRANSLATE ) ) {
+		update_user_meta( get_current_user_id(), SWIFTLING_EDITOR_CHOICE, $editor );
+	}
+}
 
 /**
  * Whether the visual editor can lay a post out and translate it into a language: made of blocks
@@ -139,8 +171,21 @@ function swiftling_visual_editor_url( $post_id, $lang ) {
 }
 
 /**
- * Returns the address of the translation editor of a post in a language that opens it also where
- * the visual editor would open instead, see swiftling_visual_editor_redirect().
+ * Returns the address of the visual editor of a post in a language that the user chose, with
+ * Visual view: Translate opens it from now on, see swiftling_remember_editor().
+ *
+ * @param int    $post_id Post ID.
+ * @param string $lang    Address slug of a target language.
+ * @return string
+ */
+function swiftling_visual_view_url( $post_id, $lang ) {
+	return add_query_arg( 'editor', 'visual', swiftling_visual_editor_url( $post_id, $lang ) );
+}
+
+/**
+ * Returns the address of the translation editor of a post in a language that the user chose, with
+ * Table view: it opens also where the visual editor would, and Translate opens it from now on, see
+ * swiftling_remember_editor() and swiftling_visual_editor_redirect().
  *
  * @param int    $post_id Post ID.
  * @param string $lang    Address slug of a target language.
@@ -152,16 +197,17 @@ function swiftling_table_editor_url( $post_id, $lang ) {
 
 /**
  * Returns where the translation editor of the request leads instead: the visual editor, when the
- * settings choose it and it can lay the post out in the language. Every link to the translation
- * editor, from the Translations screen, the list of pages, the block editor or the toolbar, is
- * swiftling_editor_url(), so they all lead there; a link with editor=table, as the visual editor's
- * own, stays.
+ * user chose it, or the settings do (see swiftling_editor_choice()), and it can lay the post out in
+ * the language. Every link to the translation editor, from the Translations screen, the list of
+ * pages, the block editor or the toolbar, is swiftling_editor_url(), so they all lead there; Table
+ * view, which names the editor (editor=table), stays. A post the visual editor cannot lay out
+ * stays too, and the user's choice with it.
  *
  * @return string The address, or '' to stay.
  */
 function swiftling_visual_editor_redirect() {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only screen parameters.
-	if ( 'visual' !== swiftling_settings()['editor'] || empty( $_GET['post'] ) || isset( $_GET['editor'] ) ) {
+	if ( empty( $_GET['post'] ) || isset( $_GET['editor'] ) || 'visual' !== swiftling_editor_choice() ) {
 		return '';
 	}
 	$post = get_post( absint( $_GET['post'] ) );
@@ -190,14 +236,14 @@ function swiftling_visual_editor_data( $post, $lang ) {
 	$supported = swiftling_visual_editor_supports( $post, $lang );
 	if ( is_wp_error( $supported ) ) {
 		if ( $post instanceof WP_Post ) {
-			$supported->add_data( array( 'url' => swiftling_table_editor_url( $post->ID, $lang ) ) );
+			$supported->add_data( array( 'url' => swiftling_editor_url( 'post:' . $post->ID, $lang ) ) );
 		}
 		return $supported;
 	}
 	$key   = 'post:' . $post->ID;
 	$texts = swiftling_subject_texts( $key, $lang );
 	if ( is_wp_error( $texts ) ) {
-		$texts->add_data( array( 'url' => swiftling_table_editor_url( $post->ID, $lang ) ) );
+		$texts->add_data( array( 'url' => swiftling_editor_url( 'post:' . $post->ID, $lang ) ) );
 		return $texts;
 	}
 	$languages = swiftling_languages();
@@ -218,7 +264,7 @@ function swiftling_visual_editor_data( $post, $lang ) {
 			'state'  => $states[ $slug ] ?? 'missing',
 			'mode'   => $mode,
 			'counts' => 'translation' === $mode ? ( $counts[ $slug ] ?? null ) : null,
-			'url'    => 'translation' === $mode ? swiftling_visual_editor_url( $post->ID, (string) $slug ) : swiftling_table_editor_url( $post->ID, (string) $slug ),
+			'url'    => 'translation' === $mode ? swiftling_visual_editor_url( $post->ID, (string) $slug ) : swiftling_editor_url( 'post:' . $post->ID, (string) $slug ),
 		);
 	}
 

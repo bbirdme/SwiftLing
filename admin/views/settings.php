@@ -147,7 +147,7 @@ $swiftling_confirm = isset( $_GET['swiftling_confirm'] );
 
 	<section class="swiftling-card">
 		<h2><?php esc_html_e( 'Translation editor', 'swiftling' ); ?></h2>
-		<p class="swiftling-muted"><?php esc_html_e( 'Which editor Translate opens for a page made of blocks. Pages built with a page builder, classic content, templates, categories, menus and forms always open in the table editor. Each editor has a link to the other.', 'swiftling' ); ?></p>
+		<p class="swiftling-muted"><?php esc_html_e( 'Which editor Translate opens for a page made of blocks. Pages built with a page builder, classic content, templates, categories, menus and forms always open in the table editor. Each editor has a link to the other, and each user\'s last choice is remembered: this one is for those who have not chosen yet.', 'swiftling' ); ?></p>
 		<fieldset class="swiftling-choice">
 			<legend class="screen-reader-text"><?php esc_html_e( 'Translation editor', 'swiftling' ); ?></legend>
 			<label><input type="radio" name="editor" value="table" <?php checked( 'table', $swiftling_settings['editor'] ); ?>> <?php esc_html_e( 'Table: every text in a row, the original beside the translation', 'swiftling' ); ?></label>

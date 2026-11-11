@@ -216,7 +216,7 @@ if ( '' === $swiftling_view_url ) {
 // Where the header, footer and menu around a post are translated.
 $swiftling_frame = $swiftling_is_post ? swiftling_post_view_subject( $swiftling_subject['post'] ) : null;
 // A page the visual editor lays out can be translated there too, whichever editor the settings choose.
-$swiftling_visual = $swiftling_is_post && true === swiftling_visual_editor_supports( $swiftling_subject['post'], $swiftling_lang ) ? swiftling_visual_editor_url( $swiftling_subject['post']->ID, $swiftling_lang ) : '';
+$swiftling_visual = $swiftling_is_post && true === swiftling_visual_editor_supports( $swiftling_subject['post'], $swiftling_lang ) ? swiftling_visual_view_url( $swiftling_subject['post']->ID, $swiftling_lang ) : '';
 
 // A list of terms checks its page only when it needs to, see swiftling_term_list_needs_check().
 $swiftling_probes = $swiftling_subject['probe'] && ( 'terms' !== $swiftling_subject['kind'] || $swiftling_check ) ? array(
@@ -321,8 +321,6 @@ $swiftling_config = array(
 		</a>
 	<?php endif; ?>
 	<?php if ( 'translation' === $swiftling_mode ) : ?>
-		<?php // How many fields changed since the last save, next to the button that saves them. ?>
-		<span class="swiftling-live-unsaved" id="swiftling-live-unsaved" aria-live="polite"></span>
 	<button type="button" class="swiftling-button is-accent swiftling-live-save" id="swiftling-live-save" disabled>
 		<span class="swiftling-spinner" aria-hidden="true"></span>
 		<?php esc_html_e( 'Save and mark reviewed', 'swiftling' ); ?>
@@ -334,8 +332,11 @@ $swiftling_config = array(
 	<div class="swiftling-editor-bar__status">
 		<div class="swiftling-editor-bar__messages">
 			<p class="swiftling-live-status" id="swiftling-live-status" role="status"><?php esc_html_e( 'Checking the page…', 'swiftling' ); ?></p>
-			<?php // What the last save or tool did, under the Save button. ?>
-			<p class="swiftling-live-note" id="swiftling-live-note" role="status"></p>
+			<?php // How many fields changed since the last save, and what the last save or tool did, under the Save button: the buttons above never move. ?>
+			<div class="swiftling-editor-bar__end">
+				<span class="swiftling-live-unsaved" id="swiftling-live-unsaved" aria-live="polite"></span>
+				<p class="swiftling-live-note" id="swiftling-live-note" role="status"></p>
+			</div>
 		</div>
 		<div class="swiftling-live-progress" id="swiftling-live-progress">
 			<div class="swiftling-bar" role="progressbar" aria-label="<?php esc_attr_e( 'Progress', 'swiftling' ); ?>" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="is-progress"></span></div>

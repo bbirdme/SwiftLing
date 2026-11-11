@@ -588,7 +588,11 @@ final class Menu {
 			wp_safe_redirect( admin_url( 'admin.php?page=swiftling-languages' ) );
 			exit;
 		}
-		// A page the visual editor lays out opens there, when the settings choose it.
+		// Table view and Visual view remember the editor the user chose; a page the visual editor
+		// lays out opens there, when the user or the settings choose it.
+		if ( in_array( $screen['view'], array( 'editor', 'visual' ), true ) ) {
+			swiftling_remember_editor();
+		}
 		$visual = 'editor' === $screen['view'] ? swiftling_visual_editor_redirect() : '';
 		if ( '' !== $visual ) {
 			wp_safe_redirect( $visual );

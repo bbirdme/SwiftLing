@@ -138,8 +138,17 @@ class VisualEditorTest extends TestCase {
 	}
 
 	/**
-	 * Translate opens the visual editor when the settings choose it and it lays the post out; a link
-	 * that asks for the table editor, as the visual editor's own, keeps it.
+	 * Loads a screen as WordPress does before it prints it.
+	 *
+	 * @param string $slug Slug of the screen.
+	 */
+	private function load( $slug ) {
+		( new Menu() )->loadScreen( Menu::screens()[ $slug ] + array( 'slug' => $slug ) );
+	}
+
+	/**
+	 * Translate opens the visual editor when the settings choose it and it lays the post out; Table
+	 * view, which asks for the table editor, keeps it.
 	 */
 	public function test_translate_opens_the_chosen_editor() {
 		$_GET = array(
@@ -153,12 +162,11 @@ class VisualEditorTest extends TestCase {
 		$visual = swiftling_visual_editor_url( $this->post->ID, 'fr' );
 		$this->assertSame( admin_url( 'admin.php?page=swiftling-visual&post=' . $this->post->ID . '&lang=fr' ), $visual );
 		$this->assertSame( $visual, swiftling_visual_editor_redirect() );
-		$screen = Menu::screens()['swiftling-translation'] + array( 'slug' => 'swiftling-translation' );
 		$this->assertSame(
 			$visual,
 			$this->redirect_of(
-				static function () use ( $screen ) {
-					( new Menu() )->loadScreen( $screen );
+				function () {
+					$this->load( 'swiftling-translation' );
 				}
 			)
 		);
@@ -171,8 +179,8 @@ class VisualEditorTest extends TestCase {
 		$this->assertSame( '', swiftling_visual_editor_redirect() );
 		$this->assertStringContainsString( 'editor=table', swiftling_table_editor_url( $this->post->ID, 'fr' ) );
 		$this->assert_no_redirect(
-			static function () use ( $screen ) {
-				( new Menu() )->loadScreen( $screen );
+			function () {
+				$this->load( 'swiftling-translation' );
 			}
 		);
 
@@ -182,6 +190,72 @@ class VisualEditorTest extends TestCase {
 			'lang' => 'fr',
 		);
 		$this->assertSame( '', swiftling_visual_editor_redirect(), 'Classic content' );
+	}
+
+	/**
+	 * Table view and Visual view remember the editor of each user, which Translate opens from then
+	 * on; a user who has not chosen gets the one of the settings. A post the visual editor does not
+	 * lay out opens in the table editor and keeps the choice.
+	 */
+	public function test_each_user_choice_is_remembered() {
+		$first  = get_current_user_id();
+		$second = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$plain  = array(
+			'post' => (string) $this->post->ID,
+			'lang' => 'fr',
+		);
+		$this->assertSame( 'table', swiftling_editor_choice() );
+
+		// Visual view.
+		$this->assertStringContainsString( 'editor=visual', swiftling_visual_view_url( $this->post->ID, 'fr' ) );
+		$_GET = $plain + array( 'editor' => 'visual' );
+		$this->load( 'swiftling-visual' );
+		$this->assertSame( 'visual', get_user_meta( $first, SWIFTLING_EDITOR_CHOICE, true ) );
+		$this->assertSame( 'visual', swiftling_editor_choice() );
+		$_GET = $plain;
+		$this->assertSame( swiftling_visual_editor_url( $this->post->ID, 'fr' ), swiftling_visual_editor_redirect() );
+		// The visual editor itself never leads anywhere else.
+		$this->assert_no_redirect(
+			function () {
+				$this->load( 'swiftling-visual' );
+			}
+		);
+
+		// Another user has not chosen: the settings' editor.
+		wp_set_current_user( $second );
+		$this->assertSame( 'table', swiftling_editor_choice() );
+		$this->assertSame( '', swiftling_visual_editor_redirect() );
+		$this->assertSame( 'visual', swiftling_editor_choice( $first ) );
+		$this->choose( 'visual' );
+		$this->assertSame( swiftling_visual_editor_url( $this->post->ID, 'fr' ), swiftling_visual_editor_redirect() );
+		$this->choose( 'table' );
+
+		// A post the visual editor does not lay out: the table editor, the choice kept.
+		wp_set_current_user( $first );
+		$_GET['post'] = (string) self::factory()->post->create( array( 'post_content' => '<p>Priče.</p>' ) );
+		$this->assert_no_redirect(
+			function () {
+				$this->load( 'swiftling-translation' );
+			}
+		);
+		$this->assertSame( 'visual', swiftling_editor_choice() );
+
+		// Table view.
+		$_GET = $plain + array( 'editor' => 'table' );
+		$this->load( 'swiftling-translation' );
+		$this->assertSame( 'table', swiftling_editor_choice() );
+		$_GET = $plain;
+		$this->assertSame( '', swiftling_visual_editor_redirect() );
+
+		// Someone who may not translate chooses nothing; nor does a value of no editor.
+		$this->become( 'subscriber' );
+		$_GET = $plain + array( 'editor' => 'visual' );
+		swiftling_remember_editor();
+		$this->assertSame( '', get_user_meta( get_current_user_id(), SWIFTLING_EDITOR_CHOICE, true ) );
+		wp_set_current_user( $first );
+		$_GET['editor'] = 'sideways';
+		swiftling_remember_editor();
+		$this->assertSame( 'table', get_user_meta( $first, SWIFTLING_EDITOR_CHOICE, true ) );
 	}
 
 	/**
@@ -213,7 +287,7 @@ class VisualEditorTest extends TestCase {
 			'post' => (string) $this->post->ID,
 			'lang' => 'fr',
 		);
-		$link = esc_url( swiftling_visual_editor_url( $this->post->ID, 'fr' ) );
+		$link = esc_url( swiftling_visual_view_url( $this->post->ID, 'fr' ) );
 		$this->assertStringContainsString( 'href="' . $link . '"', $this->render_screen( 'editor' ) );
 
 		swiftling_set_language_mode( $this->post, 'fr', 'duplicate' );
@@ -260,7 +334,8 @@ class VisualEditorTest extends TestCase {
 		$_GET['post'] = (string) $classic;
 		$html         = $this->render_screen( 'visual' );
 		$this->assertStringNotContainsString( 'swiftling-visual-config', $html );
-		$this->assertStringContainsString( esc_url( swiftling_table_editor_url( $classic, 'fr' ) ), $html );
+		// Without editor=table: the user did not choose the table editor.
+		$this->assertStringContainsString( esc_url( swiftling_editor_url( 'post:' . $classic, 'fr' ) ) . '"', $html );
 	}
 
 	/**

@@ -68,31 +68,6 @@
 	font-weight: 600;
 }
 
-/* The bar: SwiftLing's. The number of unsaved texts keeps its room, empty or not, so the buttons
-   never move; on a narrow window the buttons wrap under the title. */
-.swiftling .swiftling-visual-bar .swiftling-button.is-ghost {
-	padding: 0 10px;
-}
-
-.swiftling .swiftling-visual-bar .swiftling-editor-bar__actions {
-	gap: 8px;
-}
-
-.swiftling .swiftling-visual-bar .swiftling-live-unsaved,
-.swiftling .swiftling-visual-bar .swiftling-live-unsaved:empty {
-	display: inline-block;
-	min-width: 10ch;
-	font-variant-numeric: tabular-nums;
-	text-align: right;
-}
-
-@media (max-width: 960px) {
-	.swiftling-visual-bar .swiftling-editor-bar__actions {
-		justify-content: flex-start;
-		margin-left: 0;
-	}
-}
-
 /* The editor: its head, the page, and the original under it. */
 .swiftling-visual-editor {
 	display: flex;

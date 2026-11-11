@@ -1077,8 +1077,16 @@ body.swiftling-screen {
 	min-height: 26px;
 }
 
-.swiftling .swiftling-live-note {
+.swiftling-editor-bar__end {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
 	max-width: 60%;
+	margin-left: auto;
+}
+
+.swiftling .swiftling-live-note {
 	margin: 0;
 	padding: 4px 12px;
 	border-radius: 999px;
@@ -1977,7 +1985,7 @@ body.swiftling-screen {
 	color: #3a4150;
 }
 
-/* Number of changed fields, next to Save. */
+/* Number of changed fields, under Save. */
 .swiftling-live-unsaved {
 	color: var(--swiftling-muted);
 	font-size: 13px;

@@ -930,10 +930,9 @@
 				data.post.url && h( SButton, { variant: 'ghost', href: data.post.url, target: '_blank', rel: 'noopener', icon: 'visibility' }, __( 'View original', 'swiftling' ) ),
 				viewIn && h( SButton, { variant: 'ghost', href: viewIn, target: '_blank', rel: 'noopener', icon: 'visibility' }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'View in %s', 'swiftling' ), LANG ) ),
 				data.links.table && h( SButton, { variant: 'ghost', href: data.links.table, icon: 'editor-table', onClick: leave, title: __( 'The texts of this page as a list: original on the left, translation on the right.', 'swiftling' ) }, __( 'Table view', 'swiftling' ) ),
-				h( 'span', { className: 'swiftling-live-unsaved', 'aria-live': 'polite' }, items.length ? /* translators: %s: number of fields. */ sprintf( _n( '%s unsaved', '%s unsaved', items.length, 'swiftling' ), items.length ) : '' ),
 				h( SButton, { variant: 'accent', className: 'swiftling-live-save', onClick: () => save( 'reviewed' ), disabled: saving || ! items.length, busy: saving }, __( 'Save and mark reviewed', 'swiftling' ) )
 			),
-			// As in the table editor: what the last save or tool did, under Save.
+			// As in the translation editor: how many changes are not saved, and what the last save or tool did, under Save.
 			h(
 				'div',
 				{ className: 'swiftling-editor-bar__status' },
@@ -941,7 +940,12 @@
 					'div',
 					{ className: 'swiftling-editor-bar__messages' },
 					h( 'p', { className: 'swiftling-live-status', role: 'status' } ),
-					h( 'p', { className: 'swiftling-live-note' + ( notice ? ' is-' + ( 'warning' === notice.status ? 'error' : notice.status ) : '' ), role: 'status' }, notice ? notice.text : '' )
+					h(
+						'div',
+						{ className: 'swiftling-editor-bar__end' },
+						h( 'span', { className: 'swiftling-live-unsaved', 'aria-live': 'polite' }, items.length ? /* translators: %s: number of fields. */ sprintf( _n( '%s unsaved', '%s unsaved', items.length, 'swiftling' ), items.length ) : '' ),
+						h( 'p', { className: 'swiftling-live-note' + ( notice ? ' is-' + ( 'warning' === notice.status ? 'error' : notice.status ) : '' ), role: 'status' }, notice ? notice.text : '' )
+					)
 				)
 			)
 		);
