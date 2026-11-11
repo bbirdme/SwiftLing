@@ -205,6 +205,30 @@
 			return [ createBlock( NAME, { content, original, label, tag: own.tag, look: own.look, note: '' === content ? note : '' } ) ];
 		} );
 		const [ code, setCode ] = useState( false );
+		const holder = useRef( null );
+		// Puts the cursor at the end of the text.
+		const toEnd = () => {
+			const editable = holder.current && holder.current.querySelector( '[contenteditable="true"]' );
+			if ( ! editable ) {
+				return;
+			}
+			editable.focus();
+			const range = editable.ownerDocument.createRange();
+			range.selectNodeContents( editable );
+			range.collapse( false );
+			const selection = editable.ownerDocument.defaultView.getSelection();
+			selection.removeAllRanges();
+			selection.addRange( range );
+		};
+		// A click in the field's box beside the text, as beside a button or a bullet, is a click at
+		// its end. Not one on the toolbar, which reaches here from where it is drawn, nor in a menu of
+		// it, as for a link, drawn beside the text.
+		const onMouseDown = ( event ) => {
+			if ( 0 === event.button && event.currentTarget.contains( event.target ) && ! event.target.closest( '[contenteditable="true"], .components-popover' ) ) {
+				event.preventDefault();
+				setTimeout( toEnd );
+			}
+		};
 		const empty = '' === ( blocks[ 0 ] ? blocks[ 0 ].attributes.content : '' );
 		// The values the text area had, for undo and redo, the field's own: the block editor keeps
 		// none here, and the browser's own undo does not reach a field the block editor draws.
@@ -272,6 +296,8 @@
 			memory.time = 0;
 			show( memory.entries[ at ] );
 			write( memory.entries[ at ] );
+			// The cursor stays in the field, so typing goes on there.
+			setTimeout( toEnd );
 		};
 
 		// Ctrl+K adds a link here, as in the block editor, rather than opening the command palette.
@@ -308,7 +334,7 @@
 
 		return h(
 			'div',
-			{ className: 'swiftling-block-field' + ( empty ? ' is-empty' : '' ), onKeyDown, onKeyDownCapture },
+			{ className: 'swiftling-block-field' + ( empty ? ' is-empty' : '' ), ref: holder, onKeyDown, onKeyDownCapture },
 			h(
 				FieldContext.Provider,
 				{ value: context },
@@ -329,7 +355,7 @@
 						! code &&
 							h(
 								'div',
-								{ className: 'swiftling-block-field__content', lang: config.lang || undefined, dir: config.dir || undefined },
+								{ className: 'swiftling-block-field__content', lang: config.lang || undefined, dir: config.dir || undefined, onMouseDown },
 								// Empty, the original shows behind the field, faded, in the elements of the page.
 								empty &&
 									'' !== original &&

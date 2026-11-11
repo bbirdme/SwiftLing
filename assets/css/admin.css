@@ -1790,6 +1790,23 @@ body.swiftling-screen {
 	display: block;
 }
 
+/* The text fills the field, its padding included, so a click anywhere in its box is a click in
+   it: beside a short text the cursor goes to its end. A button keeps its shape. */
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link) {
+	margin: -8px -10px;
+	padding: 8px 10px;
+}
+
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link):not(li) {
+	display: block;
+}
+
+/* A bullet and a summary's marker stay where they are. */
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link):is(li, summary *) {
+	margin-left: 0;
+	padding-left: 0;
+}
+
 /* The text as on the page: the theme's element, fonts and colours. */
 .swiftling-block-field .swiftling-block-field__text {
 	min-height: 1.5em;
@@ -1838,6 +1855,11 @@ body.swiftling-screen {
 	background: transparent !important;
 	box-shadow: none !important;
 	caret-color: var(--swiftling-ink);
+}
+
+/* With the field's padding, as a text that is not a button has it. */
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) .swiftling-block-field__text:not(.wp-block-button__link) {
+	width: auto;
 }
 
 /* Shown as HTML: the text area under the field. */
