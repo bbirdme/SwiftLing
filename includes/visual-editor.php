@@ -54,9 +54,11 @@ function swiftling_remember_editor() {
 
 /**
  * Whether the visual editor can lay a post out and translate it into a language: made of blocks
- * only, with no block this site does not know, built with no page builder SwiftLing knows (the
- * translation editor knows the builder's fields), and the language shows the post translated here,
- * not as a separate copy or the original kept.
+ * only, with no block this site does not know, no classic block and no HTML between the blocks,
+ * built with no page builder SwiftLing knows (the translation editor knows the builder's fields),
+ * and the language shows the post translated here, not as a separate copy or the original kept.
+ * A page of a builder SwiftLing does not tell by its class is told by its data, see
+ * swiftling_visual_builder().
  *
  * @param WP_Post|null $post Post.
  * @param string       $lang Address slug of a target language; empty for the post alone.
@@ -69,11 +71,17 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 	if ( \SwiftLing\Builders\Registry::forPost( (int) $post->ID ) ) {
 		return new WP_Error( 'swiftling_visual_builder', __( 'This page is built with a page builder. Translate it in the translation editor, which knows the builder\'s fields.', 'swiftling' ) );
 	}
-	if ( ! has_blocks( $post->post_content ) ) {
+	$builder = swiftling_visual_builder( $post );
+	if ( '' !== $builder ) {
+		/* translators: %s: name of a page builder, e.g. Beaver Builder. */
+		return new WP_Error( 'swiftling_visual_builder', sprintf( __( 'This page is built with %s. Translate it in the translation editor, which knows the builder\'s fields.', 'swiftling' ), $builder ) );
+	}
+	$blocks = parse_blocks( $post->post_content );
+	if ( ! has_blocks( $post->post_content ) || swiftling_visual_loose_html( $blocks ) ) {
 		return new WP_Error( 'swiftling_visual_classic', __( 'This page is not made of blocks. Translate it in the translation editor.', 'swiftling' ) );
 	}
 	$registry = WP_Block_Type_Registry::get_instance();
-	foreach ( swiftling_visual_block_names( parse_blocks( $post->post_content ) ) as $name ) {
+	foreach ( swiftling_visual_block_names( $blocks ) as $name ) {
 		// The core blocks that only the block editor's scripts register are known all the same.
 		if ( ! $registry->is_registered( $name ) && 0 !== strpos( $name, 'core/' ) ) {
 			/* translators: %s: name of a block, e.g. acme/slider. */
@@ -85,6 +93,57 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 		return new WP_Error( 'swiftling_visual_mode', __( 'This language shows a separate copy of this page or keeps the original. See the translation editor.', 'swiftling' ) );
 	}
 	return true;
+}
+
+/**
+ * Returns the name of the page builder that built a post, where SwiftLing has no class that tells,
+ * or ''. Breakdance, Oxygen and Brizy keep the page in its meta, and can leave blocks in its
+ * content from before; Beaver Builder and SiteOrigin Page Builder keep a whole layout in one block.
+ *
+ * @param WP_Post $post Post.
+ * @return string
+ */
+function swiftling_visual_builder( $post ) {
+	$meta = array(
+		'_breakdance_data'      => 'Breakdance',
+		'_oxygen_data'          => 'Oxygen',
+		'ct_builder_shortcodes' => 'Oxygen',
+		'ct_builder_json'       => 'Oxygen',
+		'brizy'                 => 'Brizy',
+	);
+	foreach ( $meta as $key => $builder ) {
+		if ( ! empty( get_post_meta( $post->ID, $key, true ) ) ) {
+			return $builder;
+		}
+	}
+	foreach ( array(
+		'fl-builder/layout'              => 'Beaver Builder',
+		'siteorigin-panels/layout-block' => 'SiteOrigin Page Builder',
+	) as $block => $builder ) {
+		if ( has_block( $block, $post ) ) {
+			return $builder;
+		}
+	}
+	return '';
+}
+
+/**
+ * Whether a tree of blocks holds content that is no block of its own, which the visual editor
+ * cannot lay out: a classic block, or HTML between the blocks.
+ *
+ * @param array $blocks Parsed blocks.
+ * @return bool
+ */
+function swiftling_visual_loose_html( $blocks ) {
+	foreach ( $blocks as $block ) {
+		if ( 'core/freeform' === $block['blockName'] || ( null === $block['blockName'] && '' !== trim( (string) $block['innerHTML'] ) ) ) {
+			return true;
+		}
+		if ( ! empty( $block['innerBlocks'] ) && swiftling_visual_loose_html( $block['innerBlocks'] ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -286,6 +345,33 @@ function swiftling_visual_editor_data( $post, $lang ) {
 		);
 	}
 
+	// Each text named as the translation editor names its row: its kind, and the field it is in.
+	$labels = \SwiftLing\Admin\Ui::partLabels();
+	foreach ( $texts['texts'] as &$text ) {
+		$place = \SwiftLing\Builders\Registry::fieldLabel( $text['object'], $text['path'] );
+		if ( '' === $place && 'field/post_excerpt' === $text['path'] ) {
+			$place = __( 'Excerpt', 'swiftling' );
+		}
+		$text['label'] = $labels[ isset( $labels[ $text['kind'] ] ) ? $text['kind'] : 'text' ];
+		// The page's own title, wherever its page check found it.
+		if ( $key === $text['object'] && 'field/post_title' === $text['path'] ) {
+			$text['label'] = __( 'Title', 'swiftling' );
+		}
+		$text['place'] = $place;
+	}
+	unset( $text );
+
+	// The links of the screen, each only for whoever may open it.
+	$links = array_filter(
+		array(
+			'back'    => admin_url( 'admin.php?page=swiftling-content' ),
+			'table'   => swiftling_table_editor_url( $post->ID, $lang ),
+			'service' => admin_url( 'admin.php?page=swiftling-service' ),
+			'request' => admin_url( 'admin.php?page=swiftling-request' ),
+		),
+		array( \SwiftLing\Admin\Ui::class, 'opens' )
+	);
+
 	$address = swiftling_post_address( $post, $lang );
 	$frame   = swiftling_post_view_subject( $post );
 	$view_in = 'publish' === $post->post_status ? swiftling_post_language_url( $post, $lang ) : swiftling_language_url( (string) $subject['url'], $lang );
@@ -304,6 +390,11 @@ function swiftling_visual_editor_data( $post, $lang ) {
 		'patterns' => (object) swiftling_visual_patterns( $post->post_content ),
 		'lang'     => $lang,
 		'language' => $language,
+		// The language and direction of the page in the language, as the canvas shows it.
+		'target'   => array(
+			'lang' => swiftling_hreflang_code( (string) $language['locale'] ),
+			'dir'  => swiftling_language_is_rtl( $language ) ? 'rtl' : 'ltr',
+		),
 		'source'   => $languages['source'],
 		'targets'  => $targets,
 		'labels'   => \SwiftLing\Admin\Ui::statusLabels(),
@@ -324,14 +415,9 @@ function swiftling_visual_editor_data( $post, $lang ) {
 		'machine'  => $machine,
 		'frame'    => $frame ? array(
 			'title' => (string) $frame['title'],
-			'url'   => swiftling_editor_url( $frame['key'], $lang ),
+			'url'   => swiftling_can_translate_subject( $frame ) ? swiftling_editor_url( $frame['key'], $lang ) : '',
 		) : null,
-		'links'    => array(
-			'back'    => admin_url( 'admin.php?page=swiftling-content' ),
-			'table'   => swiftling_table_editor_url( $post->ID, $lang ),
-			'service' => admin_url( 'admin.php?page=swiftling-service' ),
-			'request' => admin_url( 'admin.php?page=swiftling-request' ),
-		),
+		'links'    => (object) $links,
 		'settings' => get_block_editor_settings( array(), new WP_Block_Editor_Context( array( 'name' => 'swiftling/visual' ) ) ),
 	);
 }

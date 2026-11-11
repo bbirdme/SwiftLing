@@ -261,14 +261,15 @@ final class Menu {
 				'media'   => true,
 			),
 			'swiftling-visual'         => array(
-				'cap'    => SWIFTLING_TRANSLATE,
-				'menu'   => __( 'Visual editor', 'swiftling' ),
-				'view'   => 'visual',
-				'hidden' => true,
-				'script' => 'visual',
-				'media'  => true,
-				'blocks' => true,
-				'styles' => array( 'swiftling-visual' ),
+				'cap'     => SWIFTLING_TRANSLATE,
+				'menu'    => __( 'Visual editor', 'swiftling' ),
+				'view'    => 'visual',
+				'hidden'  => true,
+				'script'  => 'visual',
+				'media'   => true,
+				'machine' => true,
+				'blocks'  => true,
+				'styles'  => array( 'swiftling-visual' ),
 			),
 		);
 
@@ -639,7 +640,16 @@ final class Menu {
 			foreach ( array( 'wp-components', 'wp-block-editor', 'wp-block-editor-content', 'wp-block-library', 'wp-edit-blocks', 'wp-format-library', 'wp-reset-editor-styles' ) as $style ) {
 				wp_enqueue_style( $style );
 			}
-			$dependencies = array_merge( $dependencies, array( 'wp-blocks', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-media-utils', 'wp-components', 'wp-element', 'wp-data', 'wp-hooks', 'wp-api-fetch', 'wp-block-serialization-default-parser' ) );
+			$dependencies = array_merge( $dependencies, array( 'wp-blocks', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-media-utils', 'wp-components', 'wp-element', 'wp-data', 'wp-hooks', 'wp-api-fetch', 'wp-block-serialization-default-parser', 'wp-dom-ready' ) );
+			// The blocks of other plugins too, as the block editor loads them, so the page shows them
+			// as they are. A script of theirs that needs more of the block editor than this screen has
+			// fails on its own; a block that does not load shows as it is saved, see assets/js/visual.js.
+			foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $type ) {
+				array_map( 'wp_enqueue_script', $type->editor_script_handles );
+				array_map( 'wp_enqueue_style', $type->editor_style_handles );
+			}
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own action, as the block editor fires it.
+			do_action( 'enqueue_block_editor_assets' );
 		}
 		if ( ! empty( $screen['machine'] ) ) {
 			wp_enqueue_script( 'swiftling-machine', SWIFTLING_URL . 'assets/js/machine.js', array(), SWIFTLING_VERSION, true );

@@ -485,3 +485,51 @@
 .swiftling .swiftling-visual-dock__fields input[type="text"] {
 	min-height: 34px;
 }
+
+/* A text with formatting beside the page: as it reads, its HTML a click away. */
+.swiftling .swiftling-visual-html {
+	min-height: 60px;
+	padding: 8px 10px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	overflow-wrap: anywhere;
+}
+
+.swiftling .swiftling-visual-html:empty::before {
+	content: attr(data-placeholder);
+	color: var(--swiftling-muted);
+}
+
+.swiftling .swiftling-visual-html > :first-child {
+	margin-top: 0;
+}
+
+.swiftling .swiftling-visual-html > :last-child {
+	margin-bottom: 0;
+}
+
+.swiftling-visual-html-toggle {
+	justify-self: end;
+	padding: 2px 8px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 6px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-muted);
+	font: 11px/1.6 var(--swiftling-font-mono);
+	cursor: pointer;
+}
+
+.swiftling-visual-html-toggle[aria-pressed="true"] {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+/* Code beside the page, as the translation editor shows it. */
+.swiftling .swiftling-visual-field pre.swiftling-visual-source {
+	max-height: 160px;
+	overflow: auto;
+	font-size: 12px;
+	white-space: pre-wrap;
+}

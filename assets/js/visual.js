@@ -25,7 +25,7 @@
 	const { createElement: h, createRoot, useState, useEffect, useMemo, useCallback, useRef, Fragment } = wp.element;
 	const { BlockEditorProvider, BlockCanvas, BlockList, BlockControls, BlockEditorKeyboardShortcuts, BlockPreview, PlainText, InnerBlocks, useBlockProps, useInnerBlocksProps, store: blockEditorStore } = wp.blockEditor;
 	const { SlotFillProvider, Popover, Button, ToolbarGroup, ToolbarButton, Dropdown, Notice, TextareaControl, TextControl, ToggleControl } = wp.components;
-	const { parse, serializeRawBlock, getBlockContent, registerBlockType, createBlock } = wp.blocks;
+	const { parse, serialize, serializeRawBlock, registerBlockType, createBlock } = wp.blocks;
 	const rawParse = wp.blockSerializationDefaultParser.parse;
 	const { addFilter } = wp.hooks;
 	const { __, _n, sprintf } = wp.i18n;
@@ -84,10 +84,14 @@
 
 	/* Filters: before the core blocks are registered. */
 
+	// Translating changes texts and images, never which blocks the page has: no block turns into
+	// another as a text is typed ("## " into a heading), and none is added by Enter or a "/".
 	addFilter( 'blocks.registerBlockType', 'swiftling/visual-attributes', ( settings ) => ( {
 		...settings,
 		attributes: { ...( settings.attributes || {} ), swl: { type: 'object' } },
+		transforms: settings.transforms ? { ...settings.transforms, from: ( settings.transforms.from || [] ).filter( ( transform ) => ! [ 'prefix', 'enter' ].includes( transform.type ) ) } : settings.transforms,
 	} ) );
+	addFilter( 'editor.Autocomplete.completers', 'swiftling/visual-no-inserter', ( completers ) => completers.filter( ( completer ) => 'blocks' !== completer.name ) );
 	if ( wp.mediaUtils && wp.mediaUtils.MediaUpload ) {
 		addFilter( 'editor.MediaUpload', 'swiftling/visual-media-upload', () => wp.mediaUtils.MediaUpload );
 	}
@@ -217,7 +221,7 @@
 		if ( ! media ) {
 			return h( BlockEdit, props );
 		}
-				return h(
+		return h(
 			Fragment,
 			null,
 			h( BlockEdit, props ),
@@ -226,7 +230,7 @@
 				{ group: 'other' },
 				h(
 					ToolbarGroup,
-					null,
+					{ className: 'swiftling-visual-tools' },
 					media && h( ToolbarButton, { icon: 'format-image', label: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ), onClick: () => chooseImage( ( chosen ) => props.setAttributes( { url: chosen.url, id: chosen.id } ) ) }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image for %s', 'swiftling' ), LANG ) ),
 					media && ownImage( props.attributes ) && h( ToolbarButton, { icon: 'undo', label: __( 'Use the original image', 'swiftling' ), onClick: () => props.setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) } )
 				)
@@ -254,6 +258,7 @@
 
 	const textsBy = {};
 	const placed = new Set();
+	const READ_ONLY = [ 'core/html', 'core/shortcode', 'core/freeform', 'core/missing' ];
 	data.texts.forEach( ( text ) => {
 		( textsBy[ text.object ] = textsBy[ text.object ] || [] ).push( text );
 	} );
@@ -312,6 +317,12 @@
 			if ( where.attr && ! [ 'src', 'alt' ].includes( where.attr ) ) {
 				return;
 			}
+			// Code, as a whole figure or the HTML of a block, and the blocks whose text the page
+			// cannot change as SwiftLing keeps it are fields beside the page; the page shows them
+			// as they are.
+			if ( 'code' === text.type || READ_ONLY.includes( node.blockName ) ) {
+				return;
+			}
 			node.swl = node.swl || [];
 			node.swl.push( { ...text, c: where.c, attr: where.attr, n: where.n, attrPath: where.attrPath || null, override: null } );
 			placed.add( text.key );
@@ -364,6 +375,16 @@
 		return copy;
 	};
 	const annotate = ( block, original, node ) => {
+		// A block that did not load, as one of a plugin whose script failed, shows as it is saved;
+		// its texts are fields beside the page.
+		if ( 'core/missing' === block.name ) {
+			const forget = ( raw ) => {
+				( raw.swl || [] ).forEach( ( unit ) => placed.delete( unit.key ) );
+				raw.innerBlocks.forEach( forget );
+			};
+			forget( node );
+			return;
+		}
 		if ( node.swlOverride ) {
 			Object.keys( node.swlOverride ).forEach( ( attrName ) => {
 				block.attributes[ attrName ] = node.swlOverride[ attrName ];
@@ -386,7 +407,7 @@
 			block.attributes.swl = {
 				units: node.swl.map( ( unit ) => ( {
 					key: unit.key, object: unit.object, path: unit.path, kind: unit.kind, type: unit.type, state: unit.state,
-					attr: unit.attr, override: unit.override, attrPath: unit.attrPath,
+					attr: unit.attr, override: unit.override, attrPath: unit.attrPath, c: unit.c,
 					original: unit.attr || unit.override || unit.attrPath ? unit.original : node.innerContent[ unit.c ],
 					translation: unit.translation,
 					loadedRaw: unit.attr || unit.override || unit.attrPath ? null : '' === unit.translation ? node.innerContent[ unit.c ] : unit.translation,
@@ -437,8 +458,52 @@
 		if ( unit.attrPath ) {
 			return htmlString( getPath( block.attributes, unit.attrPath ) );
 		}
-		const around = unit.loadedRaw.match( /^(\s*)[\s\S]*?(\s*)$/ );
-		return around[ 1 ] + getBlockContent( block ) + around[ 2 ];
+		// The text as the block writes it now, between the original's own tags: a block that writes
+		// its element anew as it loads, as one that numbers its styles, changes nothing else.
+		const [ prefix, , suffix ] = partsOf( unit.original );
+		return prefix + partsOf( segmentOf( block, unit.c ) )[ 1 ] + suffix;
+	};
+	// The tags around a block's text, as SwiftLing lists it, and the text between them: those of the
+	// block's element, as a heading's, and those a part of a block opens or closes around its inner
+	// blocks, as a list item's around its list. The machine translation service gets only the text,
+	// and a translation keeps the original's tags as they are.
+	const BLOCK_TAG = '(?:p|h[1-6]|li|ul|ol|div|figure|figcaption|blockquote|cite|summary|details|td|th|dt|dd|pre|a)';
+	const partsOf = ( html ) => {
+		let prefix = '';
+		let suffix = '';
+		let middle = html;
+		const wrapper = new RegExp( '^(\\s*<(' + BLOCK_TAG + ')\\b[^>]*>)([\\s\\S]*)(<\\/\\2>\\s*)$', 'i' );
+		for ( let found = middle.match( wrapper ); found && ! new RegExp( '<\\/?' + found[ 2 ] + '\\b', 'i' ).test( found[ 3 ] ); found = middle.match( wrapper ) ) {
+			prefix += found[ 1 ];
+			suffix = found[ 4 ] + suffix;
+			middle = found[ 3 ];
+		}
+		const opened = middle.match( new RegExp( '^(\\s*(?:<' + BLOCK_TAG + '\\b[^>]*>\\s*)+)', 'i' ) );
+		if ( opened && ! /<\//.test( opened[ 1 ] ) ) {
+			prefix += opened[ 1 ];
+			middle = middle.slice( opened[ 1 ].length );
+		}
+		const closed = middle.match( new RegExp( '((?:\\s*<\\/' + BLOCK_TAG + '>)+\\s*)$', 'i' ) );
+		if ( closed ) {
+			suffix = closed[ 1 ] + suffix;
+			middle = middle.slice( 0, middle.length - closed[ 1 ].length );
+		}
+		return [ prefix, middle, suffix ];
+	};
+
+	// What SwiftLing adds to a block, its texts and the lock, is never part of what is saved.
+	const OWN_ATTRIBUTES = [ 'swl', 'lock' ];
+	const cleanBlock = ( block ) => ( {
+		...block,
+		attributes: Object.fromEntries( Object.entries( block.attributes ).filter( ( [ name ] ) => ! OWN_ATTRIBUTES.includes( name ) ) ),
+		innerBlocks: block.innerBlocks.map( cleanBlock ),
+	} );
+	// The part of a block's HTML that is a text, as SwiftLing lists it: the HTML around its inner
+	// blocks, without them, as a list item's text without the list inside it.
+	const segmentOf = ( block, c ) => {
+		const node = rawParse( serialize( [ cleanBlock( block ) ] ) ).find( ( raw ) => raw.blockName );
+		const part = node ? node.innerContent[ c || 0 ] : '';
+		return 'string' === typeof part ? part : '';
 	};
 	const walkBlocks = ( blocks, callback ) => {
 		const walk = ( block ) => {
@@ -682,18 +747,64 @@
 		);
 	};
 
-	// Texts with no place on the page: link addresses, code, excerpt and SEO fields.
+	// HTML to show as it reads, without what would run: scripts, frames and handlers.
+	const safeHtml = ( html ) => {
+		const template = document.createElement( 'template' );
+		template.innerHTML = html;
+		template.content.querySelectorAll( 'script, style, iframe, object, embed' ).forEach( ( element ) => element.remove() );
+		template.content.querySelectorAll( '*' ).forEach( ( element ) => {
+			[ ...element.attributes ].forEach( ( attribute ) => {
+				if ( /^on/i.test( attribute.name ) || /^\s*javascript:/i.test( attribute.value ) ) {
+					element.removeAttribute( attribute.name );
+				}
+			} );
+		} );
+		return template.innerHTML;
+	};
+
+	// A text with formatting, as a product's short description: shown as it reads, and edited so,
+	// with its HTML a click away.
+	const HtmlField = ( { id, value, original, onChange } ) => {
+		const [ code, setCode ] = useState( false );
+		const ref = useRef( null );
+		useEffect( () => {
+			if ( ref.current && document.activeElement !== ref.current ) {
+				ref.current.innerHTML = safeHtml( value );
+			}
+		}, [ value, code ] );
+		return h(
+			Fragment,
+			null,
+			code
+				? h( 'textarea', { id, rows: 4, className: 'swiftling-mono', value, placeholder: original, onChange: ( event ) => onChange( event.target.value ) } )
+				: h( 'div', { id, ref, role: 'textbox', 'aria-multiline': 'true', contentEditable: true, suppressContentEditableWarning: true, className: 'swiftling-visual-html', 'data-placeholder': original.replace( /<[^>]*>/g, '' ), onInput: ( event ) => onChange( event.currentTarget.innerHTML ) } ),
+			h( 'button', { type: 'button', className: 'swiftling-visual-html-toggle', 'aria-pressed': code ? 'true' : 'false', onClick: () => setCode( ! code ) }, __( 'HTML', 'swiftling' ) )
+		);
+	};
+
+	// Texts with no place on the page: link addresses, code, excerpt and SEO fields, and the texts of
+	// blocks the page shows as they are.
 	const OtherField = ( { other, onChange } ) => {
 		const unit = other.unit;
 		const isUrl = 'url' === unit.type;
+		const isCode = 'code' === unit.type;
 		const state = other.dirty ? 'edited' : unit.state;
 		const id = 'swiftling-visual-other-' + unit.key;
+		let field;
+		if ( 'html' === unit.type ) {
+			field = h( HtmlField, { id, value: other.value, original: unit.original, onChange } );
+		} else {
+			field = h( isUrl ? 'input' : 'textarea', { id, type: isUrl ? 'text' : undefined, rows: isUrl ? undefined : isCode ? 5 : 2, className: isUrl || isCode ? 'swiftling-mono' : undefined, value: other.value, placeholder: isCode ? undefined : unit.original, onChange: ( event ) => onChange( event.target.value ) } );
+		}
 		return h(
 			'div',
 			{ className: 'swiftling-visual-field' + ( ! other.dirty && MISSING.includes( unit.state ) ? ' is-missing' : '' ) },
-			h( 'label', { htmlFor: id }, h( StatusIcon, { state } ), unit.kind || unit.type || __( 'Text', 'swiftling' ) ),
-			h( 'p', { className: 'swiftling-visual-source' }, h( 'span', { className: 'swiftling-visual-source__label' }, SOURCE ), unit.original ),
-			h( isUrl ? 'input' : 'textarea', { id, type: isUrl ? 'text' : undefined, rows: isUrl ? undefined : 2, className: isUrl ? 'swiftling-mono' : undefined, value: other.value, placeholder: unit.original, onChange: ( event ) => onChange( event.target.value ) } ),
+			h( 'label', { htmlFor: id }, h( StatusIcon, { state } ), unit.label || __( 'Text', 'swiftling' ), unit.place && h( 'span', { className: 'swiftling-muted' }, ' · ' + unit.place ) ),
+			isCode
+				? h( 'pre', { className: 'swiftling-visual-source swiftling-mono' }, unit.original )
+				: h( 'p', { className: 'swiftling-visual-source' }, h( 'span', { className: 'swiftling-visual-source__label' }, SOURCE ), 'html' === unit.type ? h( 'span', { dangerouslySetInnerHTML: { __html: safeHtml( unit.original ) } } ) : unit.original ),
+			field,
+			isCode && h( 'p', { className: 'swiftling-muted' }, __( 'Change only the text. Keep tags, attributes and shortcode names as they are.', 'swiftling' ) ),
 			other.value !== unit.original && h( SButton, { variant: 'link', className: 'swiftling-visual-use-original', onClick: () => onChange( unit.original ) }, __( 'Use the original', 'swiftling' ) )
 		);
 	};
@@ -716,8 +827,9 @@
 					Card,
 					{ title: __( 'Around this page', 'swiftling' ) },
 					h( 'p', { className: 'swiftling-live-frame' }, /* translators: %s: name of a template, e.g. Pages. */ sprintf( __( 'The header, footer, menu and site title around this page are translated once for the whole site, in the template “%s”.', 'swiftling' ), data.frame.title ) ),
-					h( SButton, { href: data.frame.url }, __( 'Translate the template', 'swiftling' ) )
+					data.frame.url && h( SButton, { href: data.frame.url }, __( 'Translate the template', 'swiftling' ) )
 				),
+			data.links.request &&
 			h(
 				Card,
 				{ title: __( 'A text is missing?', 'swiftling' ) },
@@ -741,8 +853,119 @@
 			)
 		);
 
+	/* The layout stays as it is. */
+
+	// Which blocks the page has, in which order and inside which: what translating never changes.
+	const shapeOf = ( list ) => list.map( ( block ) => block.clientId + ':' + block.name + '(' + shapeOf( block.innerBlocks ) + ')' ).join( ',' );
+	const hasTexts = ( block ) => !! block.attributes.swl || block.innerBlocks.some( hasTexts );
+
+	// A block without a text of SwiftLing's, in itself or in a block inside it, cannot be changed
+	// here: an embed, a list of posts, a block of code; the page shows it as it is.
+	const EditingModes = () => {
+		const order = useSelect( ( select ) => select( blockEditorStore ).getClientIdsWithDescendants().length, [] );
+		const { getBlocks } = useSelect( ( select ) => ( { getBlocks: select( blockEditorStore ).getBlocks } ), [] );
+		const { setBlockEditingMode } = useDispatch( blockEditorStore );
+		useEffect( () => {
+			const walk = ( list ) =>
+				list.forEach( ( block ) => {
+					if ( ! hasTexts( block ) ) {
+						setBlockEditingMode( block.clientId, 'disabled' );
+					} else {
+						walk( block.innerBlocks );
+					}
+				} );
+			walk( getBlocks() );
+		}, [ order ] );
+		return null;
+	};
+
+	// Keys that would add, copy, move or remove a block.
+	const isLayoutShortcut = ( event ) => {
+		const key = ( event.key || '' ).toLowerCase();
+		const primary = event.ctrlKey || event.metaKey;
+		return ( primary && event.shiftKey && 'd' === key ) || ( primary && event.altKey && ( 't' === key || 'y' === key ) ) || ( event.shiftKey && event.altKey && 'z' === key );
+	};
+	const stop = ( event ) => {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	};
+	// Whether the cursor is at the start or the end of a text, where Backspace or Delete would join
+	// it with the block before or after.
+	const caretAt = ( editable, edge ) => {
+		const doc = editable.ownerDocument;
+		const selection = doc.getSelection();
+		if ( ! selection || ! selection.rangeCount || ! selection.isCollapsed ) {
+			return false;
+		}
+		const range = doc.createRange();
+		if ( 'start' === edge ) {
+			range.setStart( editable, 0 );
+			range.setEnd( selection.anchorNode, selection.anchorOffset );
+		} else {
+			range.setStart( selection.anchorNode, selection.anchorOffset );
+			range.setEnd( editable, editable.childNodes.length );
+		}
+		return '' === range.toString().replace( /[\u200B\uFEFF]/g, '' );
+	};
+	// A line break where the cursor is, as Shift+Enter makes one.
+	const lineBreak = ( target ) => {
+		const view = target.ownerDocument.defaultView;
+		const event = new view.KeyboardEvent( 'keydown', { key: 'Enter', code: 'Enter', shiftKey: true, bubbles: true, cancelable: true } );
+		Object.defineProperty( event, 'keyCode', { get: () => 13 } );
+		Object.defineProperty( event, 'which', { get: () => 13 } );
+		event.swiftlingLineBreak = true;
+		target.dispatchEvent( event );
+	};
+	// In the page: Enter makes a line break, not a new block; Backspace at the start and Delete at
+	// the end of a text do not join two blocks; and no key adds, copies, moves or removes one.
+	const guardKeys = ( event ) => {
+		if ( event.swiftlingLineBreak ) {
+			return;
+		}
+		if ( isLayoutShortcut( event ) || ( [ 'Backspace', 'Delete' ].includes( event.key ) && wp.data.select( blockEditorStore ).hasMultiSelection() ) ) {
+			stop( event );
+			return;
+		}
+		const editable = event.target.closest && event.target.closest( '[contenteditable="true"]' );
+		if ( ! editable ) {
+			return;
+		}
+		if ( 'Enter' === event.key && ! event.shiftKey && ! event.ctrlKey && ! event.metaKey && ! event.altKey ) {
+			stop( event );
+			if ( ! editable.closest( '.swiftling-visual-title' ) ) {
+				lineBreak( event.target );
+			}
+		} else if ( ( 'Backspace' === event.key && caretAt( editable, 'start' ) ) || ( 'Delete' === event.key && caretAt( editable, 'end' ) ) ) {
+			stop( event );
+		}
+	};
+	// Text of several paragraphs, pasted into one, becomes its lines.
+	const guardPaste = ( event ) => {
+		const editable = event.target.closest && event.target.closest( '[contenteditable="true"]' );
+		const text = event.clipboardData ? event.clipboardData.getData( 'text/plain' ) : '';
+		if ( ! editable || ! /\n/.test( text.trim() ) ) {
+			return;
+		}
+		stop( event );
+		text.trim()
+			.split( /\r?\n/ )
+			.map( ( line ) => line.trim() )
+			.filter( Boolean )
+			.forEach( ( line, index ) => {
+				if ( index && ! editable.closest( '.swiftling-visual-title' ) ) {
+					lineBreak( event.target );
+				}
+				editable.ownerDocument.execCommand( 'insertText', false, index && editable.closest( '.swiftling-visual-title' ) ? ' ' + line : line );
+			} );
+	};
+
 	const Screen = () => {
 		const [ blocks, setBlocks ] = useState( () => buildBlocks() );
+		const shape = useRef( null );
+		if ( null === shape.current ) {
+			shape.current = shapeOf( blocks );
+		}
+		const reloading = useRef( false );
 		const [ title, setTitle ] = useState( () => ( titleUnit ? { unit: titleUnit, value: '' === titleUnit.translation ? titleUnit.original : titleUnit.translation, state: titleUnit.state, dirty: false } : null ) );
 		const [ others, setOthers ] = useState( () => data.texts.filter( ( text ) => ! placed.has( text.key ) && text !== titleUnit && ! text.follows ).map( ( unit ) => ( { unit, value: unit.translation, dirty: false } ) ) );
 		const [ address, setAddress ] = useState( data.address );
@@ -806,7 +1029,18 @@
 			}
 		}, [ itemCount ] );
 
-		const settings = useMemo( () => ( { ...data.settings, templateLock: 'contentOnly', focusMode: false, hasFixedToolbar: false, canLockBlocks: false, codeEditingEnabled: false, mediaUpload: wp.mediaUtils && wp.mediaUtils.uploadMedia ? ( args ) => wp.mediaUtils.uploadMedia( args ) : undefined } ), [] );
+		// Whatever changed the layout, a key, a paste or a menu, is undone at once: only texts and
+		// images change here.
+		const accept = ( next ) => {
+			if ( shapeOf( next ) !== shape.current ) {
+				setBlocks( ( current ) => [ ...current ] );
+				note( __( 'The layout stays as in the original; only texts and images change here.', 'swiftling' ), 'info' );
+				return;
+			}
+			setBlocks( next );
+		};
+
+		const settings = useMemo( () => ( { ...data.settings, allowedBlockTypes: [], templateLock: 'contentOnly', focusMode: false, hasFixedToolbar: false, canLockBlocks: false, codeEditingEnabled: false, mediaUpload: wp.mediaUtils && wp.mediaUtils.uploadMedia ? ( args ) => wp.mediaUtils.uploadMedia( args ) : undefined } ), [] );
 		const styles = useMemo( () => [ ...( data.settings.styles || [] ), { css: CANVAS_CSS } ], [] );
 
 		const items = changedItems( blocks, title, others );
@@ -828,34 +1062,85 @@
 				if ( result.address && result.address.url ) {
 					setAddress( ( current ) => ( current ? { ...current, ...result.address, slug: decodeURIComponent( result.address.slug || '' ) } : current ) );
 				}
+				setSaving( false );
+				return true;
 			} catch ( error ) {
 				note( error && error.message ? error.message : __( 'The translations could not be saved.', 'swiftling' ), 'error' );
 			}
 			setSaving( false );
+			return false;
 		}, [ blocks, title, others, items ] );
 
+		// Fills the empty texts with the service, as the translation editor fills its empty fields: in
+		// requests of at most 50 texts, each saved at once as machine translations, so what the
+		// service translated is kept when a later request fails. Changes not saved yet are saved
+		// first; once done, the page loads again with the translations to review.
 		const machineFill = async () => {
-			if ( items.length && ! window.confirm( __( 'Unsaved changes are kept in the browser, but the page loads again after the translation. Save first?', 'swiftling' ) ) ) {
-				return;
-			}
-			setSaving( true );
-			setMachining( true );
-			note( /* translators: %s: translation service name, e.g. Google. */ sprintf( __( 'Translating the empty texts with %s…', 'swiftling' ), data.machine.service ), 'info' );
-			try {
-				const result = await apiFetch( { path: 'swiftling/v1/fill', method: 'POST', data: { subject: PAGE, lang: data.lang } } );
-				if ( result.error ) {
-					note( result.error, 'error' );
-					setSaving( false );
-					setMachining( false );
+			if ( items.length ) {
+				if ( ! window.confirm( __( 'Your changes are saved first, then the empty fields are translated and the page loads again.', 'swiftling' ) ) ) {
 					return;
 				}
-				window.onbeforeunload = null;
-				window.location.reload();
+				if ( ! ( await save( 'reviewed' ) ) ) {
+					return;
+				}
+			}
+			const found = data.texts.filter( ( text ) => '' === text.translation && ! text.follows && ! [ 'url', 'code' ].includes( text.type ) && '' !== text.original.trim() );
+			if ( ! found.length ) {
+				note( __( 'Every text field is filled in. Empty a field to translate it again.', 'swiftling' ), 'info' );
+				return;
+			}
+			const service = data.machine.service;
+			let done = 0;
+			let translated = 0;
+			let stopped = '';
+			setSaving( true );
+			setMachining( true );
+			try {
+				for ( const batch of window.swiftlingMachine.batches( found, ( text ) => text.original.length ) ) {
+					note(
+						/* translators: 1: translation service name, e.g. Google, 2: fields done, 3: fields in all. */
+						sprintf( _n( 'Translating with %1$s: %2$s of %3$s field…', 'Translating with %1$s: %2$s of %3$s fields…', found.length, 'swiftling' ), service, done, found.length ),
+						'info'
+					);
+					const parts = new Map( batch.map( ( text ) => [ text.key, 'html' === text.type ? partsOf( text.original ) : [ '', text.original, '' ] ] ) );
+					const result = await apiFetch( { path: 'swiftling/v1/machine', method: 'POST', data: { subject: PAGE, lang: data.lang, items: batch.map( ( text ) => ( { key: text.key, text: parts.get( text.key )[ 1 ], html: 'html' === text.type } ) ) } } );
+					done += batch.length;
+					const saveItems = batch
+						.filter( ( text ) => 'string' === typeof result.translations[ text.key ] && '' !== result.translations[ text.key ].trim() )
+						.map( ( text ) => {
+							const [ prefix, , suffix ] = parts.get( text.key );
+							return { key: text.key, text: prefix + result.translations[ text.key ] + suffix, original: text.original };
+						} );
+					if ( saveItems.length ) {
+						const saved = await apiFetch( { path: 'swiftling/v1/translations', method: 'POST', data: { subject: PAGE, lang: data.lang, status: 'machine', items: saveItems } } );
+						translated += Object.keys( saved.states || {} ).length;
+					}
+					if ( result.error ) {
+						stopped = result.error;
+						break;
+					}
+				}
 			} catch ( error ) {
-				note( error && error.message ? error.message : __( 'The translation stopped.', 'swiftling' ), 'error' );
+				stopped = error && error.message ? error.message : __( 'The translation stopped.', 'swiftling' );
+			}
+			const parts = [];
+			if ( translated ) {
+				parts.push(
+					/* translators: 1: number of fields, 2: translation service name, e.g. Google. */
+					sprintf( _n( '%1$s field translated with %2$s and saved as a machine translation. Read it, then save to mark it reviewed.', '%1$s fields translated with %2$s and saved as machine translations. Read them, then save to mark them reviewed.', translated, 'swiftling' ), translated, service )
+				);
+			}
+			if ( stopped ) {
+				parts.push( stopped );
+				note( parts.join( ' ' ), 'error' );
 				setSaving( false );
 				setMachining( false );
+				return;
 			}
+			// The page again, with the translations: nothing is left unsaved, so leaving asks nothing.
+			note( parts.join( ' ' ), 'success' );
+			reloading.current = true;
+			window.location.reload();
 		};
 		const copyAll = () => {
 			const result = copyOriginals( blocks );
@@ -877,7 +1162,7 @@
 
 		useEffect( () => {
 			const warn = ( event ) => {
-				if ( items.length ) {
+				if ( items.length && ! reloading.current ) {
 					event.preventDefault();
 					event.returnValue = '';
 				}
@@ -885,6 +1170,42 @@
 			window.addEventListener( 'beforeunload', warn );
 			return () => window.removeEventListener( 'beforeunload', warn );
 		}, [ items.length ] );
+		// The page in the canvas: in the language and direction of the translation, and guarded
+		// against keys that would change its layout. The canvas is an iframe, which can load again.
+		useEffect( () => {
+			const guarded = new WeakSet();
+			const setUp = () => {
+				const frame = document.querySelector( '.swiftling-visual-canvas iframe[name="editor-canvas"]' );
+				const doc = frame && frame.contentDocument;
+				if ( ! doc || ! doc.body ) {
+					return;
+				}
+				if ( data.target ) {
+					doc.documentElement.lang = data.target.lang;
+					doc.documentElement.dir = data.target.dir;
+					doc.body.dir = data.target.dir;
+				}
+				if ( ! guarded.has( doc ) ) {
+					guarded.add( doc );
+					doc.addEventListener( 'keydown', guardKeys, true );
+					doc.addEventListener( 'paste', guardPaste, true );
+				}
+			};
+			setUp();
+			const timer = setInterval( setUp, 500 );
+			// The block's toolbar is outside the canvas.
+			const guardOutside = ( event ) => {
+				if ( isLayoutShortcut( event ) ) {
+					stop( event );
+				}
+			};
+			document.addEventListener( 'keydown', guardOutside, true );
+			return () => {
+				clearInterval( timer );
+				document.removeEventListener( 'keydown', guardOutside, true );
+			};
+		}, [] );
+
 		// "Highlight empty fields": a stylesheet in the canvas.
 		useEffect( () => {
 			const frame = document.querySelector( '.swiftling-visual-canvas iframe[name="editor-canvas"]' );
@@ -917,7 +1238,7 @@
 		const bar = h(
 			'div',
 			{ className: 'swiftling-editor-bar swiftling-visual-bar', ref: barRef },
-			h( SButton, { variant: 'link is-back', href: data.links.back, icon: 'arrow-left-alt2' }, __( 'Translations', 'swiftling' ) ),
+			data.links.back && h( SButton, { variant: 'link is-back', href: data.links.back, icon: 'arrow-left-alt2' }, __( 'Translations', 'swiftling' ) ),
 			h(
 				'div',
 				{ className: 'swiftling-editor-bar__title' },
@@ -976,7 +1297,7 @@
 
 		const machineTool = data.machine
 			? h( SButton, { variant: 'secondary is-strong', className: 'swiftling-live-machine', onClick: machineFill, disabled: saving || !! data.machine.off || ! empty, busy: machining, title: data.machine.off || undefined }, /* translators: %s: translation service name, e.g. Google. */ sprintf( __( 'Translate empty fields with %s', 'swiftling' ), data.machine.service ) )
-			: h( SButton, { href: data.links.service, icon: 'translation' }, __( 'Set up machine translation', 'swiftling' ) );
+			: data.links.service && h( SButton, { href: data.links.service, icon: 'translation' }, __( 'Set up machine translation', 'swiftling' ) );
 
 		// One row over the page: how far the language is, what fills the empty texts, the views.
 		const summary = /* translators: 1: texts translated, 2: all texts. */ sprintf( _n( '%1$s of %2$s text translated', '%1$s of %2$s texts translated', progress.total, 'swiftling' ), progress.done, progress.total ) + ( empty ? ' · ' + /* translators: %s: number of texts. */ sprintf( _n( '%s still empty', '%s still empty', empty, 'swiftling' ), empty ) : '' );
@@ -1009,9 +1330,9 @@
 			null,
 			h(
 				BlockEditorProvider,
-				{ value: blocks, onInput: setBlocks, onChange: setBlocks, settings },
+				{ value: blocks, onInput: accept, onChange: accept, settings },
 				h( BlockEditorKeyboardShortcuts.Register ),
-				h( BlockEditorKeyboardShortcuts ),
+				h( EditingModes ),
 				bar,
 				languages,
 				h(
@@ -1062,19 +1383,32 @@
 
 	const root = document.getElementById( 'swiftling-visual' );
 	if ( root ) {
-		createRoot( root ).render( h( Screen ) );
-		// The core image block's own "Replace" (and its Upload) would read as a change of the page
-		// itself; the language's image has its own, named control. The core control has no class
-		// of its own, so it is hidden by its label whenever a toolbar renders.
-		const replaceLabel = __( 'Replace' );
-		const hideCoreReplace = () => {
-			root.querySelectorAll( '.block-editor-block-toolbar button' ).forEach( ( button ) => {
-				if ( button.textContent.trim() === replaceLabel && ! button.closest( '.swiftling-visual-image' ) ) {
-					const dropdown = button.closest( '.components-dropdown' ) || button;
-					dropdown.style.display = 'none';
-				}
+		// After the scripts of other plugins, which can register their blocks once the page is ready.
+		( wp.domReady || ( ( callback ) => callback() ) )( () => createRoot( root ).render( h( Screen ) ) );
+		// The toolbar of a block offers the formats of its text and SwiftLing's own controls, as the
+		// image of the language; nothing that changes the block itself, as its alignment, its link,
+		// its caption or its image for every language. Those come from the block, in groups without
+		// a class of their own, so each group is kept by what it holds: the formats of a text, which
+		// start with bold and italic, or SwiftLing's.
+		const formats = () =>
+			new Set(
+				[ 'core/bold', 'core/italic' ]
+					.map( ( name ) => wp.data.select( 'core/rich-text' ).getFormatType( name ) )
+					.filter( Boolean )
+					.map( ( format ) => format.title )
+			);
+		const tidyToolbar = () => {
+			root.querySelectorAll( '.block-editor-block-toolbar' ).forEach( ( toolbar ) => {
+				const titles = formats();
+				[ ...toolbar.children ].forEach( ( group ) => {
+					const kept = group.querySelector( '.swiftling-visual-tools' ) || [ ...group.querySelectorAll( 'button' ) ].some( ( button ) => titles.has( button.getAttribute( 'aria-label' ) ) );
+					const display = kept ? '' : 'none';
+					if ( group.style.display !== display ) {
+						group.style.display = display;
+					}
+				} );
 			} );
 		};
-		new MutationObserver( hideCoreReplace ).observe( root, { childList: true, subtree: true } );
+		new MutationObserver( tidyToolbar ).observe( root, { childList: true, subtree: true } );
 	}
 } )();

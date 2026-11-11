@@ -395,13 +395,47 @@ class VisualEditorTest extends TestCase {
 	}
 
 	/**
-	 * Machine translation fills the empty texts of the page and saves them as machine translations,
-	 * only for whoever may translate the post and use machine translation.
+	 * A post with content that is no block of its own, a classic block or HTML between the blocks,
+	 * and a page of a builder that keeps the page in its meta or in one block of its own, stay with
+	 * the translation editor; a builder's name says why.
 	 */
-	public function test_fill_route() {
-		FakeService::connect();
-		self::reset_static( \SwiftLing\Translation\Services::class, 'services' );
-		$this->checked( 'Priče' );
+	public function test_declines_what_it_cannot_lay_out() {
+		$freeform = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:freeform -->\n<p>Klasični blok.</p>\n<!-- /wp:freeform -->" ) );
+		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $freeform )->get_error_code() );
+		$loose = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<p>HTML između blokova.</p>" ) );
+		$this->assertSame( 'swiftling_visual_classic', swiftling_visual_editor_supports( $loose )->get_error_code() );
+
+		foreach ( array(
+			'_breakdance_data'      => 'Breakdance',
+			'_oxygen_data'          => 'Oxygen',
+			'ct_builder_shortcodes' => 'Oxygen',
+			'brizy'                 => 'Brizy',
+		) as $key => $builder ) {
+			$post = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT ) );
+			add_post_meta( $post->ID, $key, array( 'tree' => 1 ) );
+			$declined = swiftling_visual_editor_supports( $post );
+			$this->assertSame( 'swiftling_visual_builder', $declined->get_error_code(), $key );
+			$this->assertStringContainsString( $builder, $declined->get_error_message() );
+		}
+		register_block_type( 'fl-builder/layout', array() );
+		$beaver = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:fl-builder/layout -->\n<p>Raspored.</p>\n<!-- /wp:fl-builder/layout -->" ) );
+		$this->assertStringContainsString( 'Beaver Builder', swiftling_visual_editor_supports( $beaver )->get_error_message() );
+		unregister_block_type( 'fl-builder/layout' );
+	}
+
+	/**
+	 * The screen gives its script what the page in the language needs: its language and direction,
+	 * each text's name as the translation editor names its row, and only the links the user may
+	 * open, which for a translator are not the settings.
+	 */
+	public function test_screen_for_a_translator() {
+		$this->set_languages(
+			array(
+				'de_DE' => 'de',
+				'ar'    => 'ar',
+			)
+		);
+		$this->checked( 'podcast' );
 		$post = $this->post;
 		$this->serve_page_check(
 			'post:' . $post->ID,
@@ -409,21 +443,81 @@ class VisualEditorTest extends TestCase {
 				$this->content( $post );
 			}
 		);
-		$params = array(
-			'subject' => 'post:' . $post->ID,
-			'lang'    => 'fr',
+		$data = swiftling_visual_editor_data( $post, 'ar' );
+		$this->assertSame(
+			array(
+				'lang' => 'ar',
+				'dir'  => 'rtl',
+			),
+			$data['target']
 		);
+		$texts = array_column( $data['texts'], null, 'path' );
+		$this->assertSame( 'Title', $texts['field/post_title']['label'] );
+		$this->assertSame( array( 'back', 'table', 'service', 'request' ), array_keys( (array) $data['links'] ) );
 
-		$this->become( 'subscriber' );
-		$this->assertSame( 403, $this->call( '/fill', $params )->get_status() );
+		// A translator, who may translate but not change the settings.
+		$this->become( 'author' );
+		add_filter( 'swiftling_can_translate', '__return_true' );
+		$this->assertTrue( current_user_can( SWIFTLING_TRANSLATE ) );
+		$data = swiftling_visual_editor_data( $post, 'de' );
+		$this->assertSame( array( 'back', 'table' ), array_keys( (array) $data['links'] ) );
+		remove_filter( 'swiftling_can_translate', '__return_true' );
+	}
 
-		$this->become( 'administrator' );
-		$response = $this->call( '/fill', $params );
-		$this->assertSame( 200, $response->get_status() );
-		$this->assertGreaterThanOrEqual( 2, $response->get_data()['translated'] );
-		$this->assertSame( '', $response->get_data()['error'] );
+	/**
+	 * The screen loads the blocks of other plugins, as the block editor does, so the page shows them.
+	 */
+	public function test_screen_loads_the_blocks_of_other_plugins() {
+		$GLOBALS['wp_scripts'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A fresh queue of scripts.
+		wp_register_script( 'swiftling-test-block-editor', 'https://example.org/block.js', array(), '1', true );
+		register_block_type( 'swiftling-test/card', array( 'editor_script_handles' => array( 'swiftling-test-block-editor' ) ) );
+		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-visual'] + array( 'slug' => 'swiftling-visual' ) );
+		$this->assertTrue( wp_script_is( 'swiftling-test-block-editor' ) );
+		$this->assertTrue( wp_script_is( 'swiftling-machine' ), 'Machine translation, in batches' );
+		$this->assertContains( 'wp-dom-ready', wp_scripts()->registered['swiftling-visual']->deps );
+		unregister_block_type( 'swiftling-test/card' );
+		$GLOBALS['wp_scripts'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A fresh queue of scripts.
+	}
+
+	/**
+	 * A list item with a list inside it is a text of its own, without that list: saved as the
+	 * visual editor saves it, the page shows the item and its list once each.
+	 */
+	public function test_text_of_a_block_with_inner_blocks() {
+		$post   = self::factory()->post->create_and_get(
+			array( 'post_content' => "<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Točka jedan<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Podtočka</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list --></li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->" )
+		);
+		$result = $this->check(
+			'post:' . $post->ID,
+			function () use ( $post ) {
+				$this->content( $post );
+			}
+		);
+		$item   = $this->found( $result, 'Točka jedan' );
+		$this->assertStringNotContainsString( 'Podtočka', $item['v'] );
+		$key   = swiftling_place_key( 'post:' . $post->ID, swiftling_path_key( $item['p'] ), swiftling_hash( $item['v'] ) );
+		$saved = $this->call(
+			'/translations',
+			array(
+				'subject' => 'post:' . $post->ID,
+				'lang'    => 'fr',
+				'status'  => 'reviewed',
+				'items'   => array(
+					array(
+						'key'      => $key,
+						'text'     => str_replace( 'Točka jedan', 'Point un', $item['v'] ),
+						'original' => $item['v'],
+					),
+				),
+			)
+		);
+		$this->assertSame( array( $key => 'reviewed' ), $saved->get_data()['states'] );
 
 		$this->show_in( 'fr' );
-		$this->assertStringContainsString( 'PRIČE IZ POVIJESTI.', $this->content( $post ) );
+		$html = $this->content( $post );
+		$this->assertSame( 1, substr_count( $html, 'Point un' ) );
+		$this->assertSame( 1, substr_count( $html, 'Podtočka' ) );
+		$this->assertStringNotContainsString( 'Točka jedan', $html );
+		$this->assertStringNotContainsString( '<!--', $html );
 	}
 }
