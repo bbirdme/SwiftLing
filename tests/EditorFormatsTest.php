@@ -77,6 +77,10 @@ class EditorFormatsTest extends TestCase {
 		$this->assertTrue( wp_script_is( 'swiftling-editor' ), 'The editor itself still loads' );
 		$this->assertFalse( $this->editor_has_formats( $built ), 'A page builder' );
 		$this->assertFalse( $this->editor_has_formats( 0 ), 'No post' );
+		// A post of a type never translated has no editor, only the screen that says what to translate.
+		update_option( 'swiftling_settings', array( 'never' => array( 'post' ) ) );
+		$this->assertFalse( $this->editor_has_formats( $blocks ), 'Never translated' );
+		delete_option( 'swiftling_settings' );
 
 		// Breakdance, Oxygen and Brizy show their own data, also where blocks are left in the content.
 		foreach ( array( '_breakdance_data', '_oxygen_data', 'ct_builder_shortcodes', 'ct_builder_json', 'brizy' ) as $key ) {
@@ -221,8 +225,8 @@ class EditorFormatsTest extends TestCase {
 	}
 
 	/**
-	 * A synced pattern is made of blocks too: as a subject of its own, and where a page shows it,
-	 * its highlighted paragraph is the text of one block, with the paragraph around it.
+	 * A synced pattern is made of blocks too: where a page shows it, its highlighted paragraph is the
+	 * text of one block, with the paragraph around it.
 	 */
 	public function test_synced_pattern_texts_get_the_field() {
 		$this->become( 'administrator' );
@@ -234,12 +238,6 @@ class EditorFormatsTest extends TestCase {
 			)
 		);
 		$this->assertTrue( swiftling_live_block_formats( $pattern ) );
-		$_GET = array(
-			'page'    => 'swiftling-translation',
-			'subject' => 'post:' . $pattern->ID,
-		);
-		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-translation'] + array( 'slug' => 'swiftling-translation' ) );
-		$this->assertTrue( wp_script_is( 'swiftling-editor-formats' ), 'Opened as a subject' );
 
 		$page   = self::factory()->post->create_and_get( array( 'post_content' => '<!-- wp:block {"ref":' . $pattern->ID . '} /-->' ) );
 		$result = $this->check(

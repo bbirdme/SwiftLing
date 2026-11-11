@@ -1708,7 +1708,7 @@ body.swiftling-screen {
 	display: none !important;
 }
 
-.swiftling-block-field__code {
+.swiftling-block-field__visual {
 	margin: 0 8px;
 	padding: 2px 8px;
 	border: 1px solid var(--swiftling-field);
@@ -1719,11 +1719,6 @@ body.swiftling-screen {
 	cursor: pointer;
 }
 
-.swiftling-block-field__code[aria-pressed="true"] {
-	border-color: var(--swiftling-ink);
-	background: var(--swiftling-ink);
-	color: #fff;
-}
 
 .swiftling-block-field__content {
 	padding: 8px 10px;
@@ -1801,15 +1796,32 @@ body.swiftling-screen {
 	outline: none !important;
 }
 
-/* An empty translation shows the original, faded, as a start to type over. */
-.swiftling-block-field.is-original .swiftling-block-field__text {
-	opacity: 0.42;
-	transition: opacity 0.15s ease;
+/* An empty field shows the original behind it, faded, as on the page; the field, empty and
+   transparent, stays over it, so the cursor shows where the text starts. */
+.swiftling-block-field__content {
+	position: relative;
 }
 
-.swiftling-block-field.is-original:hover .swiftling-block-field__text,
-.swiftling-block-field.is-original:focus-within .swiftling-block-field__text {
-	opacity: 0.6;
+.swiftling-block-field__original {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+	padding: 8px 10px;
+	opacity: 0.42;
+	pointer-events: none;
+}
+
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) {
+	position: relative;
+	z-index: 1;
+}
+
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) .swiftling-block-field__text {
+	border-color: transparent !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	caret-color: var(--swiftling-ink);
 }
 
 /* Shown as HTML: the text area under the field. */

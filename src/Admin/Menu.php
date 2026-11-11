@@ -660,7 +660,8 @@ final class Menu {
 		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : ( preg_match( '/^post:(\d+)$/', $subject, $found ) ? (int) $found[1] : 0 );
 		// phpcs:enable
 		$post = $post_id ? get_post( $post_id ) : null;
-		if ( ! swiftling_live_block_formats( $post ) ) {
+		// Only for a post the editor translates: not on its screen that asks what to translate.
+		if ( ! $post || ! swiftling_subject( 'post:' . $post->ID ) || ! swiftling_live_block_formats( $post ) ) {
 			return false;
 		}
 		foreach ( array( 'wp-components', 'wp-block-editor', 'wp-block-editor-content', 'wp-format-library' ) as $style ) {

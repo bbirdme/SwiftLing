@@ -9,10 +9,9 @@
  * these formats.
  *
  * The text area stays where the editor reads and saves the translation: the field writes into it
- * and tells the editor with an input event, and assets/js/editor.js fills it through set(). While
- * the text area is empty, the field shows the original, faded, with its formats: a start to type
- * over, as on the page. Nothing is saved until the field is changed; emptied, it shows the
- * original again.
+ * and tells the editor with an input event, and assets/js/editor.js fills it through set(). An
+ * empty field shows the original behind it, faded, as on the page, with its formats: what is
+ * typed starts the translation, and Use the original puts the original in to change.
  */
 ( function () {
 	const config = window.swiftlingEditorFormats;
@@ -20,8 +19,8 @@
 	if ( ! config || ! wp || ! wp.blockEditor || ! wp.blocks || ! wp.element ) {
 		return;
 	}
-	const { createElement: h, createRoot, useState, useEffect, useMemo, useRef, Fragment } = wp.element;
-	const { BlockEditorProvider, BlockList, BlockTools, BlockToolbar, BlockControls, RichText, useBlockProps, store: blockEditorStore } = wp.blockEditor;
+	const { createElement: h, createRoot, createContext, useContext, useState, useEffect, useMemo, useRef, Fragment } = wp.element;
+	const { BlockEditorProvider, BlockList, BlockTools, BlockToolbar, BlockControls, RichText, RichTextToolbarButton, useBlockProps, store: blockEditorStore } = wp.blockEditor;
 	const { SlotFillProvider, Popover, ToolbarGroup, ToolbarButton } = wp.components;
 	const { registerBlockType, createBlock } = wp.blocks;
 	const { useDispatch } = wp.data;
@@ -40,6 +39,33 @@
 		return html.slice( before.length, html.length - after.length );
 	};
 
+	// A link inside a link breaks both, on the page and in the editor: of links one inside another,
+	// the outer one stays and the inner ones keep their words; in a text whose own element is a link,
+	// as a button's, no link stays at all.
+	const tidyLinks = ( html, own ) => {
+		let open = 0;
+		let dropped = 0;
+		return String( html ).replace( /<a\b[^>]*>|<\/a\s*>/gi, ( tag ) => {
+			if ( 'a' === own ) {
+				return '';
+			}
+			if ( '/' !== tag[ 1 ] ) {
+				if ( open ) {
+					++dropped;
+					return '';
+				}
+				++open;
+				return tag;
+			}
+			if ( dropped ) {
+				--dropped;
+				return '';
+			}
+			open = Math.max( 0, open - 1 );
+			return tag;
+		} );
+	};
+
 	// The words of a text, without its tags.
 	const words = ( html ) => {
 		const template = document.createElement( 'template' );
@@ -55,12 +81,9 @@
 		attributes: {
 			content: { type: 'string', default: '' },
 			original: { type: 'string', default: '' },
-			// Whether "Use the original" put the original in, which makes it the translation.
-			chosen: { type: 'boolean', default: false },
-			// What the field is called, what describes it, and what it shows while it is empty.
+			// What the field is called, and what describes it while it is empty.
 			label: { type: 'string', default: '' },
 			note: { type: 'string', default: '' },
-			placeholder: { type: 'string', default: '' },
 			// The element the text is in on the page, which the field is: its tag, classes and style.
 			tag: { type: 'string', default: 'p' },
 			look: { type: 'object', default: {} },
@@ -91,7 +114,7 @@
 						h( ToolbarButton, {
 							icon: 'admin-page',
 							label: __( 'Use the original, with its formatting', 'swiftling' ),
-							onClick: () => setAttributes( { content: attributes.original, chosen: true } ),
+							onClick: () => setAttributes( { content: attributes.original } ),
 						} )
 					)
 				),
@@ -101,7 +124,6 @@
 					tagName: attributes.tag,
 					value: attributes.content,
 					onChange: ( content ) => setAttributes( { content } ),
-					placeholder: attributes.placeholder,
 					__unstableAllowPrefixTransformations: false,
 					// A link in a link would break it: the text of a button or a link gets no links, as
 					// in the block editor's own button.
@@ -110,6 +132,18 @@
 			);
 		},
 		save: ( { attributes } ) => h( RichText.Content, { tagName: attributes.tag, value: attributes.content } ),
+	} );
+
+	// The field a control of the menu of formats is in: "Edit as HTML" shows its text area.
+	const FieldContext = createContext( null );
+	wp.richText.registerFormatType( 'swiftling/edit-as-html', {
+		title: __( 'Edit as HTML', 'swiftling' ),
+		tagName: 'swiftling-edit-as-html',
+		className: null,
+		edit: () => {
+			const field = useContext( FieldContext );
+			return field ? h( RichTextToolbarButton, { icon: 'editor-code', title: __( 'Edit as HTML', 'swiftling' ), onClick: field.editAsHtml } ) : null;
+		},
 	} );
 
 	// The elements a text is in on the page, from the tags before it, as the browser reads them:
@@ -148,29 +182,25 @@
 	// Typing within this time is one step of undo.
 	const STEP = 1000;
 
-	// A field and the text area behind it. A field is in one of three states:
-	// - faded: the text area is empty and the field shows the original, faded, as a start to type
-	//   over, as on the page; nothing is saved until it changes;
-	// - emptied: the user emptied it, so the text area is empty and the original shows only as its
-	//   placeholder: typing starts a new text;
-	// - translated: the field and the text area hold the translation.
+	// A field and the text area behind it. Empty, it shows the original behind it, faded, as on the
+	// page; what is typed starts the translation.
 	const Field = ( { input, api, note, label } ) => {
 		const original = inner( input.dataset.original || '' );
 		const [ before, after ] = edges( input.dataset.original || '' );
 		const [ outer, own ] = useMemo( () => elementsAround( input.dataset.prefix || '' ), [] );
-		const pointer = useRef( false );
-		const initial = '' === input.value && '' !== original ? 'faded' : 'translated';
-
-		const contentOf = ( value, state ) => ( '' === value ? ( 'faded' === state ? original : '' ) : inner( value ) );
-		const placeholderOf = ( state ) => ( 'emptied' === state ? words( original ) : config.placeholder );
-		const [ blocks, setBlocks ] = useState( () => [
-			createBlock( NAME, { content: contentOf( input.value, initial ), original, label, note, placeholder: placeholderOf( initial ), tag: own.tag, look: own.look } ),
-		] );
-		const [ state, setState ] = useState( initial );
+		const contentOf = ( value ) => {
+			const content = inner( tidyLinks( value, own.tag ) );
+			return isBlank( content ) ? '' : content;
+		};
+		const [ blocks, setBlocks ] = useState( () => {
+			const content = contentOf( input.value );
+			return [ createBlock( NAME, { content, original, label, tag: own.tag, look: own.look, note: '' === content ? note : '' } ) ];
+		} );
 		const [ code, setCode ] = useState( false );
+		const empty = '' === ( blocks[ 0 ] ? blocks[ 0 ].attributes.content : '' );
 		// The values the text area had, for undo and redo, the field's own: the block editor keeps
 		// none here, and the browser's own undo does not reach a field the block editor draws.
-		const history = useRef( { entries: [ { value: input.value, state: initial } ], at: 0, time: 0 } );
+		const history = useRef( { entries: [ input.value ], at: 0, time: 0 } );
 
 		// The text area, and with it the editor, which saves it and counts it.
 		const write = ( value ) => {
@@ -179,61 +209,44 @@
 				input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 			}
 		};
-		const remember = ( value, next, typing ) => {
+		const remember = ( value, typing ) => {
 			const memory = history.current;
 			const now = Date.now();
+			// The same value again, as the block editor reports a change once as typed and once more
+			// when it settles, is no step of its own.
+			if ( memory.entries[ memory.at ] === value ) {
+				return;
+			}
 			memory.entries = memory.entries.slice( 0, memory.at + 1 );
-			if ( typing && now - memory.time < STEP && 'translated' === memory.entries[ memory.at ].state ) {
-				memory.entries[ memory.at ] = { value, state: next };
+			if ( typing && memory.at > 0 && now - memory.time < STEP && '' !== memory.entries[ memory.at ] ) {
+				memory.entries[ memory.at ] = value;
 			} else {
-				memory.entries.push( { value, state: next } );
+				memory.entries.push( value );
 				memory.at = memory.entries.length - 1;
 			}
 			memory.time = typing ? now : 0;
 		};
 		// Shows a value in the field, keeping its block, so the field keeps the cursor.
-		const show = ( value, next ) => {
-			setBlocks( ( current ) => [ { ...current[ 0 ], attributes: { ...current[ 0 ].attributes, content: contentOf( value, next ), placeholder: placeholderOf( next ), chosen: false } } ] );
-			setState( next );
+		const show = ( value ) => {
+			const content = contentOf( value );
+			setBlocks( ( current ) => [ { ...current[ 0 ], attributes: { ...current[ 0 ].attributes, content, note: '' === content ? note : '' } } ] );
 		};
 
 		useEffect( () => {
 			// Filled by the editor: copying the original, machine translation, typing as HTML.
 			api.set = ( value ) => {
-				const next = '' === value && '' !== original ? 'faded' : 'translated';
-				show( value, next );
-				remember( value, next, false );
+				show( value );
+				remember( value, false );
 			};
 		}, [] );
 
 		const onChange = ( changed ) => {
-			let next = changed;
-			let attributes = next[ 0 ] ? next[ 0 ].attributes : { content: '' };
-			// The text of a link gets no link of its own, also not one pasted in: its words stay.
-			if ( 'a' === own.tag && /<a\b/i.test( String( attributes.content || '' ) ) ) {
-				attributes = { ...attributes, content: String( attributes.content ).replace( /<\/?a\b[^>]*>/gi, '' ) };
-				next = [ { ...next[ 0 ], attributes } ];
-			}
-			const content = String( attributes.content || '' );
-			// Untouched, the faded original is no translation.
-			if ( 'faded' === state && content === original && ! attributes.chosen ) {
-				setBlocks( next );
-				return;
-			}
-			if ( isBlank( content ) ) {
-				// Emptied: the original shows as the placeholder, and typing starts a new text.
-				setBlocks( [ { ...next[ 0 ], attributes: { ...attributes, content: '', placeholder: placeholderOf( 'emptied' ), chosen: false } } ] );
-				setState( 'emptied' );
-				remember( '', 'emptied', false );
-				write( '' );
-				return;
-			}
-			// The translation from now on, also when it is changed back to the original. The spaces
-			// around the original go around it, unless it has its own.
-			const value = ( /^(\s|&nbsp;)/.test( content ) ? '' : before ) + content + ( /(\s|&nbsp;)$/.test( content ) ? '' : after );
-			setBlocks( next );
-			setState( 'translated' );
-			remember( value, 'translated', true );
+			// No link in a link, also not one pasted in: its words stay.
+			const content = contentOf( changed[ 0 ] ? changed[ 0 ].attributes.content || '' : '' );
+			setBlocks( [ { ...changed[ 0 ], attributes: { ...changed[ 0 ].attributes, content, note: '' === content ? note : '' } } ] );
+			// The spaces around the original go around the translation, unless it has its own.
+			const value = '' === content ? '' : ( /^(\s|&nbsp;)/.test( content ) ? '' : before ) + content + ( /(\s|&nbsp;)$/.test( content ) ? '' : after );
+			remember( value, true );
 			write( value );
 		};
 
@@ -245,9 +258,8 @@
 			}
 			memory.at = at;
 			memory.time = 0;
-			const entry = memory.entries[ at ];
-			show( entry.value, entry.state );
-			write( entry.value );
+			show( memory.entries[ at ] );
+			write( memory.entries[ at ] );
 		};
 
 		// Ctrl+K adds a link here, as in the block editor, rather than opening the command palette.
@@ -256,7 +268,6 @@
 				event.stopPropagation();
 			}
 		};
-
 		const onKeyDownCapture = ( event ) => {
 			if ( ! ( event.ctrlKey || event.metaKey ) || event.altKey ) {
 				return;
@@ -269,79 +280,67 @@
 			}
 		};
 
-		// Reached with the keyboard, a field that shows the original has it chosen, so the first key
-		// typed replaces it; a click puts the cursor where it was, to change a word of it.
-		const onFocusCapture = ( event ) => {
-			const editable = event.target.closest && event.target.closest( '[contenteditable]' );
-			if ( pointer.current || 'faded' !== state || ! editable || Date.now() - tabbed > 500 ) {
-				return;
+		// As HTML, the text area shows instead of the field; back, the field shows what it holds.
+		const editAs = ( html ) => {
+			input.hidden = ! html;
+			setCode( html );
+			if ( ! html ) {
+				write( tidyLinks( input.value, own.tag ) );
+				show( input.value );
 			}
-			setTimeout( () => {
-				if ( editable.ownerDocument.activeElement !== editable ) {
-					return;
-				}
-				const range = document.createRange();
-				range.selectNodeContents( editable );
-				const selection = editable.ownerDocument.defaultView.getSelection();
-				selection.removeAllRanges();
-				selection.addRange( range );
-			} );
 		};
-		const onPointerDownCapture = () => {
-			pointer.current = true;
-			setTimeout( () => {
-				pointer.current = false;
-			}, 300 );
-		};
+		const context = useMemo( () => ( { editAsHtml: () => editAs( true ) } ), [] );
+
+		// Around the text, the elements it is in on the page, as the field draws them.
+		const around = ( inside ) => outer.reduceRight( ( content, element ) => h( element.tag, element.look, content ), inside );
 
 		return h(
 			'div',
-			{ className: 'swiftling-block-field' + ( 'faded' === state ? ' is-original' : '' ), onKeyDown, onKeyDownCapture, onFocusCapture, onPointerDownCapture },
+			{ className: 'swiftling-block-field' + ( empty ? ' is-empty' : '' ), onKeyDown, onKeyDownCapture },
 			h(
-				SlotFillProvider,
-				null,
+				FieldContext.Provider,
+				{ value: context },
 				h(
-					BlockEditorProvider,
-					{ value: blocks, onInput: onChange, onChange, settings },
+					SlotFillProvider,
+					null,
 					h(
-						'div',
-						{ className: 'swiftling-block-field__toolbar' },
-						h( BlockToolbar, { hideDragHandle: true } ),
+						BlockEditorProvider,
+						{ value: blocks, onInput: onChange, onChange, settings },
 						h(
-							'button',
-							{
-								type: 'button',
-								className: 'swiftling-block-field__code',
-								'aria-pressed': code ? 'true' : 'false',
-								onClick: () => {
-									input.hidden = code;
-									setCode( ! code );
-								},
-							},
-							__( 'HTML', 'swiftling' )
-						)
-					),
-					// The text with the theme's styles; the toolbar and its menus keep the editor's.
-					! code && h( 'div', { className: 'swiftling-block-field__content', lang: config.lang || undefined, dir: config.dir || undefined }, h( BlockTools, null, outer.reduceRight( ( inside, element ) => h( element.tag, element.look, inside ), h( BlockList ) ) ) ),
-					h( Popover.Slot )
+							'div',
+							{ className: 'swiftling-block-field__toolbar' },
+							code
+								? h( 'button', { type: 'button', className: 'swiftling-block-field__visual', onClick: () => editAs( false ) }, __( 'Edit visually', 'swiftling' ) )
+								: h( BlockToolbar, { hideDragHandle: true } )
+						),
+						// The text with the theme's styles; the toolbar and its menus keep the editor's.
+						! code &&
+							h(
+								'div',
+								{ className: 'swiftling-block-field__content', lang: config.lang || undefined, dir: config.dir || undefined },
+								// Empty, the original shows behind the field, faded, in the elements of the page.
+								empty &&
+									'' !== original &&
+									h(
+										'div',
+										{ className: 'swiftling-block-field__original', 'aria-hidden': 'true' },
+										around( h( 'div', { className: 'block-editor-block-list__layout' }, h( own.tag, { ...own.look, className: [ 'swiftling-block-field__text', own.look.className ].filter( Boolean ).join( ' ' ), dangerouslySetInnerHTML: { __html: original } } ) ) )
+									),
+								h( BlockTools, null, around( h( BlockList ) ) )
+							),
+						h( Popover.Slot )
+					)
 				)
 			),
-			// While the field shows the original, it says so; read by screen readers with its name.
-			h( 'span', { id: note, className: 'screen-reader-text' }, 'translated' === state ? '' : __( 'Not translated yet: the field shows the original.', 'swiftling' ) )
+			// While the field is empty, it says what visitors read: the original.
+			h(
+				'span',
+				{ id: note, className: 'screen-reader-text' },
+				/* translators: %s: the original text. */
+				empty ? sprintf( __( 'Not translated yet; the original is: %s', 'swiftling' ), words( original ) ) : ''
+			)
 		);
 	};
-
-	// When the Tab key was last pressed: a field it reaches gets its faded original chosen.
-	let tabbed = 0;
-	document.addEventListener(
-		'keydown',
-		( event ) => {
-			if ( 'Tab' === event.key ) {
-				tabbed = Date.now();
-			}
-		},
-		true
-	);
 
 	// The name of a field for screen readers: what the row is, in which language, as "Heading in
 	// Français".
@@ -367,8 +366,11 @@
 			}
 		} );
 		createRoot( holder ).render( h( Field, { input, api, note: input.id + '-faded', label: labelOf( input ) } ) );
+		const own = elementsAround( input.dataset.prefix || '' )[ 1 ];
 		return {
 			set: ( html ) => api.set && api.set( html ),
+			// What is saved, whichever way it reached the text area, as typed as HTML.
+			tidy: ( html ) => tidyLinks( html, own.tag ),
 		};
 	};
 

@@ -364,7 +364,8 @@
 		if ( ! isRich( input ) ) {
 			return input.value;
 		}
-		const middle = richContent( input );
+		// The block editor's field keeps links out of links, also in what was typed as HTML.
+		const middle = blockFields.has( input ) ? blockFields.get( input ).tidy( richContent( input ) ) : richContent( input );
 		return '' === middle.replace( /<[^>]*>|&nbsp;|\s/g, '' ) ? '' : input.dataset.prefix + middle + input.dataset.suffix;
 	};
 
