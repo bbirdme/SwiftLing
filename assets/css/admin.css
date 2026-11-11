@@ -1822,7 +1822,18 @@ body.swiftling-screen {
 	z-index: 1;
 }
 
+/* Empty, the field fills the area of the original under it, so a click anywhere on it is a click
+   in the field. */
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original),
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) :has(.swiftling-block-field__text) {
+	height: 100%;
+}
+
 .swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) .swiftling-block-field__text {
+	display: block;
+	width: 100%;
+	min-height: 100%;
+	box-sizing: border-box;
 	border-color: transparent !important;
 	background: transparent !important;
 	box-shadow: none !important;

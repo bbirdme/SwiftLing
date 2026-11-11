@@ -188,8 +188,16 @@
 		const original = inner( input.dataset.original || '' );
 		const [ before, after ] = edges( input.dataset.original || '' );
 		const [ outer, own ] = useMemo( () => elementsAround( input.dataset.prefix || '' ), [] );
+		// A translation as saved, without the spaces of the original around it, which go back
+		// around it when it is written: its own spaces stay.
 		const contentOf = ( value ) => {
-			const content = inner( tidyLinks( value, own.tag ) );
+			let content = tidyLinks( value, own.tag );
+			if ( before && content.startsWith( before ) ) {
+				content = content.slice( before.length );
+			}
+			if ( after && content.endsWith( after ) ) {
+				content = content.slice( 0, content.length - after.length );
+			}
 			return isBlank( content ) ? '' : content;
 		};
 		const [ blocks, setBlocks ] = useState( () => {
