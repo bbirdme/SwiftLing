@@ -1725,13 +1725,38 @@ body.swiftling-screen {
 	color: #fff;
 }
 
-.swiftling-block-field .block-editor-block-list__layout {
+.swiftling-block-field__content {
 	padding: 8px 10px;
+}
+
+.swiftling .swiftling-live-editor .swiftling-block-field__content {
+	background-color: transparent;
+}
+
+/* Without the styles of the blocks, which the admin does not load: a button keeps its shape. */
+.swiftling-block-field__content .wp-block-button__link {
+	display: inline-block;
+}
+
+/* The menus of the toolbar, as the colours of a highlight, stay under the editor's bar while the
+   page scrolls, and keep the editor's font, not the theme's of the text they open from. */
+.swiftling-block-field .components-popover {
+	z-index: 19;
+	color: #1e1e1e;
+	font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	letter-spacing: normal;
+	text-transform: none;
 }
 
 /* The original and the field get the theme's styles, see assets/js/editor-formats.js; the page's
    background stays the table's. */
 .swiftling .swiftling-live-editor .swiftling-live-html {
+	background-color: transparent;
+}
+
+/* A text colour without a highlight is a mark with a transparent background, which the original
+   loses when it is printed: without a background of its own, a mark shows none. */
+.swiftling-live-html mark:not([style*="background"]):not([class*="-background-color"]) {
 	background-color: transparent;
 }
 
@@ -1741,6 +1766,20 @@ body.swiftling-screen {
 
 .swiftling .swiftling-live-editor tr.is-empty .swiftling-block-field {
 	background-color: #fffaf7;
+}
+
+/* A list item with its bullet, in a list of its own. */
+.swiftling-block-field__content ul,
+.swiftling-block-field__content ol {
+	margin-top: 0;
+	margin-bottom: 0;
+	padding-left: 1.5em;
+	list-style: disc;
+}
+
+.swiftling-block-field__content li.swiftling-block-field__text {
+	display: list-item;
+	list-style: inherit;
 }
 
 /* The text of a summary beside its marker, as on the page. */

@@ -654,8 +654,12 @@ final class Menu {
 	 * @return bool Whether it was enqueued.
 	 */
 	private static function enqueueBlockFormats(): bool {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen parameter.
-		$post = isset( $_GET['post'] ) ? get_post( absint( $_GET['post'] ) ) : null;
+		// The post of the editor, by its number or as its subject, as a synced pattern can be.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only screen parameters.
+		$subject = isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : ( preg_match( '/^post:(\d+)$/', $subject, $found ) ? (int) $found[1] : 0 );
+		// phpcs:enable
+		$post = $post_id ? get_post( $post_id ) : null;
 		if ( ! swiftling_live_block_formats( $post ) ) {
 			return false;
 		}
@@ -668,10 +672,21 @@ final class Menu {
 
 		wp_enqueue_script( 'swiftling-editor-formats', SWIFTLING_URL . 'assets/js/editor-formats.js', array( 'wp-blocks', 'wp-block-editor', 'wp-format-library', 'wp-components', 'wp-element', 'wp-data', 'wp-i18n' ), SWIFTLING_VERSION, true );
 		wp_set_script_translations( 'swiftling-editor-formats', 'swiftling' );
+		// The language of the fields, for their names, and as the language and direction of their
+		// text: the editor's, or its first.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen parameter.
+		$language = swiftling_target_language( isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '' );
+		$targets  = swiftling_languages()['targets'];
+		if ( ! $language && $targets ) {
+			$language = reset( $targets );
+		}
 		$config = array(
 			'settings'    => $settings,
 			'styles'      => $styles,
 			'placeholder' => swiftling_live_placeholder(),
+			'language'    => $language ? $language['name'] : '',
+			'lang'        => $language ? swiftling_hreflang_code( (string) $language['locale'] ) : '',
+			'dir'         => $language && swiftling_language_is_rtl( $language ) ? 'rtl' : 'ltr',
 		);
 		wp_add_inline_script( 'swiftling-editor-formats', 'window.swiftlingEditorFormats = ' . wp_json_encode( $config ) . ';', 'before' );
 		return true;

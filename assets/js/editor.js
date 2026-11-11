@@ -291,7 +291,7 @@
 				input.dataset.blocks = '0';
 				input.classList.replace( 'swiftling-live-wrapped', 'swiftling-live-rich' );
 			} );
-			table.querySelectorAll( 'textarea.swiftling-live-rich[data-blocks="0"]:not([disabled])' ).forEach( unwrap );
+			table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ).forEach( unwrap );
 		}
 		const inputs = [ ...table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ) ];
 		if ( inputs.length <= RICH_AT_ONCE || ! window.IntersectionObserver ) {
@@ -318,9 +318,14 @@
 	// or doubled, and its attributes stay as they are. The field draws it around the text, so it
 	// still looks as on the page. Only where the translation has the same element, or none yet.
 	const WRAPPER = /^(\s*<([a-z][a-z0-9-]*)\b[^>]*>)([\s\S]*)(<\/\2>\s*)$/i;
+	const BLOCK_TAGS = /<\/?(p|div|ul|ol|li|h[1-6]|blockquote|table|figure|pre|hr|section|details)\b/i;
 	const unwrap = ( input ) => {
 		const found = ( input.dataset.original || '' ).match( WRAPPER );
 		if ( ! found || new RegExp( '<\\/?' + found[ 2 ] + '\\b', 'i' ).test( found[ 3 ] ) ) {
+			return;
+		}
+		// Paragraphs and lists keep the visual editor of WordPress, with their tags as they are.
+		if ( '1' === input.dataset.blocks && BLOCK_TAGS.test( found[ 3 ] ) ) {
 			return;
 		}
 		const [ open, close ] = [ found[ 1 ].trim(), found[ 4 ].trim() ];
@@ -332,6 +337,8 @@
 		input.dataset.suffix = found[ 4 ] + input.dataset.suffix;
 		input.dataset.original = found[ 3 ];
 		input.value = '' === value ? '' : value.slice( open.length, value.length - close.length );
+		// One paragraph or heading read as paragraphs: inside it, its text is a block's text.
+		input.dataset.blocks = '0';
 	};
 
 	const setRichContent = ( input, html ) => {

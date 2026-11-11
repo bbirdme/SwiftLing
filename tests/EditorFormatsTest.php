@@ -77,6 +77,35 @@ class EditorFormatsTest extends TestCase {
 		$this->assertTrue( wp_script_is( 'swiftling-editor' ), 'The editor itself still loads' );
 		$this->assertFalse( $this->editor_has_formats( $built ), 'A page builder' );
 		$this->assertFalse( $this->editor_has_formats( 0 ), 'No post' );
+
+		// Breakdance and Oxygen show their own data, also where blocks are left in the content.
+		foreach ( array( '_breakdance_data', '_oxygen_data', 'ct_builder_shortcodes', 'ct_builder_json' ) as $key ) {
+			$post = self::factory()->post->create( array( 'post_content' => self::HEADING ) );
+			add_post_meta( $post, $key, '{"tree":{}}' );
+			$this->assertFalse( $this->editor_has_formats( $post ), $key );
+		}
+	}
+
+	/**
+	 * The text of the fields is in the language they translate into, in its direction.
+	 */
+	public function test_fields_have_the_language_and_direction() {
+		$this->become( 'administrator' );
+		$this->set_languages(
+			array(
+				'de_DE' => 'de',
+				'ar'    => 'ar',
+			)
+		);
+		$post = self::factory()->post->create( array( 'post_content' => self::HEADING ) );
+		$this->assertTrue( $this->editor_has_formats( $post ) );
+		$data = implode( '', (array) wp_scripts()->get_data( 'swiftling-editor-formats', 'before' ) );
+		$this->assertStringContainsString( '"lang":"de-DE","dir":"ltr"', $data, 'The first language, without one asked for' );
+
+		$_GET['lang'] = 'ar';
+		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-translation'] + array( 'slug' => 'swiftling-translation' ) );
+		$data = implode( '', (array) wp_scripts()->get_data( 'swiftling-editor-formats', 'before' ) );
+		$this->assertStringContainsString( '"lang":"ar","dir":"rtl"', $data );
 	}
 
 	/**
@@ -183,5 +212,44 @@ class EditorFormatsTest extends TestCase {
 			$this->assertSame( 1, substr_count( $html, '<a ' ), $text );
 			$this->reset_state();
 		}
+	}
+
+	/**
+	 * A synced pattern is made of blocks too: as a subject of its own, and where a page shows it,
+	 * its highlighted paragraph is the text of one block, with the paragraph around it.
+	 */
+	public function test_synced_pattern_texts_get_the_field() {
+		$this->become( 'administrator' );
+		$pattern = self::factory()->post->create_and_get(
+			array(
+				'post_type'    => 'wp_block',
+				'post_title'   => 'Uvod',
+				'post_content' => "<!-- wp:paragraph {\"metadata\":{\"name\":\"Intro\",\"bindings\":{\"__default\":{\"source\":\"core/pattern-overrides\"}}}} -->\n<p>Zajednički uvod s <mark style=\"background-color:#FFEE58\" class=\"has-inline-color has-accent-3-color\">isticanjem</mark>.</p>\n<!-- /wp:paragraph -->",
+			)
+		);
+		$this->assertTrue( swiftling_live_block_formats( $pattern ) );
+		$_GET = array(
+			'page'    => 'swiftling-translation',
+			'subject' => 'post:' . $pattern->ID,
+		);
+		( new Menu() )->enqueueAssets( Menu::screens()['swiftling-translation'] + array( 'slug' => 'swiftling-translation' ) );
+		$this->assertTrue( wp_script_is( 'swiftling-editor-formats' ), 'Opened as a subject' );
+
+		$page   = self::factory()->post->create_and_get( array( 'post_content' => '<!-- wp:block {"ref":' . $pattern->ID . '} /-->' ) );
+		$result = $this->check(
+			'post:' . $page->ID,
+			static function () use ( $page ) {
+				$GLOBALS['post'] = $page; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The loop of a theme sets it.
+				setup_postdata( $page );
+				apply_filters( 'the_content', $page->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, as a theme runs it.
+			}
+		);
+
+		$unit = $this->found( $result, 'isticanjem' );
+		$this->assertSame( 'post:' . $pattern->ID, $unit['o'] );
+		list( $prefix, $middle, , $blocks ) = swiftling_rich_parts( $unit['v'] );
+		$this->assertSame( '<p>', trim( $prefix ) );
+		$this->assertStringStartsWith( 'Zajednički uvod s <mark', $middle );
+		$this->assertFalse( $blocks, 'The text of one block, not paragraphs' );
 	}
 }

@@ -797,11 +797,22 @@ function swiftling_live_places( $unit, $map ) {
  * assets/js/editor-formats.js: a post made of blocks that no page builder SwiftLing knows built.
  * Classic content and a builder's own markup keep the visual editor of WordPress.
  *
+ * A page of Breakdance or Oxygen can keep blocks in its content from before, while the builder
+ * shows its own data: such a page has the builder's data in its meta, which is enough to tell.
+ *
  * @param WP_Post|null $post Post.
  * @return bool
  */
 function swiftling_live_block_formats( $post ) {
-	return $post instanceof WP_Post && has_blocks( $post->post_content ) && ! \SwiftLing\Builders\Registry::forPost( (int) $post->ID );
+	if ( ! $post instanceof WP_Post || ! has_blocks( $post->post_content ) || \SwiftLing\Builders\Registry::forPost( (int) $post->ID ) ) {
+		return false;
+	}
+	foreach ( array( '_breakdance_data', '_oxygen_data', 'ct_builder_shortcodes', 'ct_builder_json' ) as $key ) {
+		if ( '' !== (string) get_post_meta( $post->ID, $key, true ) ) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
