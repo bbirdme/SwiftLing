@@ -353,6 +353,16 @@ function swiftling_visual_editor_data( $post, $lang ) {
 			$place = __( 'Excerpt', 'swiftling' );
 		}
 		$text['label'] = $labels[ isset( $labels[ $text['kind'] ] ) ? $text['kind'] : 'text' ];
+		// HTML is edited as the translation editor edits it: its text with simple formatting, the
+		// tags around it kept as they are, or else as code.
+		if ( 'html' === $text['type'] ) {
+			$parts = swiftling_rich_parts( $text['original'] );
+			if ( $parts ) {
+				$text['parts'] = array( $parts[0], $parts[1], $parts[2] );
+			} else {
+				$text['type'] = 'code';
+			}
+		}
 		// The page's own title, wherever its page check found it.
 		if ( $key === $text['object'] && 'field/post_title' === $text['path'] ) {
 			$text['label'] = __( 'Title', 'swiftling' );

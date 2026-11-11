@@ -453,6 +453,18 @@ class VisualEditorTest extends TestCase {
 		);
 		$texts = array_column( $data['texts'], null, 'path' );
 		$this->assertSame( 'Title', $texts['field/post_title']['label'] );
+		// HTML keeps its tags, as in the translation editor: only the text between them is edited.
+		$heading = current(
+			array_filter(
+				$data['texts'],
+				static function ( $text ) {
+					return false !== strpos( $text['original'], 'podcast' );
+				}
+			)
+		);
+		$this->assertSame( 'html', $heading['type'] );
+		$this->assertSame( '<h2 class="wp-block-heading">', trim( $heading['parts'][0] ) );
+		$this->assertStringStartsWith( 'Naš <mark', $heading['parts'][1] );
 		$this->assertSame( array( 'back', 'table', 'service', 'request' ), array_keys( (array) $data['links'] ) );
 
 		// A translator, who may translate but not change the settings.

@@ -50,6 +50,8 @@
 		return copy;
 	};
 	const stateLabel = ( state ) => LABELS[ state ] || state;
+	// Whether a text has nothing but tags and spaces.
+	const isBlank = ( html ) => '' === String( html || '' ).replace( /<[^>]*>|&nbsp;|[\s\u200B\uFEFF]/g, '' );
 
 	// Attributes as text, to see whether a block changed since it was loaded or saved.
 	const snapshot = ( attributes ) => {
@@ -80,7 +82,29 @@
 		const states = swl.units.map( ( unit ) => unit.state );
 		return [ 'outdated', 'missing', 'machine', 'official', 'reviewed' ].find( ( state ) => states.includes( state ) ) || states[ 0 ] || '';
 	};
-	const ownImage = ( attributes ) => attributes.swl && attrUnitOf( attributes.swl, 'src' ) && attributes.url && attributes.swl.originalAttrs.url && attributes.url !== attributes.swl.originalAttrs.url;
+	// The attributes of a block's image: an image's and a cover's url, id and alt; Media & Text's
+	// mediaUrl, mediaId and mediaAlt.
+	const mediaKeys = ( name ) => ( 'core/media-text' === name ? { url: 'mediaUrl', id: 'mediaId', alt: 'mediaAlt' } : { url: 'url', id: 'id', alt: 'alt' } );
+	const imageOf = ( name, attributes ) => {
+		const keys = mediaKeys( name );
+		return { url: attributes[ keys.url ], id: attributes[ keys.id ], alt: attributes[ keys.alt ] };
+	};
+	const imageAttributes = ( name, image ) => {
+		const keys = mediaKeys( name );
+		const attributes = {};
+		[ 'url', 'id', 'alt' ].filter( ( key ) => key in image ).forEach( ( key ) => {
+			attributes[ keys[ key ] ] = image[ key ];
+		} );
+		return attributes;
+	};
+	const ownImage = ( name, attributes ) => {
+		if ( ! attributes.swl || ! attrUnitOf( attributes.swl, 'src' ) ) {
+			return false;
+		}
+		const now = imageOf( name, attributes ).url;
+		const before = imageOf( name, attributes.swl.originalAttrs ).url;
+		return !! now && !! before && now !== before;
+	};
 
 	/* Filters: before the core blocks are registered. */
 
@@ -108,7 +132,7 @@
 			classes.push( textUnitOf( swl ) || swl.units.some( ( unit ) => unit.override || unit.attrPath ) ? 'swiftling-visual-missing' : 'swiftling-visual-missing-media' );
 		}
 		const wrapperProps = { ...( props.wrapperProps || {} ), 'data-swiftling-visual-state': 'edited' === state ? __( 'changed, not saved', 'swiftling' ) : stateLabel( state ) };
-		if ( ownImage( props.attributes ) ) {
+		if ( ownImage( props.name, props.attributes ) ) {
 			classes.push( 'swiftling-visual-own-image' );
 			wrapperProps[ 'data-swiftling-visual-image' ] = /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( '%s image', 'swiftling' ), LANG );
 		}
@@ -161,7 +185,9 @@
 		const src = attrUnitOf( swl, 'src' );
 		const shared = swl.units.some( ( unit ) => unit.object !== PAGE );
 		const original = useMemo( () => [ createBlock( name, { ...swl.originalAttrs } ) ], [ name, swl.originalAttrs ] );
-		const own = ownImage( attributes );
+		const own = ownImage( name, attributes );
+		const image = imageOf( name, attributes );
+		const originalImage = imageOf( name, swl.originalAttrs );
 		const changed = ! untouched( attributes ) || swl.copied;
 		const stateOf = ( unit ) => ( changed ? __( 'changed, not saved yet', 'swiftling' ) : 'src' === unit.attr && MISSING.includes( unit.state ) ? __( 'the original’s', 'swiftling' ) : stateLabel( unit.state ) );
 		const head = h(
@@ -185,11 +211,11 @@
 				h(
 					'div',
 					{ className: 'swiftling-visual-image-pair' },
-					h( 'figure', null, h( 'img', { src: src.original || swl.originalAttrs.url, alt: '' } ), h( 'figcaption', null, __( 'Original', 'swiftling' ) ) ),
+					h( 'figure', null, h( 'img', { src: src.original || originalImage.url, alt: '' } ), h( 'figcaption', null, __( 'Original', 'swiftling' ) ) ),
 					h(
 						'figure',
 						{ className: own ? 'is-own' : 'is-same' },
-						own ? h( 'img', { src: attributes.url, alt: '' } ) : h( 'span', { className: 'swiftling-visual-image-same' }, __( 'Same as the original', 'swiftling' ) ),
+						own ? h( 'img', { src: image.url, alt: '' } ) : h( 'span', { className: 'swiftling-visual-image-same' }, __( 'Same as the original', 'swiftling' ) ),
 						h( 'figcaption', null, LANG )
 					)
 				),
@@ -199,15 +225,15 @@
 					h(
 						'div',
 						{ className: 'swiftling-visual-actions' },
-						h( SButton, { icon: 'format-image', onClick: () => chooseImage( ( chosen ) => setAttributes( { url: chosen.url, id: chosen.id } ) ) }, own ? __( 'Choose another image', 'swiftling' ) : /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ) ),
-						own && h( SButton, { variant: 'link', onClick: () => setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) }, __( 'Use the original image', 'swiftling' ) )
+						h( SButton, { icon: 'format-image', onClick: () => chooseImage( ( chosen ) => setAttributes( imageAttributes( name, { url: chosen.url, id: chosen.id } ) ) ) }, own ? __( 'Choose another image', 'swiftling' ) : /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ) ),
+						own && h( SButton, { variant: 'link', onClick: () => setAttributes( imageAttributes( name, { url: originalImage.url, id: originalImage.id } ) ) }, __( 'Use the original image', 'swiftling' ) )
 					),
 					alt &&
 						h(
 							'div',
 							{ className: 'swiftling-visual-field' },
 							h( 'label', { htmlFor: 'swiftling-visual-alt-' + alt.key }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Alt text in %s', 'swiftling' ), LANG ), h( 'span', { className: 'swiftling-visual-field__original' }, SOURCE + ': ' + ( alt.original || '—' ) ) ),
-							h( 'input', { type: 'text', id: 'swiftling-visual-alt-' + alt.key, value: ! changed && MISSING.includes( alt.state ) && attributes.alt === swl.originalAttrs.alt ? '' : attributes.alt || '', placeholder: alt.original, onChange: ( event ) => setAttributes( { alt: event.target.value } ) } )
+							h( 'input', { type: 'text', id: 'swiftling-visual-alt-' + alt.key, value: ! changed && MISSING.includes( alt.state ) && image.alt === originalImage.alt ? '' : image.alt || '', placeholder: alt.original, onChange: ( event ) => setAttributes( imageAttributes( name, { alt: event.target.value } ) ) } )
 						)
 				)
 			)
@@ -231,8 +257,8 @@
 				h(
 					ToolbarGroup,
 					{ className: 'swiftling-visual-tools' },
-					media && h( ToolbarButton, { icon: 'format-image', label: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ), onClick: () => chooseImage( ( chosen ) => props.setAttributes( { url: chosen.url, id: chosen.id } ) ) }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image for %s', 'swiftling' ), LANG ) ),
-					media && ownImage( props.attributes ) && h( ToolbarButton, { icon: 'undo', label: __( 'Use the original image', 'swiftling' ), onClick: () => props.setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) } )
+					media && h( ToolbarButton, { icon: 'format-image', label: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ), onClick: () => chooseImage( ( chosen ) => props.setAttributes( imageAttributes( props.name, { url: chosen.url, id: chosen.id } ) ) ) }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image for %s', 'swiftling' ), LANG ) ),
+					media && ownImage( props.name, props.attributes ) && h( ToolbarButton, { icon: 'undo', label: __( 'Use the original image', 'swiftling' ), onClick: () => props.setAttributes( imageAttributes( props.name, { url: imageOf( props.name, swl.originalAttrs ).url, id: imageOf( props.name, swl.originalAttrs ).id } ) ) } )
 				)
 			)
 		);
@@ -444,30 +470,36 @@
 	const textOf = ( block, unit ) => {
 		if ( 'src' === unit.attr ) {
 			// The original image again: no translation of the address, rather than a copy of it.
-			return block.attributes.url && block.attributes.url !== block.attributes.swl.originalAttrs.url ? block.attributes.url : '';
+			return ownImage( block.name, block.attributes ) ? imageOf( block.name, block.attributes ).url : '';
 		}
 		if ( 'alt' === unit.attr ) {
-			return block.attributes.alt || '';
+			return imageOf( block.name, block.attributes ).alt || '';
 		}
 		if ( unit.attr ) {
 			return null;
 		}
 		if ( unit.override ) {
-			return htmlString( block.attributes[ unit.override ] );
+			const text = htmlString( block.attributes[ unit.override ] );
+			return isBlank( text ) ? '' : text;
 		}
 		if ( unit.attrPath ) {
-			return htmlString( getPath( block.attributes, unit.attrPath ) );
+			const text = htmlString( getPath( block.attributes, unit.attrPath ) );
+			return isBlank( text ) ? '' : text;
 		}
 		// The text as the block writes it now, between the original's own tags: a block that writes
 		// its element anew as it loads, as one that numbers its styles, changes nothing else.
+		// Emptied, it is no translation: visitors read the original, as in the translation editor.
 		const [ prefix, , suffix ] = partsOf( unit.original );
-		return prefix + partsOf( segmentOf( block, unit.c ) )[ 1 ] + suffix;
+		const middle = partsOf( segmentOf( block, unit.c ) )[ 1 ];
+		return isBlank( middle ) ? '' : prefix + middle + suffix;
 	};
 	// The tags around a block's text, as SwiftLing lists it, and the text between them: those of the
 	// block's element, as a heading's, and those a part of a block opens or closes around its inner
 	// blocks, as a list item's around its list. The machine translation service gets only the text,
 	// and a translation keeps the original's tags as they are.
-	const BLOCK_TAG = '(?:p|h[1-6]|li|ul|ol|div|figure|figcaption|blockquote|cite|summary|details|td|th|dt|dd|pre|a)';
+	// The elements of a block's structure: never a link or a format that is part of the text, but
+	// the link of a button, which is the button.
+	const BLOCK_TAG = '(?:p|h[1-6]|li|ul|ol|div|figure|figcaption|blockquote|cite|summary|details|td|th|dt|dd|pre|a(?=[^>]*\\bwp-block-button__link\\b))';
 	const partsOf = ( html ) => {
 		let prefix = '';
 		let suffix = '';
@@ -523,7 +555,8 @@
 			if ( swl && ( swl.copied || ! untouched( block.attributes ) ) ) {
 				swl.units.forEach( ( unit ) => {
 					const text = textOf( block, unit );
-					if ( null !== text && ! seen.has( unit.key ) && ( ! swl.copied || untouched( block.attributes ) ? true : true ) ) {
+					// Empty with no translation, as the original image kept, is nothing to save.
+					if ( null !== text && ! seen.has( unit.key ) && ! ( '' === text && '' === unit.translation ) ) {
 						seen.add( unit.key );
 						items.push( { key: unit.key, text, original: unit.original } );
 					}
@@ -613,21 +646,23 @@
 			}
 			const counted = swl.units.filter( ( unit ) => 'url' !== unit.type );
 			total += counted.length;
-			done += translated( block.attributes ) ? counted.length : counted.filter( ( unit ) => DONE.includes( unit.state ) ).length;
+			// A text changed here counts once it holds something; one emptied is empty again.
+			const changed = swl.copied || ! untouched( block.attributes );
+			done += changed ? counted.filter( ( unit ) => { const text = textOf( block, unit ); return null === text || '' !== text; } ).length : counted.filter( ( unit ) => DONE.includes( unit.state ) ).length;
 			if ( untouched( block.attributes ) && ! swl.copied ) {
 				machine += counted.filter( ( unit ) => 'machine' === unit.state ).length;
 			}
 		} );
 		if ( title ) {
 			total++;
-			done += title.dirty || DONE.includes( title.state ) ? 1 : 0;
+			done += ( title.dirty ? '' !== title.value.trim() : DONE.includes( title.state ) ) ? 1 : 0;
 		}
 		others.forEach( ( other ) => {
 			if ( 'url' === other.unit.type ) {
 				return;
 			}
 			total++;
-			done += other.dirty || DONE.includes( other.unit.state ) ? 1 : 0;
+			done += ( other.dirty ? ! isBlank( other.value ) : DONE.includes( other.unit.state ) ) ? 1 : 0;
 		} );
 		return { total, done, machine };
 	};
@@ -792,7 +827,10 @@
 		const id = 'swiftling-visual-other-' + unit.key;
 		let field;
 		if ( 'html' === unit.type ) {
-			field = h( HtmlField, { id, value: other.value, original: unit.original, onChange } );
+			// The text between the tags around it, which stay as they are; emptied, no translation.
+			const [ prefix, middle, suffix ] = unit.parts || [ '', unit.original, '' ];
+			const value = other.value.startsWith( prefix ) && other.value.endsWith( suffix ) && other.value.length >= prefix.length + suffix.length ? other.value.slice( prefix.length, other.value.length - suffix.length ) : other.value;
+			field = h( HtmlField, { id, value, original: middle, onChange: ( text ) => onChange( isBlank( text ) ? '' : prefix + text + suffix ) } );
 		} else {
 			field = h( isUrl ? 'input' : 'textarea', { id, type: isUrl ? 'text' : undefined, rows: isUrl ? undefined : isCode ? 5 : 2, className: isUrl || isCode ? 'swiftling-mono' : undefined, value: other.value, placeholder: isCode ? undefined : unit.original, onChange: ( event ) => onChange( event.target.value ) } );
 		}
@@ -865,6 +903,7 @@
 		const order = useSelect( ( select ) => select( blockEditorStore ).getClientIdsWithDescendants().length, [] );
 		const { getBlocks } = useSelect( ( select ) => ( { getBlocks: select( blockEditorStore ).getBlocks } ), [] );
 		const { setBlockEditingMode } = useDispatch( blockEditorStore );
+		canvas.registry = wp.data.useRegistry();
 		useEffect( () => {
 			const walk = ( list ) =>
 				list.forEach( ( block ) => {
@@ -918,11 +957,23 @@
 	};
 	// In the page: Enter makes a line break, not a new block; Backspace at the start and Delete at
 	// the end of a text do not join two blocks; and no key adds, copies, moves or removes one.
+	// Undo and redo of the page, which the screen keeps itself, see Screen; and the registry of its
+	// block editor, a registry of its own, see EditingModes.
+	const history = { step: null };
+	const canvas = { registry: null };
+	const editorSelect = () => ( canvas.registry || wp.data ).select( blockEditorStore );
+	const editorDispatch = () => ( canvas.registry || wp.data ).dispatch( blockEditorStore );
 	const guardKeys = ( event ) => {
 		if ( event.swiftlingLineBreak ) {
 			return;
 		}
-		if ( isLayoutShortcut( event ) || ( [ 'Backspace', 'Delete' ].includes( event.key ) && wp.data.select( blockEditorStore ).hasMultiSelection() ) ) {
+		const key = ( event.key || '' ).toLowerCase();
+		if ( ( event.ctrlKey || event.metaKey ) && ! event.altKey && ( 'z' === key || 'y' === key ) && history.step ) {
+			stop( event );
+			history.step( 'z' === key && ! event.shiftKey ? -1 : 1 );
+			return;
+		}
+		if ( isLayoutShortcut( event ) || ( [ 'Backspace', 'Delete' ].includes( event.key ) && editorSelect().hasMultiSelection() ) ) {
 			stop( event );
 			return;
 		}
@@ -940,23 +991,52 @@
 		}
 	};
 	// Text of several paragraphs, pasted into one, becomes its lines.
+	// Pasted text of several paragraphs, lists or lines, as one text: its lines with line breaks
+	// between them and their formats kept, without the paragraphs and lists, which would be blocks.
+	const INLINE_TAGS = [ 'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code', 'del', 'dfn', 'em', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var' ];
+	const inlineLines = ( html, text ) => {
+		const template = document.createElement( 'template' );
+		if ( html ) {
+			template.innerHTML = html;
+		} else {
+			template.content.append( ...text.split( /\r?\n/ ).flatMap( ( line, index ) => ( index ? [ document.createElement( 'br' ), line ] : [ line ] ) ) );
+		}
+		template.content.querySelectorAll( 'script, style, meta, title' ).forEach( ( element ) => element.remove() );
+		// Each element that is no inline format ends a line and gives up its tags.
+		[ ...template.content.querySelectorAll( '*' ) ].reverse().forEach( ( element ) => {
+			if ( INLINE_TAGS.includes( element.tagName.toLowerCase() ) ) {
+				[ ...element.attributes ].filter( ( attribute ) => /^on/i.test( attribute.name ) ).forEach( ( attribute ) => element.removeAttribute( attribute.name ) );
+				return;
+			}
+			element.after( document.createElement( 'br' ) );
+			element.replaceWith( ...element.childNodes );
+		} );
+		return template.innerHTML
+			.replace( /\s*(<br\s*\/?>\s*)+/gi, '<br>' )
+			.replace( /^(<br>)+|(<br>)+$/g, '' )
+			.trim();
+	};
 	const guardPaste = ( event ) => {
 		const editable = event.target.closest && event.target.closest( '[contenteditable="true"]' );
 		const text = event.clipboardData ? event.clipboardData.getData( 'text/plain' ) : '';
-		if ( ! editable || ! /\n/.test( text.trim() ) ) {
+		const html = event.clipboardData ? event.clipboardData.getData( 'text/html' ) : '';
+		if ( ! editable || ( ! /\n/.test( text.trim() ) && ! /<(p|div|li|h[1-6]|ul|ol|blockquote|table|tr|pre)\b/i.test( html ) ) ) {
+			return;
+		}
+		const store = editorSelect();
+		const start = store.getSelectionStart();
+		const end = store.getSelectionEnd();
+		if ( ! start.clientId || start.clientId !== end.clientId || ! start.attributeKey || start.attributeKey !== end.attributeKey ) {
 			return;
 		}
 		stop( event );
-		text.trim()
-			.split( /\r?\n/ )
-			.map( ( line ) => line.trim() )
-			.filter( Boolean )
-			.forEach( ( line, index ) => {
-				if ( index && ! editable.closest( '.swiftling-visual-title' ) ) {
-					lineBreak( event.target );
-				}
-				editable.ownerDocument.execCommand( 'insertText', false, index && editable.closest( '.swiftling-visual-title' ) ? ' ' + line : line );
-			} );
+		const title = editable.closest( '.swiftling-visual-title' );
+		const pasted = wp.richText.create( { html: inlineLines( title ? '' : html, title ? text.replace( /\s*\n\s*/g, ' ' ) : text ) } );
+		const current = wp.richText.create( { html: htmlString( store.getBlockAttributes( start.clientId )[ start.attributeKey ] ) } );
+		const next = wp.richText.insert( current, pasted, start.offset, end.offset );
+		const offset = start.offset + pasted.text.length;
+		editorDispatch().updateBlockAttributes( start.clientId, { [ start.attributeKey ]: wp.richText.toHTMLString( { value: next } ) } );
+		editorDispatch().selectionChange( start.clientId, start.attributeKey, offset, offset );
 	};
 
 	const Screen = () => {
@@ -1035,9 +1115,28 @@
 			if ( shapeOf( next ) !== shape.current ) {
 				setBlocks( ( current ) => [ ...current ] );
 				note( __( 'The layout stays as in the original; only texts and images change here.', 'swiftling' ), 'info' );
-				return;
+				return false;
 			}
 			setBlocks( next );
+			return true;
+		};
+		// Undo and redo: the page as it was after each change the block editor settled, as it
+		// reports one once typing pauses; the screen keeps them, as the block editor alone keeps none.
+		const steps = useRef( { entries: [ blocks ], at: 0 } );
+		const settled = ( next ) => {
+			if ( accept( next ) && next !== steps.current.entries[ steps.current.at ] ) {
+				const memory = steps.current;
+				memory.entries = memory.entries.slice( Math.max( 0, memory.at - 99 ), memory.at + 1 ).concat( [ next ] );
+				memory.at = memory.entries.length - 1;
+			}
+		};
+		history.step = ( by ) => {
+			const memory = steps.current;
+			const at = memory.at + by;
+			if ( at >= 0 && at < memory.entries.length ) {
+				memory.at = at;
+				setBlocks( memory.entries[ at ] );
+			}
 		};
 
 		const settings = useMemo( () => ( { ...data.settings, allowedBlockTypes: [], templateLock: 'contentOnly', focusMode: false, hasFixedToolbar: false, canLockBlocks: false, codeEditingEnabled: false, mediaUpload: wp.mediaUtils && wp.mediaUtils.uploadMedia ? ( args ) => wp.mediaUtils.uploadMedia( args ) : undefined } ), [] );
@@ -1052,7 +1151,10 @@
 			try {
 				const result = await apiFetch( { path: 'swiftling/v1/translations', method: 'POST', data: { subject: PAGE, lang: data.lang, status: state, items } } );
 				const states = result.states || {};
-				setBlocks( settle( blocks, states ) );
+				const saved = settle( blocks, states );
+				setBlocks( saved );
+				// Undo starts again from what is saved.
+				steps.current = { entries: [ saved ], at: 0 };
 				if ( title && title.dirty ) {
 					setTitle( { ...title, dirty: false, state: states[ title.unit.key ] || state } );
 				}
@@ -1330,7 +1432,7 @@
 			null,
 			h(
 				BlockEditorProvider,
-				{ value: blocks, onInput: accept, onChange: accept, settings },
+				{ value: blocks, onInput: accept, onChange: settled, settings },
 				h( BlockEditorKeyboardShortcuts.Register ),
 				h( EditingModes ),
 				bar,
@@ -1400,11 +1502,19 @@
 		const tidyToolbar = () => {
 			root.querySelectorAll( '.block-editor-block-toolbar' ).forEach( ( toolbar ) => {
 				const titles = formats();
+				const show = ( element, shown ) => {
+					const display = shown ? '' : 'none';
+					if ( element.style.display !== display ) {
+						element.style.display = display;
+					}
+				};
 				[ ...toolbar.children ].forEach( ( group ) => {
-					const kept = group.querySelector( '.swiftling-visual-tools' ) || [ ...group.querySelectorAll( 'button' ) ].some( ( button ) => titles.has( button.getAttribute( 'aria-label' ) ) );
-					const display = kept ? '' : 'none';
-					if ( group.style.display !== display ) {
-						group.style.display = display;
+					const ours = group.querySelector( '.swiftling-visual-tools' );
+					show( group, ours || [ ...group.querySelectorAll( 'button' ) ].some( ( button ) => titles.has( button.getAttribute( 'aria-label' ) ) ) );
+					// A block can put its own controls beside SwiftLing's, as a cover its Replace and Reset:
+					// of that group, only SwiftLing's show.
+					if ( ours ) {
+						group.querySelectorAll( '.block-editor-block-toolbar__slot > *' ).forEach( ( item ) => show( item, item.contains( ours ) ) );
 					}
 				} );
 			} );
