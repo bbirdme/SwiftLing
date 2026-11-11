@@ -63,7 +63,7 @@
 		return JSON.stringify( out );
 	};
 	const textUnitOf = ( swl ) => swl.units.find( ( unit ) => ! unit.attr && ! unit.override && ! unit.attrPath );
-	const attrUnitOf = ( swl, attr ) => swl.units.find( ( unit ) => unit.attr === attr || ( 'src' === attr && 'url' === unit.override ) || ( 'alt' === attr && 'alt' === unit.override ) );
+	const attrUnitOf = ( swl, attr ) => swl.units.find( ( unit ) => unit.attr === attr || ( unit.figure && [ 'src', 'alt' ].includes( attr ) ) || ( 'src' === attr && 'url' === unit.override ) || ( 'alt' === attr && 'alt' === unit.override ) );
 	const untouched = ( attributes ) => snapshot( attributes ) === attributes.swl.loadedSnap;
 	// Whether a block counts as translated now: saved so, changed here, or the original copied.
 	const translated = ( attributes ) => {
@@ -211,7 +211,7 @@
 				h(
 					'div',
 					{ className: 'swiftling-visual-image-pair' },
-					h( 'figure', null, h( 'img', { src: src.original || originalImage.url, alt: '' } ), h( 'figcaption', null, __( 'Original', 'swiftling' ) ) ),
+					h( 'figure', null, h( 'img', { src: ( src.figure ? '' : src.original ) || originalImage.url, alt: '' } ), h( 'figcaption', null, __( 'Original', 'swiftling' ) ) ),
 					h(
 						'figure',
 						{ className: own ? 'is-own' : 'is-same' },
@@ -232,8 +232,8 @@
 						h(
 							'div',
 							{ className: 'swiftling-visual-field' },
-							h( 'label', { htmlFor: 'swiftling-visual-alt-' + alt.key }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Alt text in %s', 'swiftling' ), LANG ), h( 'span', { className: 'swiftling-visual-field__original' }, SOURCE + ': ' + ( alt.original || '—' ) ) ),
-							h( 'input', { type: 'text', id: 'swiftling-visual-alt-' + alt.key, value: ! changed && MISSING.includes( alt.state ) && image.alt === originalImage.alt ? '' : image.alt || '', placeholder: alt.original, onChange: ( event ) => setAttributes( imageAttributes( name, { alt: event.target.value } ) ) } )
+							h( 'label', { htmlFor: 'swiftling-visual-alt-' + alt.key }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Alt text in %s', 'swiftling' ), LANG ), h( 'span', { className: 'swiftling-visual-field__original' }, SOURCE + ': ' + ( ( alt.figure ? originalImage.alt : alt.original ) || '—' ) ) ),
+							h( 'input', { type: 'text', id: 'swiftling-visual-alt-' + alt.key, value: ! changed && MISSING.includes( alt.state ) && image.alt === originalImage.alt ? '' : image.alt || '', placeholder: alt.figure ? originalImage.alt : alt.original, onChange: ( event ) => setAttributes( imageAttributes( name, { alt: event.target.value } ) ) } )
 						)
 				)
 			)
@@ -348,6 +348,15 @@
 			// Code, as a whole figure or the HTML of a block, and the blocks whose text the page
 			// cannot change as SwiftLing keeps it are fields beside the page; the page shows them
 			// as they are.
+			// An image with a caption, also of a gallery, is listed as its figure: the image of the
+			// language, its alt text and its caption are changed on the block, and the figure saved
+			// is the original's with those put in, see figureOf().
+			if ( 'code' === text.type && 'core/image' === node.blockName && 0 === where.c && ! where.attr && /^\s*<figure\b/i.test( text.original ) ) {
+				node.swl = node.swl || [];
+				node.swl.push( { ...text, c: 0, attr: null, n: 0, attrPath: null, override: null, figure: true } );
+				placed.add( text.key );
+				return;
+			}
 			if ( 'code' === text.type || READ_ONLY.includes( node.blockName ) ) {
 				if ( READ_ONLY.includes( node.blockName ) ) {
 					sideAs[ text.key ] = node.blockName;
@@ -399,6 +408,11 @@
 		return ! unit.attrPath && ( 'content' in override || 'text' in override );
 	};
 	const cloneRaw = ( node ) => ( { blockName: node.blockName, attrs: { ...node.attrs }, innerBlocks: node.innerBlocks.map( cloneRaw ), innerHTML: node.innerHTML, innerContent: [ ...node.innerContent ] } );
+	// Whether a block keeps an attribute in its comment, not in its HTML, as a cover its image.
+	const inComment = ( name, key ) => {
+		const type = wp.blocks.getBlockType( name );
+		return !! ( type && type.attributes[ key ] && ! type.attributes[ key ].source );
+	};
 	const fillRaw = ( node ) => {
 		const copy = cloneRaw( node );
 		( node.swl || [] ).forEach( ( unit ) => {
@@ -406,6 +420,16 @@
 				return;
 			}
 			copy.innerContent[ unit.c ] = unit.attr ? replaceNthAttribute( copy.innerContent[ unit.c ], unit.attr, unit.n, unit.translation ) : unit.translation;
+			// The image of the language and its alt text where the block keeps them in its comment
+			// too, as a cover does; an image of the language, its number.
+			const key = 'src' === unit.attr ? mediaKeys( node.blockName ).url : 'alt' === unit.attr ? mediaKeys( node.blockName ).alt : '';
+			if ( key && inComment( node.blockName, key ) ) {
+				copy.attrs = { ...copy.attrs, [ key ]: unit.translation };
+			}
+			const number = unit.figure ? unit.translation.match( /\bwp-image-(\d+)\b/ ) : null;
+			if ( number && inComment( node.blockName, 'id' ) ) {
+				copy.attrs = { ...copy.attrs, id: Number( number[ 1 ] ) };
+			}
 		} );
 		copy.innerBlocks = node.innerBlocks.map( fillRaw );
 		return copy;
@@ -440,10 +464,18 @@
 			} );
 			const originalAttrs = { ...original.attributes };
 			delete originalAttrs.swl;
+			// Emptied, a text shows its original as its placeholder, faded, not the block's prompt.
+			const text = node.swl.find( ( unit ) => ! unit.attr && ! unit.override && ! unit.attrPath && ! unit.figure );
+			const type = wp.blocks.getBlockType( block.name );
+			if ( text && type && type.attributes.placeholder ) {
+				const words = document.createElement( 'template' );
+				words.innerHTML = node.innerContent[ text.c ] || '';
+				block.attributes.placeholder = words.content.textContent.trim();
+			}
 			block.attributes.swl = {
 				units: node.swl.map( ( unit ) => ( {
 					key: unit.key, object: unit.object, path: unit.path, kind: unit.kind, type: unit.type, state: unit.state,
-					attr: unit.attr, override: unit.override, attrPath: unit.attrPath, c: unit.c,
+					attr: unit.attr, override: unit.override, attrPath: unit.attrPath, c: unit.c, figure: !! unit.figure,
 					original: unit.attr || unit.override || unit.attrPath ? unit.original : node.innerContent[ unit.c ],
 					translation: unit.translation,
 					loadedRaw: unit.attr || unit.override || unit.attrPath ? null : '' === unit.translation ? node.innerContent[ unit.c ] : unit.translation,
@@ -486,7 +518,25 @@
 		return blocks;
 	};
 
+	// The figure of an image as the original's, with the image, alt text and caption of the block put
+	// in: everything else as it is. An emptied caption goes, as the block saves none.
+	const figureOf = ( original, block ) => {
+		const image = imageOf( block.name, block.attributes );
+		let html = original.replace( /(<img\b[^>]*?\ssrc=)("[^"]*"|'[^']*')/i, ( match, before ) => before + '"' + escapeAttr( image.url || '' ) + '"' );
+		html = /<img\b[^>]*?\salt=/i.test( html )
+			? html.replace( /(<img\b[^>]*?\salt=)("[^"]*"|'[^']*')/i, ( match, before ) => before + '"' + escapeAttr( image.alt || '' ) + '"' )
+			: html.replace( /<img\b/i, '<img alt="' + escapeAttr( image.alt || '' ) + '"' );
+		if ( image.id ) {
+			html = html.replace( /\bwp-image-\d+\b/, 'wp-image-' + image.id );
+		}
+		const caption = htmlString( block.attributes.caption );
+		return isBlank( caption ) ? html.replace( /<figcaption\b[^>]*>[\s\S]*?<\/figcaption>/i, '' ) : html.replace( /(<figcaption\b[^>]*>)[\s\S]*?(<\/figcaption>)/i, ( match, open, close ) => open + caption + close );
+	};
+
 	const textOf = ( block, unit ) => {
+		if ( unit.figure ) {
+			return figureOf( unit.original, block );
+		}
 		if ( 'src' === unit.attr ) {
 			// The original image again: no translation of the address, rather than a copy of it.
 			return ownImage( block.name, block.attributes ) ? imageOf( block.name, block.attributes ).url : '';
@@ -572,10 +622,13 @@
 		walkBlocks( blocks, ( block ) => {
 			const swl = block.attributes.swl;
 			if ( swl && ( swl.copied || ! untouched( block.attributes ) ) ) {
+				// The original copied into a block not changed otherwise: only its texts without a
+				// translation, never over one saved.
+				const copiedOnly = swl.copied && untouched( block.attributes );
 				swl.units.forEach( ( unit ) => {
 					const text = textOf( block, unit );
 					// Empty with no translation, as the original image kept, is nothing to save.
-					if ( null !== text && ! seen.has( unit.key ) && ! ( '' === text && '' === unit.translation ) ) {
+					if ( null !== text && ! seen.has( unit.key ) && ! ( '' === text && '' === unit.translation ) && ( ! copiedOnly || MISSING.includes( unit.state ) ) ) {
 						seen.add( unit.key );
 						items.push( { key: unit.key, text, original: unit.original } );
 					}
@@ -645,6 +698,10 @@
 			const swl = block.attributes.swl;
 			if ( swl && ! translated( block.attributes ) ) {
 				block.attributes = { ...block.attributes, swl: { ...swl, copied: true } };
+				copied++;
+			} else if ( swl && ! untouched( block.attributes ) && swl.units.some( ( unit ) => ! unit.attr && '' === textOf( block, unit ) ) ) {
+				// A text emptied here gets its original again.
+				block.attributes = { ...block.attributes, ...swl.originalAttrs, swl: { ...swl, copied: true } };
 				copied++;
 			}
 		} );
@@ -1035,8 +1092,16 @@
 	const INLINE_TAGS = [ 'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code', 'del', 'dfn', 'em', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var' ];
 	const inlineLines = ( html, text ) => {
 		const template = document.createElement( 'template' );
-		if ( html ) {
-			template.innerHTML = html;
+		// Blocks copied from a block editor come as their markup, also as plain text.
+		const markup = html || ( /<!--\s*wp:/.test( text ) ? text : '' );
+		if ( markup ) {
+			template.innerHTML = markup;
+			const comments = document.createTreeWalker( template.content, window.NodeFilter.SHOW_COMMENT );
+			const found = [];
+			while ( comments.nextNode() ) {
+				found.push( comments.currentNode );
+			}
+			found.forEach( ( comment ) => comment.remove() );
 		} else {
 			template.content.append( ...text.split( /\r?\n/ ).flatMap( ( line, index ) => ( index ? [ document.createElement( 'br' ), line ] : [ line ] ) ) );
 		}
@@ -1059,7 +1124,7 @@
 		const editable = event.target.closest && event.target.closest( '[contenteditable="true"]' );
 		const text = event.clipboardData ? event.clipboardData.getData( 'text/plain' ) : '';
 		const html = event.clipboardData ? event.clipboardData.getData( 'text/html' ) : '';
-		if ( ! editable || ( ! /\n/.test( text.trim() ) && ! /<(p|div|li|h[1-6]|ul|ol|blockquote|table|tr|pre)\b/i.test( html ) ) ) {
+		if ( ! editable || ( ! /\n/.test( text.trim() ) && ! /<(p|div|li|h[1-6]|ul|ol|blockquote|table|tr|pre)\b|<!--/i.test( html ) ) ) {
 			return;
 		}
 		const store = editorSelect();
@@ -1351,6 +1416,15 @@
 			const guardOutside = ( event ) => {
 				if ( isLayoutShortcut( event ) ) {
 					stop( event );
+					return;
+				}
+				// Undo and redo of the page also from its toolbar and the panel under it; a field of
+				// its own, as an alt text, keeps the browser's.
+				const key = ( event.key || '' ).toLowerCase();
+				const own = event.target.closest && event.target.closest( 'input, textarea, [contenteditable="true"]' );
+				if ( ( event.ctrlKey || event.metaKey ) && ! event.altKey && ( 'z' === key || 'y' === key ) && ! own && history.step && event.target.closest && event.target.closest( '.block-editor-block-toolbar, .swiftling-visual-dock' ) ) {
+					stop( event );
+					history.step( 'z' === key && ! event.shiftKey ? -1 : 1 );
 				}
 			};
 			document.addEventListener( 'keydown', guardOutside, true );
@@ -1509,6 +1583,8 @@
 	// Inside the canvas (an iframe with the theme's styles): placeholders, states and markers, in
 	// SwiftLing's colours.
 	const CANVAS_CSS = `
+		/* An image keeps its size: no handles to resize it. */
+		.components-resizable-box__handle { display: none !important; }
 		.swiftling-visual-missing { opacity: .42; transition: opacity .15s ease; }
 		.swiftling-visual-missing:hover, .swiftling-visual-missing.is-selected, .swiftling-visual-missing:focus-within { opacity: .85; }
 		.swiftling-visual-missing-media { outline: 2px dashed #ddd5c7; outline-offset: 3px; }

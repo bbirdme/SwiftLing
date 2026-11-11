@@ -568,4 +568,49 @@ class VisualEditorTest extends TestCase {
 		$this->assertStringNotContainsString( 'Točka jedan', $html );
 		$this->assertStringNotContainsString( '<!--', $html );
 	}
+
+	/**
+	 * An image with a caption is one text, its figure: the visual editor saves the original figure
+	 * with the alt text and the caption of the language put in, and the page shows it so.
+	 */
+	public function test_figure_of_a_captioned_image() {
+		$post   = self::factory()->post->create_and_get(
+			array( 'post_content' => "<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"https://example.org/brdo.jpg\" alt=\"Brdo\"/><figcaption class=\"wp-element-caption\">Pogled na <strong>brdo</strong></figcaption></figure>\n<!-- /wp:image -->" )
+		);
+		$result = $this->check(
+			'post:' . $post->ID,
+			function () use ( $post ) {
+				$this->content( $post );
+			}
+		);
+
+		$figure = $this->found( $result, 'Pogled na' );
+		$this->assertStringStartsWith( '<figure', trim( $figure['v'] ) );
+		$key = swiftling_place_key( 'post:' . $post->ID, swiftling_path_key( $figure['p'] ), swiftling_hash( $figure['v'] ) );
+		// Listed as code, which the visual editor gives the image block, see rawTreeOf().
+		$this->assertTrue( swiftling_live_is_code( $figure ) );
+
+		// As figureOf() in assets/js/visual.js puts the language's alt text and caption in.
+		$text = str_replace( array( 'alt="Brdo"', 'Pogled na <strong>brdo</strong>' ), array( 'alt="Montagne"', 'Vue sur la <strong>montagne</strong>' ), $figure['v'] );
+		$this->call(
+			'/translations',
+			array(
+				'subject' => 'post:' . $post->ID,
+				'lang'    => 'fr',
+				'status'  => 'reviewed',
+				'items'   => array(
+					array(
+						'key'      => $key,
+						'text'     => $text,
+						'original' => $figure['v'],
+					),
+				),
+			)
+		);
+		$this->show_in( 'fr' );
+		$html = $this->content( $post );
+		$this->assertStringContainsString( 'alt="Montagne"', $html );
+		$this->assertStringContainsString( 'Vue sur la <strong>montagne</strong></figcaption>', $html );
+		$this->assertSame( 1, substr_count( $html, '<figure' ) );
+	}
 }
