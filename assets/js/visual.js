@@ -106,8 +106,7 @@
 		const wrapperProps = { ...( props.wrapperProps || {} ), 'data-swiftling-visual-state': 'edited' === state ? __( 'changed, not saved', 'swiftling' ) : stateLabel( state ) };
 		if ( ownImage( props.attributes ) ) {
 			classes.push( 'swiftling-visual-own-image' );
-			/* translators: %s: language name */
-			wrapperProps[ 'data-swiftling-visual-image' ] = sprintf( __( '%s image', 'swiftling' ), LANG );
+			wrapperProps[ 'data-swiftling-visual-image' ] = /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( '%s image', 'swiftling' ), LANG );
 		}
 		return h( BlockListBlock, { ...props, className: classes.filter( Boolean ).join( ' ' ), wrapperProps } );
 	} );
@@ -120,12 +119,10 @@
 			return;
 		}
 		const frame = window.wp.media( {
-			/* translators: %s: language name */
-			title: sprintf( __( 'Choose the image for %s', 'swiftling' ), LANG ),
+			title: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Choose the image for %s', 'swiftling' ), LANG ),
 			library: { type: 'image' },
 			multiple: false,
-			/* translators: %s: language name */
-			button: { text: sprintf( __( 'Use for %s', 'swiftling' ), LANG ) },
+			button: { text: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use for %s', 'swiftling' ), LANG ) },
 		} );
 		frame.on( 'select', () => {
 			const chosen = frame.state().get( 'selection' ).first().toJSON();
@@ -152,9 +149,9 @@
 		return type ? type.title : __( 'Text', 'swiftling' );
 	};
 
-	// The original of the chosen block beside the page (in the sidebar, or the toolbar's popover);
-	// for an image, the image and alt text of this language next to the original's.
-	const OriginalPanel = ( { name, attributes, setAttributes, width } ) => {
+	// The original of the chosen block, in the panel under the page: for a text, the text as the
+	// page shows it; for an image, the original's and this language's, and the alt text.
+	const OriginalPanel = ( { name, attributes, setAttributes } ) => {
 		const swl = attributes.swl;
 		const alt = attrUnitOf( swl, 'alt' );
 		const src = attrUnitOf( swl, 'src' );
@@ -162,61 +159,65 @@
 		const original = useMemo( () => [ createBlock( name, { ...swl.originalAttrs } ) ], [ name, swl.originalAttrs ] );
 		const own = ownImage( attributes );
 		const changed = ! untouched( attributes ) || swl.copied;
-		const states = h(
-			'ul',
-			{ className: 'swiftling-visual-unit-states' },
-			swl.units.map( ( unit ) =>
-				h( 'li', { key: unit.key }, h( StatusIcon, { state: changed ? 'edited' : unit.state } ), h( 'span', null, unitKind( unit ), ' · ', changed ? __( 'changed, not saved yet', 'swiftling' ) : 'src' === unit.attr && MISSING.includes( unit.state ) ? __( 'the original’s', 'swiftling' ) : stateLabel( unit.state ) ) )
-			)
+		const stateOf = ( unit ) => ( changed ? __( 'changed, not saved yet', 'swiftling' ) : 'src' === unit.attr && MISSING.includes( unit.state ) ? __( 'the original’s', 'swiftling' ) : stateLabel( unit.state ) );
+		const head = h(
+			'div',
+			{ className: 'swiftling-visual-dock__head' },
+			h( 'strong', { className: 'swiftling-visual-dock__title' }, src ? /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image in %s', 'swiftling' ), LANG ) : /* translators: 1: kind of block, e.g. Heading, 2: language of the original. */ sprintf( __( '%1$s · original in %2$s', 'swiftling' ), blockTitle( name ), SOURCE ) ),
+			h( 'ul', { className: 'swiftling-visual-unit-states' }, swl.units.map( ( unit ) => h( 'li', { key: unit.key }, h( StatusIcon, { state: changed ? 'edited' : unit.state } ), swl.units.length > 1 ? unitKind( unit ) + ' · ' + stateOf( unit ) : stateOf( unit ) ) ) ),
+			shared && h( 'span', { className: 'swiftling-visual-dock__shared', title: __( 'Translated once for every page that uses this pattern.', 'swiftling' ) }, h( 'span', { className: 'dashicons dashicons-controls-repeat', 'aria-hidden': true } ), __( 'Synced pattern', 'swiftling' ) ),
+			! src && translated( attributes ) && h( SButton, { variant: 'link', className: 'swiftling-visual-dock__action', onClick: () => setAttributes( { ...swl.originalAttrs } ) }, __( 'Use the original', 'swiftling' ) )
 		);
-		const sharedNote = shared && h( 'p', { className: 'swiftling-visual-note' }, h( 'span', { className: 'dashicons dashicons-controls-repeat', 'aria-hidden': true } ), __( 'Part of a synced pattern: translated once for every page that uses it.', 'swiftling' ) );
-		if ( src ) {
-			return h(
-				'div',
-				{ className: 'swiftling-visual-original is-image' },
-				h(
-					'div',
-					{ className: 'swiftling-visual-image-pair' + ( own ? '' : ' is-single' ) },
-					h( 'figure', null, h( 'img', { src: src.original || swl.originalAttrs.url, alt: '' } ), h( 'figcaption', null, own ? __( 'Original', 'swiftling' ) : /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'The original, also in %s', 'swiftling' ), LANG ) ) ),
-					own && h( 'figure', { className: 'is-own' }, h( 'img', { src: attributes.url, alt: '' } ), h( 'figcaption', null, LANG ) )
-				),
-				h(
-					'div',
-					{ className: 'swiftling-visual-actions' },
-					h( SButton, { icon: 'format-image', onClick: () => chooseImage( ( chosen ) => setAttributes( { url: chosen.url, id: chosen.id } ) ) }, own ? __( 'Choose another image', 'swiftling' ) : /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ) ),
-					own && h( SButton, { variant: 'link', onClick: () => setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) }, __( 'Use the original image', 'swiftling' ) )
-				),
-				alt &&
-					h(
-						'div',
-						{ className: 'swiftling-visual-field' },
-						h( 'label', { htmlFor: 'swiftling-visual-alt-' + alt.key }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Alt text in %s', 'swiftling' ), LANG ) ),
-						h( 'p', { className: 'swiftling-visual-source' }, h( 'span', { className: 'swiftling-visual-source__label' }, SOURCE ), alt.original || '—' ),
-						h( 'textarea', { id: 'swiftling-visual-alt-' + alt.key, rows: 2, value: ! changed && MISSING.includes( alt.state ) && attributes.alt === swl.originalAttrs.alt ? '' : attributes.alt || '', placeholder: alt.original, onChange: ( event ) => setAttributes( { alt: event.target.value } ) } )
-					),
-				states,
-				sharedNote
-			);
+		if ( ! src ) {
+			return h( Fragment, null, head, h( 'div', { className: 'swiftling-visual-dock__body swiftling-visual-original-preview' }, h( BlockPreview, { blocks: original, viewportWidth: 900 } ) ) );
 		}
 		return h(
-			'div',
-			{ className: 'swiftling-visual-original' },
-			h( 'p', { className: 'swiftling-visual-source__label' }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Original in %s', 'swiftling' ), SOURCE ) ),
-			h( 'div', { className: 'swiftling-visual-original-preview' }, h( BlockPreview, { blocks: original, viewportWidth: width || 480 } ) ),
-			states,
-			sharedNote,
-			translated( attributes ) && h( 'div', { className: 'swiftling-visual-actions' }, h( SButton, { icon: 'undo', onClick: () => setAttributes( { ...swl.originalAttrs } ), title: __( 'Puts the original text back into this block, with its formats. Change what needs changing, then save.', 'swiftling' ) }, __( 'Use the original', 'swiftling' ) ) )
+			Fragment,
+			null,
+			head,
+			h(
+				'div',
+				{ className: 'swiftling-visual-dock__body swiftling-visual-dock__image' },
+				h(
+					'div',
+					{ className: 'swiftling-visual-image-pair' },
+					h( 'figure', null, h( 'img', { src: src.original || swl.originalAttrs.url, alt: '' } ), h( 'figcaption', null, __( 'Original', 'swiftling' ) ) ),
+					h(
+						'figure',
+						{ className: own ? 'is-own' : 'is-same' },
+						own ? h( 'img', { src: attributes.url, alt: '' } ) : h( 'span', { className: 'swiftling-visual-image-same' }, __( 'Same as the original', 'swiftling' ) ),
+						h( 'figcaption', null, LANG )
+					)
+				),
+				h(
+					'div',
+					{ className: 'swiftling-visual-dock__fields' },
+					h(
+						'div',
+						{ className: 'swiftling-visual-actions' },
+						h( SButton, { icon: 'format-image', onClick: () => chooseImage( ( chosen ) => setAttributes( { url: chosen.url, id: chosen.id } ) ) }, own ? __( 'Choose another image', 'swiftling' ) : /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ) ),
+						own && h( SButton, { variant: 'link', onClick: () => setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) }, __( 'Use the original image', 'swiftling' ) )
+					),
+					alt &&
+						h(
+							'div',
+							{ className: 'swiftling-visual-field' },
+							h( 'label', { htmlFor: 'swiftling-visual-alt-' + alt.key }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Alt text in %s', 'swiftling' ), LANG ), h( 'span', { className: 'swiftling-visual-field__original' }, SOURCE + ': ' + ( alt.original || '—' ) ) ),
+							h( 'input', { type: 'text', id: 'swiftling-visual-alt-' + alt.key, value: ! changed && MISSING.includes( alt.state ) && attributes.alt === swl.originalAttrs.alt ? '' : attributes.alt || '', placeholder: alt.original, onChange: ( event ) => setAttributes( { alt: event.target.value } ) } )
+						)
+				)
+			)
 		);
 	};
 	const unitKind = ( unit ) => ( { alt: __( 'Alt text', 'swiftling' ), src: __( 'Image', 'swiftling' ), url: __( 'Image', 'swiftling' ) } )[ unit.attr || unit.override ] || __( 'Text', 'swiftling' );
 
 	addFilter( 'editor.BlockEdit', 'swiftling/visual-original', ( BlockEdit ) => ( props ) => {
 		const swl = props.attributes && props.attributes.swl;
-		if ( ! swl || ! props.isSelected ) {
+		const media = swl && props.isSelected && MEDIA_BLOCKS.includes( props.name ) && attrUnitOf( swl, 'src' );
+		if ( ! media ) {
 			return h( BlockEdit, props );
 		}
-		const media = MEDIA_BLOCKS.includes( props.name ) && attrUnitOf( swl, 'src' );
-		return h(
+				return h(
 			Fragment,
 			null,
 			h( BlockEdit, props ),
@@ -227,12 +228,7 @@
 					ToolbarGroup,
 					null,
 					media && h( ToolbarButton, { icon: 'format-image', label: /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Use a different image for %s', 'swiftling' ), LANG ), onClick: () => chooseImage( ( chosen ) => props.setAttributes( { url: chosen.url, id: chosen.id } ) ) }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image for %s', 'swiftling' ), LANG ) ),
-					media && ownImage( props.attributes ) && h( ToolbarButton, { icon: 'undo', label: __( 'Use the original image', 'swiftling' ), onClick: () => props.setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) } ),
-					h( Dropdown, {
-						popoverProps: { placement: 'bottom-start' },
-						renderToggle: ( { isOpen, onToggle } ) => h( ToolbarButton, { icon: 'translation', label: __( 'Show the original', 'swiftling' ), onClick: onToggle, isPressed: isOpen } ),
-						renderContent: () => h( OriginalPanel, { name: props.name, attributes: props.attributes, setAttributes: props.setAttributes, width: 600 } ),
-					} )
+					media && ownImage( props.attributes ) && h( ToolbarButton, { icon: 'undo', label: __( 'Use the original image', 'swiftling' ), onClick: () => props.setAttributes( { url: swl.originalAttrs.url, id: swl.originalAttrs.id } ) } )
 				)
 			)
 		);
@@ -407,19 +403,16 @@
 			}
 		} );
 	};
-	const lockBlocks = ( blocks ) =>
-		blocks.forEach( ( block ) => {
-			block.attributes.lock = { move: true, remove: true };
-			lockBlocks( block.innerBlocks );
-		} );
 	const buildBlocks = () => {
 		const blocks = [];
 		rawTreeOf( PAGE, data.post.content, 0 ).forEach( ( node ) => {
 			const parsed = parse( serializeRawBlock( fillRaw( node ) ) );
 			const original = parse( serializeRawBlock( cloneRaw( node ) ) );
+			// Translating changes texts and images, never the layout: no block moves or goes.
+			walkBlocks( parsed, ( block ) => {
+				block.attributes.lock = { move: true, remove: true };
+			} );
 			if ( parsed.length && original.length ) {
-				// Translating never moves or removes a block.
-				lockBlocks( parsed );
 				annotate( parsed[ 0 ], original[ 0 ], node );
 				blocks.push( parsed[ 0 ] );
 			}
@@ -588,34 +581,25 @@
 
 	const Card = ( { title, className, children } ) => h( 'section', { className: 'swiftling-card swiftling-side' + ( className ? ' ' + className : '' ) }, title && h( 'h2', null, title ), children );
 
-	// The card at the top of the sidebar: the chosen block's original, or how the screen works.
-	const SelectedCard = () => {
+	// The panel under the page: always the same height, so choosing a block moves nothing.
+	const Dock = () => {
 		const block = useSelect( ( select ) => {
 			const id = select( blockEditorStore ).getSelectedBlockClientId();
 			return id ? select( blockEditorStore ).getBlock( id ) : null;
 		}, [] );
 		const { updateBlockAttributes } = useDispatch( blockEditorStore );
 		const swl = block && block.attributes.swl;
-		if ( ! swl ) {
-			return h(
-				Card,
-				{ className: 'swiftling-visual-selected is-empty' },
-				h( 'span', { className: 'swiftling-visual-selected__icon dashicons dashicons-translation', 'aria-hidden': true } ),
-				h( 'h2', null, __( 'Translate on the page', 'swiftling' ) ),
-				h(
-					'ol',
-					{ className: 'swiftling-visual-steps' },
-					h( 'li', null, __( 'Click a text on the page and type over it. Greyed texts still show the original.', 'swiftling' ) ),
-					h( 'li', null, __( 'Its original shows here while you type. Bold, links, highlights and colours work as in the block editor.', 'swiftling' ) ),
-					h( 'li', null, __( 'Click an image to give this language its own image or alt text.', 'swiftling' ) )
-				)
-			);
-		}
-		const isImage = !! attrUnitOf( swl, 'src' );
 		return h(
-			Card,
-			{ className: 'swiftling-visual-selected', title: isImage ? /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'Image in %s', 'swiftling' ), LANG ) : blockTitle( block.name ) },
-			h( OriginalPanel, { key: block.clientId, name: block.name, attributes: block.attributes, setAttributes: ( attrs ) => updateBlockAttributes( block.clientId, attrs ), width: 340 } )
+			'section',
+			{ className: 'swiftling-visual-dock' + ( swl ? '' : ' is-empty' ), 'aria-live': 'polite', 'aria-label': __( 'Original', 'swiftling' ) },
+			swl
+				? h( OriginalPanel, { key: block.clientId, name: block.name, attributes: block.attributes, setAttributes: ( attrs ) => updateBlockAttributes( block.clientId, attrs ) } )
+				: h(
+						'p',
+						{ className: 'swiftling-visual-dock__hint' },
+						h( 'span', { className: 'dashicons dashicons-translation', 'aria-hidden': true } ),
+						__( 'Click a text on the page and type over it: its original shows here. Greyed texts are not translated yet. Click an image to give this language its own image or alt text.', 'swiftling' )
+				  )
 		);
 	};
 
@@ -693,7 +677,7 @@
 				{ className: 'swiftling-ways' },
 				h( 'p', { className: 'swiftling-way is-current', 'aria-current': 'true' }, h( 'strong', null, __( 'Translated here', 'swiftling' ) ), h( 'span', null, __( 'The texts of this page, in this editor.', 'swiftling' ) ) ),
 				data.mode.canCopy && way( 'manual', __( 'Separate copy', 'swiftling' ), __( 'A different layout, changed by hand in its own editor. It starts with the translations made here.', 'swiftling' ) ),
-				way( 'duplicate', __( 'Keep the original', 'swiftling' ), /* translators: 1: language of the visitors, 2: language of the original. */ sprintf( __( 'Visitors in %1$s see this page in %2$s, as it is. It counts as done, so Translate everything skips it. The translations made here are kept.', 'swiftling' ), LANG, SOURCE ) )
+				way( 'duplicate', __( 'Keep the original', 'swiftling' ), /* translators: 1: language of the visitors, 2: language of the original. */sprintf( __( 'Visitors in %1$s see this page in %2$s, as it is. It counts as done, so Translate everything skips it. The translations made here are kept.', 'swiftling' ), LANG, SOURCE ) )
 			)
 		);
 	};
@@ -718,7 +702,6 @@
 		h(
 			'aside',
 			{ className: 'swiftling-editor-layout__aside swiftling-visual-aside' },
-			h( SelectedCard ),
 			others.length > 0 &&
 				h(
 					Card,
@@ -767,26 +750,61 @@
 		const [ notice, setNotice ] = useState( null );
 		const [ highlight, setHighlight ] = useState( false );
 		const [ machining, setMachining ] = useState( false );
+		// The sidebar, shown or hidden for more room; remembered in this browser.
+		const [ wide, setWide ] = useState( () => {
+			try {
+				return '1' === window.localStorage.getItem( 'swiftling-visual-wide' );
+			} catch ( error ) {
+				return false;
+			}
+		} );
+		const toggleWide = () => {
+			setWide( ! wide );
+			try {
+				window.localStorage.setItem( 'swiftling-visual-wide', wide ? '0' : '1' );
+			} catch ( error ) {}
+		};
 		const note = ( text, status ) => setNotice( text ? { text, status } : null );
-		// The bar stays at the top; the canvas and the sidebar fit under it.
+		// The page, the original under it and the sidebar fit the window as it opens: nothing to
+		// scroll to, and nothing that moves. Measured again when the window or the head changes.
 		const barRef = useRef( null );
 		useEffect( () => {
-			const el = barRef.current;
-			if ( ! el || ! window.ResizeObserver ) {
-				return;
+			const root = document.documentElement;
+			const fit = () => {
+				const canvas = document.querySelector( '.swiftling-visual-canvas' );
+				const layout = document.querySelector( '.swiftling-visual-layout' );
+				if ( ! canvas || ! layout ) {
+					return;
+				}
+				const dock = parseFloat( getComputedStyle( canvas.closest( '.swiftling-visual' ) ).getPropertyValue( '--swiftling-visual-dock' ) ) || 164;
+				const canvasTop = canvas.getBoundingClientRect().top + window.scrollY;
+				const layoutTop = layout.getBoundingClientRect().top + window.scrollY;
+				root.style.setProperty( '--swiftling-visual-canvas-h', Math.max( 300, window.innerHeight - canvasTop - dock - 24 ) + 'px' );
+				root.style.setProperty( '--swiftling-visual-aside-h', Math.max( 360, window.innerHeight - layoutTop - 20 ) + 'px' );
+				if ( barRef.current ) {
+					root.style.setProperty( '--swiftling-visual-bar', barRef.current.offsetHeight + 'px' );
+				}
+			};
+			fit();
+			window.addEventListener( 'resize', fit );
+			const observer = window.ResizeObserver ? new window.ResizeObserver( fit ) : null;
+			if ( observer ) {
+				[ barRef.current, document.querySelector( '.swiftling-visual-head' ) ].filter( Boolean ).forEach( ( el ) => observer.observe( el ) );
 			}
-			const observer = new window.ResizeObserver( () => document.documentElement.style.setProperty( '--swiftling-visual-bar', el.offsetHeight + 'px' ) );
-			observer.observe( el );
-			return () => observer.disconnect();
+			return () => {
+				window.removeEventListener( 'resize', fit );
+				if ( observer ) {
+					observer.disconnect();
+				}
+			};
 		}, [] );
-		// A success message goes after a while; an error stays until the next action.
+		// "Saved." no longer holds once something changes, as in the table editor.
+		const itemCount = changedItems( blocks, title, others ).length;
 		useEffect( () => {
-			if ( ! notice || 'error' === notice.status || 'warning' === notice.status ) {
-				return;
+			if ( itemCount && notice && 'success' === notice.status ) {
+				setNotice( null );
 			}
-			const timer = setTimeout( () => setNotice( null ), 6000 );
-			return () => clearTimeout( timer );
-		}, [ notice ] );
+		}, [ itemCount ] );
 
 		const settings = useMemo( () => ( { ...data.settings, templateLock: 'contentOnly', focusMode: false, hasFixedToolbar: false, canLockBlocks: false, codeEditingEnabled: false, mediaUpload: wp.mediaUtils && wp.mediaUtils.uploadMedia ? ( args ) => wp.mediaUtils.uploadMedia( args ) : undefined } ), [] );
 		const styles = useMemo( () => [ ...( data.settings.styles || [] ), { css: CANVAS_CSS } ], [] );
@@ -796,7 +814,7 @@
 
 		const save = useCallback( async ( state ) => {
 			setSaving( true );
-			setNotice( null );
+			note( __( 'Saving…', 'swiftling' ), 'info' );
 			try {
 				const result = await apiFetch( { path: 'swiftling/v1/translations', method: 'POST', data: { subject: PAGE, lang: data.lang, status: state, items } } );
 				const states = result.states || {};
@@ -806,12 +824,12 @@
 				}
 				setOthers( others.map( ( other ) => ( other.dirty ? { ...other, dirty: false, unit: { ...other.unit, state: states[ other.unit.key ] || state, translation: other.value } } : other ) ) );
 				const refused = ( result.refused || [] ).length;
-				note( refused ? /* translators: %d: number of texts. */ sprintf( _n( 'Saved, but %d text was refused: its placeholders do not fit the original.', 'Saved, but %d texts were refused: their placeholders do not fit the original.', refused, 'swiftling' ), refused ) : /* translators: %d: number of texts. */ sprintf( _n( 'Saved %d text.', 'Saved %d texts.', items.length, 'swiftling' ), items.length ), refused ? 'warning' : 'success' );
+				note( refused ? /* translators: %d: number of texts. */ sprintf( _n( 'Saved, but %d text was refused: its placeholders do not fit the original.', 'Saved, but %d texts were refused: their placeholders do not fit the original.', refused, 'swiftling' ), refused ) : __( 'Saved.', 'swiftling' ), refused ? 'warning' : 'success' );
 				if ( result.address && result.address.url ) {
 					setAddress( ( current ) => ( current ? { ...current, ...result.address, slug: decodeURIComponent( result.address.slug || '' ) } : current ) );
 				}
 			} catch ( error ) {
-				note( error && error.message ? error.message : __( 'Saving failed.', 'swiftling' ), 'error' );
+				note( error && error.message ? error.message : __( 'The translations could not be saved.', 'swiftling' ), 'error' );
 			}
 			setSaving( false );
 		}, [ blocks, title, others, items ] );
@@ -854,7 +872,7 @@
 				}
 				return other;
 			} ) );
-			note( copied ? /* translators: %d: number of texts. */ sprintf( _n( 'The original is in %d empty text now. Change what needs changing, then save.', 'The original is in %d empty texts now. Change what needs changing, then save.', copied, 'swiftling' ), copied ) : __( 'Every text is filled in.', 'swiftling' ), 'info' );
+			note( copied ? /* translators: %s: number of fields. */ sprintf( _n( 'The original is in %s empty field now. Change what needs changing, then save.', 'The original is in %s empty fields now. Change what needs changing, then save.', copied, 'swiftling' ), copied ) : __( 'Every field is filled in.', 'swiftling' ), 'info' );
 		};
 
 		useEffect( () => {
@@ -887,7 +905,7 @@
 
 		// Leaving with unsaved changes: ask first.
 		const leave = ( event ) => {
-			if ( items.length && ! window.confirm( __( 'Some translations are not saved yet. Leave anyway?', 'swiftling' ) ) ) {
+			if ( items.length && ! window.confirm( __( 'Some translations are not saved yet.', 'swiftling' ) ) ) {
 				event.preventDefault();
 			}
 		};
@@ -904,7 +922,7 @@
 				'div',
 				{ className: 'swiftling-editor-bar__title' },
 				h( 'h1', null, data.post.title || __( '(no title)', 'swiftling' ) ),
-				h( 'span', { className: 'swiftling-muted' }, data.post.type ? /* translators: %s: kind of content, e.g. Page. */ sprintf( __( '%s · visual editor', 'swiftling' ), data.post.type ) : __( 'Visual editor', 'swiftling' ) )
+				h( 'span', { className: 'swiftling-muted' }, data.post.type )
 			),
 			h(
 				'div',
@@ -912,10 +930,19 @@
 				data.post.url && h( SButton, { variant: 'ghost', href: data.post.url, target: '_blank', rel: 'noopener', icon: 'visibility' }, __( 'View original', 'swiftling' ) ),
 				viewIn && h( SButton, { variant: 'ghost', href: viewIn, target: '_blank', rel: 'noopener', icon: 'visibility' }, /* translators: %s: language name, e.g. Deutsch. */ sprintf( __( 'View in %s', 'swiftling' ), LANG ) ),
 				data.links.table && h( SButton, { variant: 'ghost', href: data.links.table, icon: 'editor-table', onClick: leave, title: __( 'The texts of this page as a list: original on the left, translation on the right.', 'swiftling' ) }, __( 'Table view', 'swiftling' ) ),
-				h( 'p', { className: 'swiftling-live-note' + ( notice ? ' is-' + ( 'warning' === notice.status ? 'error' : notice.status ) : '' ), role: 'status' }, notice ? notice.text : saving ? __( 'Saving…', 'swiftling' ) : '' ),
-				! notice && h( 'span', { className: 'swiftling-live-unsaved', 'aria-live': 'polite' }, items.length ? /* translators: %d: number of texts. */ sprintf( _n( '%d change', '%d changes', items.length, 'swiftling' ), items.length ) : '' ),
-				h( SButton, { onClick: () => save( 'machine' ), disabled: saving || ! items.length, title: __( 'Visitors read it, and it stays marked for review, as a machine translation does.', 'swiftling' ) }, __( 'Save, review later', 'swiftling' ) ),
+				h( 'span', { className: 'swiftling-live-unsaved', 'aria-live': 'polite' }, items.length ? /* translators: %s: number of fields. */ sprintf( _n( '%s unsaved', '%s unsaved', items.length, 'swiftling' ), items.length ) : '' ),
 				h( SButton, { variant: 'accent', className: 'swiftling-live-save', onClick: () => save( 'reviewed' ), disabled: saving || ! items.length, busy: saving }, __( 'Save and mark reviewed', 'swiftling' ) )
+			),
+			// As in the table editor: what the last save or tool did, under Save.
+			h(
+				'div',
+				{ className: 'swiftling-editor-bar__status' },
+				h(
+					'div',
+					{ className: 'swiftling-editor-bar__messages' },
+					h( 'p', { className: 'swiftling-live-status', role: 'status' } ),
+					h( 'p', { className: 'swiftling-live-note' + ( notice ? ' is-' + ( 'warning' === notice.status ? 'error' : notice.status ) : '' ), role: 'status' }, notice ? notice.text : '' )
+				)
 			)
 		);
 
@@ -944,30 +971,32 @@
 		);
 
 		const machineTool = data.machine
-			? h( SButton, { variant: 'secondary is-strong', className: 'swiftling-live-machine', onClick: machineFill, disabled: saving || !! data.machine.off || ! empty, busy: machining, title: data.machine.off || undefined }, /* translators: %s: translation service name, e.g. Google. */ sprintf( __( 'Translate empty texts with %s', 'swiftling' ), data.machine.service ) )
+			? h( SButton, { variant: 'secondary is-strong', className: 'swiftling-live-machine', onClick: machineFill, disabled: saving || !! data.machine.off || ! empty, busy: machining, title: data.machine.off || undefined }, /* translators: %s: translation service name, e.g. Google. */ sprintf( __( 'Translate empty fields with %s', 'swiftling' ), data.machine.service ) )
 			: h( SButton, { href: data.links.service, icon: 'translation' }, __( 'Set up machine translation', 'swiftling' ) );
 
+		// One row over the page: how far the language is, what fills the empty texts, the views.
+		const summary = /* translators: 1: texts translated, 2: all texts. */ sprintf( _n( '%1$s of %2$s text translated', '%1$s of %2$s texts translated', progress.total, 'swiftling' ), progress.done, progress.total ) + ( empty ? ' · ' + /* translators: %s: number of texts. */ sprintf( _n( '%s still empty', '%s still empty', empty, 'swiftling' ), empty ) : '' );
 		const head = h(
 			'div',
-			{ className: 'swiftling-live-head' },
+			{ className: 'swiftling-visual-head' },
 			h(
 				'div',
-				{ className: 'swiftling-live-head__title' },
-				h( 'h2', null, LANG ),
-				h( 'p', { className: 'swiftling-live-summary', 'aria-live': 'polite' }, empty ? /* translators: 1: texts translated, 2: all texts, 3: texts still empty. */ sprintf( _n( '%1$d of %2$d text translated · %3$d still empty', '%1$d of %2$d texts translated · %3$d still empty', progress.total, 'swiftling' ), progress.done, progress.total, empty ) : __( 'Every text is translated.', 'swiftling' ) )
+				{ className: 'swiftling-visual-head__progress' },
+				h( 'p', { className: 'swiftling-live-summary', 'aria-live': 'polite' }, summary ),
+				h( 'div', { className: 'swiftling-bar swiftling-live-meter', 'aria-hidden': true }, h( 'span', { className: 'is-reviewed', style: { width: percent( progress.done - progress.machine ) } } ), h( 'span', { className: 'is-machine', style: { width: percent( progress.machine ) } } ) )
 			),
-			h( 'div', { className: 'swiftling-bar swiftling-live-meter', 'aria-hidden': true }, h( 'span', { className: 'is-reviewed', style: { width: percent( progress.done - progress.machine ) } } ), h( 'span', { className: 'is-machine', style: { width: percent( progress.machine ) } } ) ),
 			h(
 				'div',
-				{ className: 'swiftling-visual-head-tools' },
-				h(
-					'div',
-					{ className: 'swiftling-live-fill', role: 'group', 'aria-labelledby': 'swiftling-visual-fill-label' },
-					h( 'span', { className: 'swiftling-live-toolbar__label', id: 'swiftling-visual-fill-label' }, __( 'Fill empty texts', 'swiftling' ) ),
-					machineTool,
-					h( SButton, { onClick: copyAll, disabled: saving || ! empty }, __( 'Copy the original into empty texts', 'swiftling' ) )
-				),
-				h( 'button', { type: 'button', className: 'swiftling-live-switch', 'aria-pressed': highlight ? 'true' : 'false', onClick: () => setHighlight( ! highlight ), disabled: ! empty }, __( 'Highlight empty texts', 'swiftling' ) )
+				{ className: 'swiftling-live-fill', role: 'group', 'aria-labelledby': 'swiftling-visual-fill-label' },
+				h( 'span', { className: 'swiftling-live-toolbar__label', id: 'swiftling-visual-fill-label' }, __( 'Fill empty fields', 'swiftling' ) ),
+				machineTool,
+				h( SButton, { onClick: copyAll, disabled: saving || ! empty }, __( 'Copy the original into empty fields', 'swiftling' ) )
+			),
+			h(
+				'div',
+				{ className: 'swiftling-visual-head__end' },
+				h( 'button', { type: 'button', className: 'swiftling-live-switch', 'aria-pressed': highlight ? 'true' : 'false', onClick: () => setHighlight( ! highlight ), disabled: ! empty }, __( 'Highlight empty fields', 'swiftling' ) ),
+				h( SButton, { variant: 'ghost', className: 'swiftling-visual-panel-toggle', icon: wide ? 'editor-contract' : 'editor-expand', 'aria-pressed': wide ? 'false' : 'true', onClick: toggleWide, title: wide ? __( 'Show the sidebar', 'swiftling' ) : __( 'Hide the sidebar', 'swiftling' ) }, h( 'span', { className: 'screen-reader-text' }, wide ? __( 'Show the sidebar', 'swiftling' ) : __( 'Hide the sidebar', 'swiftling' ) ) )
 			)
 		);
 
@@ -983,12 +1012,13 @@
 				languages,
 				h(
 					'div',
-					{ className: 'swiftling-editor-layout swiftling-visual-layout' },
+					{ className: 'swiftling-editor-layout swiftling-visual-layout' + ( wide ? ' is-wide' : '' ) },
 					h(
 						'div',
 						{ className: 'swiftling-card is-flush swiftling-live-editor swiftling-visual-editor' + ( highlight ? ' is-marking-empty' : '' ) },
 						head,
-						h( 'div', { className: 'swiftling-visual-canvas' }, h( BlockCanvas, { height: '100%', styles }, h( Title, { title, setTitle } ), h( BlockList ) ) )
+						h( 'div', { className: 'swiftling-visual-canvas' }, h( BlockCanvas, { height: '100%', styles }, h( Title, { title, setTitle } ), h( BlockList ) ) ),
+						h( Dock )
 					),
 					h( Sidebar, { others, setOthers, address, setAddress, note } )
 				),
@@ -1032,7 +1062,7 @@
 		// The core image block's own "Replace" (and its Upload) would read as a change of the page
 		// itself; the language's image has its own, named control. The core control has no class
 		// of its own, so it is hidden by its label whenever a toolbar renders.
-		const replaceLabel = __( 'Replace' ) /* WordPress's own label. */;
+		const replaceLabel = __( 'Replace' );
 		const hideCoreReplace = () => {
 			root.querySelectorAll( '.block-editor-block-toolbar button' ).forEach( ( button ) => {
 				if ( button.textContent.trim() === replaceLabel && ! button.closest( '.swiftling-visual-image' ) ) {
