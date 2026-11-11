@@ -219,7 +219,12 @@
 		if ( noteBox.classList.contains( 'is-success' ) ) {
 			note( '' );
 		}
-		dirty.add( input );
+		// The block editor's field, undone back to what is saved, has nothing to save.
+		if ( blockFields.has( input ) && input.value === input.dataset.saved ) {
+			dirty.delete( input );
+		} else {
+			dirty.add( input );
+		}
 		saveButton.disabled = false;
 		refreshEmpty( input.closest( 'tr' ) );
 		showUnsaved();
@@ -241,7 +246,18 @@
 	const isRich = ( input ) => input.classList.contains( 'swiftling-live-rich' );
 	const richEditor = ( input ) => window.tinymce && window.tinymce.get( input.id );
 
+	// In a post made of blocks, a text of a block gets the block editor's own field instead, with
+	// every inline format of the block editor, such as highlight and text colour: see
+	// assets/js/editor-formats.js. Paragraphs and lists keep the visual editor.
+	const blockField = window.swiftlingBlockField;
+	const blockFields = new Map();
+
 	const startRichEditor = ( input ) => {
+		if ( blockField && '0' === input.dataset.blocks ) {
+			input.dataset.saved = input.value;
+			blockFields.set( input, blockField.start( input ) );
+			return;
+		}
 		window.wp.editor.initialize( input.id, {
 			tinymce: {
 				wpautop: false,
@@ -271,6 +287,18 @@
 		if ( ! window.wp || ! window.wp.editor || ! window.wp.editor.initialize ) {
 			return;
 		}
+		// A text with nothing to format gets a plain field; with the block editor's field it can get
+		// formats, so it gets that field too: its text as HTML, the tags around it kept as for
+		// formatted text.
+		if ( blockField ) {
+			table.querySelectorAll( 'textarea.swiftling-live-wrapped:not([disabled])' ).forEach( ( input ) => {
+				input.value = escapeText( input.value );
+				input.dataset.original = escapeText( input.dataset.original || '' );
+				input.dataset.blocks = '0';
+				input.classList.replace( 'swiftling-live-wrapped', 'swiftling-live-rich' );
+			} );
+			table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ).forEach( unwrap );
+		}
 		const inputs = [ ...table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ) ];
 		if ( inputs.length <= RICH_AT_ONCE || ! window.IntersectionObserver ) {
 			inputs.forEach( startRichEditor );
@@ -291,9 +319,40 @@
 	// The text inside the editable part, as HTML.
 	const richContent = ( input ) => ( window.wp && window.wp.editor && window.wp.editor.getContent ? window.wp.editor.getContent( input.id ) : input.value ) || '';
 
+	// An element around the whole text, as the link of a button, stays outside the text the block
+	// editor's field edits, with the tags around it, and is put back as it is: it cannot be removed
+	// or doubled, and its attributes stay as they are. The field draws it around the text, so it
+	// still looks as on the page. Only where the translation has the same element, or none yet.
+	const WRAPPER = /^(\s*<([a-z][a-z0-9-]*)\b[^>]*>)([\s\S]*)(<\/\2>\s*)$/i;
+	const BLOCK_TAGS = /<\/?(p|div|ul|ol|li|h[1-6]|blockquote|table|figure|pre|hr|section|details)\b/i;
+	const unwrap = ( input ) => {
+		const found = ( input.dataset.original || '' ).match( WRAPPER );
+		if ( ! found || new RegExp( '<\\/?' + found[ 2 ] + '\\b', 'i' ).test( found[ 3 ] ) ) {
+			return;
+		}
+		// Paragraphs and lists keep the visual editor of WordPress, with their tags as they are.
+		if ( '1' === input.dataset.blocks && BLOCK_TAGS.test( found[ 3 ] ) ) {
+			return;
+		}
+		const [ open, close ] = [ found[ 1 ].trim(), found[ 4 ].trim() ];
+		const value = input.value.trim();
+		if ( '' !== value && ! ( value.startsWith( open ) && value.endsWith( close ) && value.length >= open.length + close.length ) ) {
+			return;
+		}
+		input.dataset.prefix += found[ 1 ];
+		input.dataset.suffix = found[ 4 ] + input.dataset.suffix;
+		input.dataset.original = found[ 3 ];
+		input.value = '' === value ? '' : value.slice( open.length, value.length - close.length );
+		// One paragraph or heading read as paragraphs: inside it, its text is a block's text.
+		input.dataset.blocks = '0';
+	};
+
 	const setRichContent = ( input, html ) => {
 		const editor = richEditor( input );
 		input.value = html;
+		if ( blockFields.has( input ) ) {
+			blockFields.get( input ).set( html );
+		}
 		if ( editor && ! editor.isHidden() ) {
 			editor.setContent( html );
 		}
@@ -311,7 +370,8 @@
 		if ( ! isRich( input ) ) {
 			return input.value;
 		}
-		const middle = richContent( input );
+		// The block editor's field keeps links out of links, also in what was typed as HTML.
+		const middle = blockFields.has( input ) ? blockFields.get( input ).tidy( richContent( input ) ) : richContent( input );
 		return '' === middle.replace( /<[^>]*>|&nbsp;|\s/g, '' ) ? '' : input.dataset.prefix + middle + input.dataset.suffix;
 	};
 
@@ -544,6 +604,7 @@
 					broken.push( input );
 				} else if ( ! broken.includes( input ) ) {
 					dirty.delete( input );
+					input.dataset.saved = input.value;
 				}
 			} );
 			showUnsaved();

@@ -792,6 +792,52 @@ function swiftling_live_places( $unit, $map ) {
 }
 
 /**
+ * Whether the translation editor gives the texts of a post's blocks the block editor's own field,
+ * with the inline formats of the block editor, such as highlight and text colour, see
+ * assets/js/editor-formats.js: a post made of blocks that no page builder built, see
+ * swiftling_live_builder(). Classic content and a builder's own markup keep the visual editor of
+ * WordPress.
+ *
+ * @param WP_Post|null $post Post.
+ * @return bool
+ */
+function swiftling_live_block_formats( $post ) {
+	return $post instanceof WP_Post && has_blocks( $post->post_content ) && ! \SwiftLing\Builders\Registry::forPost( (int) $post->ID ) && '' === swiftling_live_builder( $post );
+}
+
+/**
+ * Returns the name of the page builder that built a post, where SwiftLing has no class that tells,
+ * or ''. Breakdance, Oxygen and Brizy keep the page in its meta, and can leave blocks in its
+ * content from before; Beaver Builder and SiteOrigin Page Builder keep a whole layout in one block.
+ *
+ * @param WP_Post $post Post.
+ * @return string
+ */
+function swiftling_live_builder( $post ) {
+	$meta = array(
+		'_breakdance_data'      => 'Breakdance',
+		'_oxygen_data'          => 'Oxygen',
+		'ct_builder_shortcodes' => 'Oxygen',
+		'ct_builder_json'       => 'Oxygen',
+		'brizy'                 => 'Brizy',
+	);
+	foreach ( $meta as $key => $builder ) {
+		if ( ! empty( get_post_meta( $post->ID, $key, true ) ) ) {
+			return $builder;
+		}
+	}
+	foreach ( array(
+		'fl-builder/layout'              => 'Beaver Builder',
+		'siteorigin-panels/layout-block' => 'SiteOrigin Page Builder',
+	) as $block => $builder ) {
+		if ( has_block( $block, $post ) ) {
+			return $builder;
+		}
+	}
+	return '';
+}
+
+/**
  * Returns what an empty translation field says: what to write there, and what visitors read until
  * then, naming both languages, as "Write the Deutsch translation here. Until you do, visitors read
  * the original (Hrvatski)."

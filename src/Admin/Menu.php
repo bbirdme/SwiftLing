@@ -623,6 +623,11 @@ final class Menu {
 			wp_add_inline_script( 'swiftling-flag-choice', 'window.swiftlingFlags = ' . wp_json_encode( array( 'url' => SWIFTLING_URL . 'assets/flags/' ) ) . ';', 'before' );
 			$dependencies[] = 'swiftling-flag-choice';
 		}
+		// The editor of a post made of blocks gives the texts of its blocks the block editor's own
+		// field, which the editor's script starts.
+		if ( 'swiftling-translation' === ( $screen['slug'] ?? '' ) && self::enqueueBlockFormats() ) {
+			$dependencies[] = 'swiftling-editor-formats';
+		}
 		if ( ! empty( $screen['script'] ) ) {
 			// wp-i18n for texts whose form depends on a number, such as "1 field" and "2 fields".
 			$dependencies[] = 'wp-i18n';
@@ -638,6 +643,54 @@ final class Menu {
 		 * @param array  $screen The screen, as Menu::screens() gives it.
 		 */
 		do_action( 'swiftling_admin_screen_assets', (string) ( $screen['slug'] ?? '' ), $screen );
+	}
+
+	/**
+	 * Enqueues the block editor's field for the texts of a post made of blocks in the translation
+	 * editor, with the inline formats of the block editor and the theme's styles, which the formats
+	 * of its palette need, see assets/js/editor-formats.js. Other subjects keep the visual editor of
+	 * WordPress, see swiftling_live_block_formats().
+	 *
+	 * @return bool Whether it was enqueued.
+	 */
+	private static function enqueueBlockFormats(): bool {
+		// The post of the editor, by its number or as its subject, as a synced pattern can be.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only screen parameters.
+		$subject = isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : '';
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : ( preg_match( '/^post:(\d+)$/', $subject, $found ) ? (int) $found[1] : 0 );
+		// phpcs:enable
+		$post = $post_id ? get_post( $post_id ) : null;
+		// Only for a post the editor translates: not on its screen that asks what to translate.
+		if ( ! $post || ! swiftling_subject( 'post:' . $post->ID ) || ! swiftling_live_block_formats( $post ) ) {
+			return false;
+		}
+		foreach ( array( 'wp-components', 'wp-block-editor', 'wp-block-editor-content', 'wp-format-library' ) as $style ) {
+			wp_enqueue_style( $style );
+		}
+		$settings = get_block_editor_settings( array(), new \WP_Block_Editor_Context( array( 'name' => 'swiftling/translation' ) ) );
+		$styles   = $settings['styles'] ?? array();
+		unset( $settings['styles'], $settings['__unstableResolvedAssets'] );
+
+		wp_enqueue_script( 'swiftling-editor-formats', SWIFTLING_URL . 'assets/js/editor-formats.js', array( 'wp-blocks', 'wp-block-editor', 'wp-format-library', 'wp-components', 'wp-element', 'wp-data', 'wp-i18n' ), SWIFTLING_VERSION, true );
+		wp_set_script_translations( 'swiftling-editor-formats', 'swiftling' );
+		// The language of the fields, for their names, and as the language and direction of their
+		// text: the editor's, or its first.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen parameter.
+		$language = swiftling_target_language( isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '' );
+		$targets  = swiftling_languages()['targets'];
+		if ( ! $language && $targets ) {
+			$language = reset( $targets );
+		}
+		$config = array(
+			'settings'    => $settings,
+			'styles'      => $styles,
+			'placeholder' => swiftling_live_placeholder(),
+			'language'    => $language ? $language['name'] : '',
+			'lang'        => $language ? swiftling_hreflang_code( (string) $language['locale'] ) : '',
+			'dir'         => $language && swiftling_language_is_rtl( $language ) ? 'rtl' : 'ltr',
+		);
+		wp_add_inline_script( 'swiftling-editor-formats', 'window.swiftlingEditorFormats = ' . wp_json_encode( $config ) . ';', 'before' );
+		return true;
 	}
 
 	/**

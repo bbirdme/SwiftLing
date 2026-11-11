@@ -1657,6 +1657,217 @@ body.swiftling-screen {
 	border-radius: 0;
 }
 
+/* The block editor's field of a text of a block, see assets/js/editor-formats.js: its toolbar
+   holds only the formats, Use the original and HTML, not the block's own tools. */
+.swiftling-block-field {
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	overflow: hidden;
+}
+
+.swiftling-block-field:focus-within {
+	border-color: var(--swiftling-swift);
+	box-shadow: 0 0 0 3px rgba(232, 85, 45, 0.18);
+}
+
+.swiftling-live-editor tr.is-empty .swiftling-block-field {
+	border: 1.5px dashed var(--swiftling-swift);
+	background: #fffaf7;
+}
+
+.swiftling-block-field__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+	border-bottom: 1px solid var(--swiftling-line);
+	background: var(--swiftling-ground);
+}
+
+/* The block editor keeps its toolbar in sight while the page scrolls; in a field it stays in
+   place, under the editor's bar. */
+.swiftling-block-field__toolbar .block-editor-block-contextual-toolbar {
+	position: static;
+	z-index: auto;
+}
+
+.swiftling-block-field__toolbar .block-editor-block-toolbar,
+.swiftling-block-field__toolbar .block-editor-block-toolbar .components-toolbar-group,
+.swiftling-block-field__toolbar .block-editor-block-toolbar .components-toolbar {
+	border: 0;
+	background: transparent;
+}
+
+.swiftling-block-field__toolbar .block-editor-block-toolbar > :first-child,
+.swiftling-block-field__toolbar .block-editor-block-toolbar > .components-toolbar-group:last-child,
+.swiftling-block-field__toolbar .block-editor-block-mover,
+.swiftling-block-field__toolbar .block-editor-block-switcher,
+.swiftling-block-field__toolbar .block-editor-block-settings-menu,
+.swiftling-block-field__toolbar .block-editor-block-lock-toolbar {
+	display: none !important;
+}
+
+.swiftling-block-field__visual {
+	margin: 0 8px;
+	padding: 2px 8px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 6px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-muted);
+	font: 11px/1.6 var(--swiftling-font-mono);
+	cursor: pointer;
+}
+
+
+.swiftling-block-field__content {
+	padding: 8px 10px;
+}
+
+.swiftling .swiftling-live-editor .swiftling-block-field__content {
+	background-color: transparent;
+}
+
+/* Without the styles of the blocks, which the admin does not load: a button keeps its shape. */
+.swiftling-block-field__content .wp-block-button__link {
+	display: inline-block;
+}
+
+/* The menus of the toolbar, as the colours of a highlight, stay under the editor's bar while the
+   page scrolls, and keep the editor's font, not the theme's of the text they open from. */
+.swiftling-block-field .components-popover {
+	z-index: 19;
+	color: #1e1e1e;
+	font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+/* The original and the field get the theme's styles, see assets/js/editor-formats.js; the page's
+   background stays the table's. */
+.swiftling .swiftling-live-editor .swiftling-live-html {
+	background-color: transparent;
+}
+
+/* A text colour without a highlight is a mark with a transparent background, which the original
+   loses when it is printed: without a background of its own, a mark shows none. */
+.swiftling-live-html mark:not([style*="background"]):not([class*="-background-color"]) {
+	background-color: transparent;
+}
+
+.swiftling .swiftling-live-editor .swiftling-block-field {
+	background-color: var(--swiftling-surface);
+}
+
+.swiftling .swiftling-live-editor tr.is-empty .swiftling-block-field {
+	background-color: #fffaf7;
+}
+
+/* A list item with its bullet, in a list of its own. */
+.swiftling-block-field__content ul,
+.swiftling-block-field__content ol {
+	margin-top: 0;
+	margin-bottom: 0;
+	padding-left: 1.5em;
+	list-style: disc;
+}
+
+.swiftling-block-field__content li.swiftling-block-field__text {
+	display: list-item;
+	list-style: inherit;
+}
+
+/* The text of a summary beside its marker, as on the page, filling its line, so a click anywhere
+   on it reaches the field, also while it is empty. */
+.swiftling-block-field summary .block-editor-block-list__layout {
+	display: inline-block;
+	width: calc(100% - 1.5em);
+	padding: 0;
+	vertical-align: top;
+}
+
+.swiftling-block-field summary .swiftling-block-field__text {
+	display: block;
+}
+
+/* The text fills the field, its padding included, so a click anywhere in its box is a click in
+   it: beside a short text the cursor goes to its end. A button keeps its shape. */
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link) {
+	margin: -8px -10px;
+	padding: 8px 10px;
+}
+
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link):not(li) {
+	display: block;
+}
+
+/* A bullet and a summary's marker stay where they are. */
+.swiftling-block-field__content .swiftling-block-field__text:not(.wp-block-button__link):is(li, summary *) {
+	margin-left: 0;
+	padding-left: 0;
+}
+
+/* The text as on the page: the theme's element, fonts and colours. */
+.swiftling-block-field .swiftling-block-field__text {
+	min-height: 1.5em;
+	margin: 0;
+	outline: none;
+}
+
+.swiftling-block-field .block-editor-block-list__block.is-selected,
+.swiftling-block-field .block-editor-block-list__block.is-selected::after {
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+/* An empty field shows the original behind it, faded, as on the page, and is as tall as it; the
+   field, empty and transparent, lies over it, so the cursor shows where the text starts. */
+.swiftling-block-field__content {
+	position: relative;
+}
+
+.swiftling-block-field__original {
+	position: relative;
+	z-index: 0;
+	opacity: 0.42;
+	pointer-events: none;
+}
+
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) {
+	position: absolute;
+	inset: 8px 10px;
+	z-index: 1;
+}
+
+/* Empty, the field fills the area of the original under it, so a click anywhere on it is a click
+   in the field. */
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original),
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) :has(.swiftling-block-field__text) {
+	height: 100%;
+}
+
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) .swiftling-block-field__text {
+	display: block;
+	width: 100%;
+	min-height: 100%;
+	box-sizing: border-box;
+	border-color: transparent !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	caret-color: var(--swiftling-ink);
+}
+
+/* With the field's padding, as a text that is not a button has it. */
+.swiftling-block-field.is-empty .swiftling-block-field__content > :not(.swiftling-block-field__original) .swiftling-block-field__text:not(.wp-block-button__link) {
+	width: auto;
+}
+
+/* Shown as HTML: the text area under the field. */
+.swiftling .swiftling-block-field__holder + textarea.swiftling-live-input {
+	margin-top: 4px;
+	font-family: var(--swiftling-font-mono);
+}
+
 .swiftling-live-link {
 	display: grid;
 	gap: 4px;
