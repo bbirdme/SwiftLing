@@ -241,7 +241,17 @@
 	const isRich = ( input ) => input.classList.contains( 'swiftling-live-rich' );
 	const richEditor = ( input ) => window.tinymce && window.tinymce.get( input.id );
 
+	// In a post made of blocks, a text of a block gets the block editor's own field instead, with
+	// every inline format of the block editor, such as highlight and text colour: see
+	// assets/js/editor-formats.js. Paragraphs and lists keep the visual editor.
+	const blockField = window.swiftlingBlockField;
+	const blockFields = new Map();
+
 	const startRichEditor = ( input ) => {
+		if ( blockField && '0' === input.dataset.blocks ) {
+			blockFields.set( input, blockField.start( input ) );
+			return;
+		}
 		window.wp.editor.initialize( input.id, {
 			tinymce: {
 				wpautop: false,
@@ -271,6 +281,17 @@
 		if ( ! window.wp || ! window.wp.editor || ! window.wp.editor.initialize ) {
 			return;
 		}
+		// A text with nothing to format gets a plain field; with the block editor's field it can get
+		// formats, so it gets that field too: its text as HTML, the tags around it kept as for
+		// formatted text.
+		if ( blockField ) {
+			table.querySelectorAll( 'textarea.swiftling-live-wrapped:not([disabled])' ).forEach( ( input ) => {
+				input.value = escapeText( input.value );
+				input.dataset.original = escapeText( input.dataset.original || '' );
+				input.dataset.blocks = '0';
+				input.classList.replace( 'swiftling-live-wrapped', 'swiftling-live-rich' );
+			} );
+		}
 		const inputs = [ ...table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ) ];
 		if ( inputs.length <= RICH_AT_ONCE || ! window.IntersectionObserver ) {
 			inputs.forEach( startRichEditor );
@@ -294,6 +315,9 @@
 	const setRichContent = ( input, html ) => {
 		const editor = richEditor( input );
 		input.value = html;
+		if ( blockFields.has( input ) ) {
+			blockFields.get( input ).set( html );
+		}
 		if ( editor && ! editor.isHidden() ) {
 			editor.setContent( html );
 		}

@@ -1657,6 +1657,110 @@ body.swiftling-screen {
 	border-radius: 0;
 }
 
+/* The block editor's field of a text of a block, see assets/js/editor-formats.js: its toolbar
+   holds only the formats, Use the original and HTML, not the block's own tools. */
+.swiftling-block-field {
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	overflow: hidden;
+}
+
+.swiftling-block-field:focus-within {
+	border-color: var(--swiftling-swift);
+	box-shadow: 0 0 0 3px rgba(232, 85, 45, 0.18);
+}
+
+.swiftling-live-editor tr.is-empty .swiftling-block-field {
+	border: 1.5px dashed var(--swiftling-swift);
+	background: #fffaf7;
+}
+
+.swiftling-block-field__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+	border-bottom: 1px solid var(--swiftling-line);
+	background: var(--swiftling-ground);
+}
+
+/* The block editor keeps its toolbar in sight while the page scrolls; in a field it stays in
+   place, under the editor's bar. */
+.swiftling-block-field__toolbar .block-editor-block-contextual-toolbar {
+	position: static;
+	z-index: auto;
+}
+
+.swiftling-block-field__toolbar .block-editor-block-toolbar,
+.swiftling-block-field__toolbar .block-editor-block-toolbar .components-toolbar-group,
+.swiftling-block-field__toolbar .block-editor-block-toolbar .components-toolbar {
+	border: 0;
+	background: transparent;
+}
+
+.swiftling-block-field__toolbar .block-editor-block-toolbar > :first-child,
+.swiftling-block-field__toolbar .block-editor-block-toolbar > .components-toolbar-group:last-child,
+.swiftling-block-field__toolbar .block-editor-block-mover,
+.swiftling-block-field__toolbar .block-editor-block-switcher,
+.swiftling-block-field__toolbar .block-editor-block-settings-menu,
+.swiftling-block-field__toolbar .block-editor-block-lock-toolbar {
+	display: none !important;
+}
+
+.swiftling-block-field__code {
+	margin: 0 8px;
+	padding: 2px 8px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 6px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-muted);
+	font: 11px/1.6 var(--swiftling-font-mono);
+	cursor: pointer;
+}
+
+.swiftling-block-field__code[aria-pressed="true"] {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+.swiftling-block-field .block-editor-block-list__layout {
+	padding: 8px 10px;
+}
+
+/* The theme's fonts and colours, at the size of the table, not of the page. */
+.swiftling-block-field .swiftling-block-field__text {
+	min-height: 1.5em;
+	margin: 0;
+	outline: none;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+.swiftling-block-field .block-editor-block-list__block.is-selected,
+.swiftling-block-field .block-editor-block-list__block.is-selected::after {
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+/* An empty translation shows the original, faded, as a start to type over. */
+.swiftling-block-field.is-original .swiftling-block-field__text {
+	opacity: 0.42;
+	transition: opacity 0.15s ease;
+}
+
+.swiftling-block-field.is-original:hover .swiftling-block-field__text,
+.swiftling-block-field.is-original:focus-within .swiftling-block-field__text {
+	opacity: 0.6;
+}
+
+/* Shown as HTML: the text area under the field. */
+.swiftling .swiftling-block-field__holder + textarea.swiftling-live-input {
+	margin-top: 4px;
+	font-family: var(--swiftling-font-mono);
+}
+
 .swiftling-live-link {
 	display: grid;
 	gap: 4px;
