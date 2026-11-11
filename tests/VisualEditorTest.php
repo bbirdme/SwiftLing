@@ -127,6 +127,7 @@ class VisualEditorTest extends TestCase {
 		self::set_static( Registry::class, 'builders', Registry::all() + array( 'fakepagebuilder' => new FakePageBuilder() ) );
 		self::reset_static( Registry::class, 'active' );
 		$this->assertSame( 'swiftling_visual_builder', swiftling_visual_editor_supports( $built )->get_error_code() );
+		$this->assertStringContainsString( 'built with Fake page builder', swiftling_visual_editor_supports( $built )->get_error_message() );
 		$this->assertTrue( swiftling_visual_editor_supports( $this->post ), 'A post the builder did not build' );
 
 		$this->assertSame( 'duplicate', swiftling_set_language_mode( $this->post, 'de', 'duplicate' ) );
@@ -427,9 +428,17 @@ class VisualEditorTest extends TestCase {
 			$this->assertSame( 'swiftling_visual_builder', $declined->get_error_code(), $key );
 			$this->assertStringContainsString( $builder, $declined->get_error_message() );
 		}
+		// The empty block Beaver Builder adds to a page of blocks is no builder's page; its meta is.
 		register_block_type( 'fl-builder/layout', array() );
-		$beaver = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:fl-builder/layout -->\n<p>Raspored.</p>\n<!-- /wp:fl-builder/layout -->" ) );
+		$beaver = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:fl-builder/layout /-->" ) );
+		$this->assertTrue( swiftling_visual_editor_supports( $beaver ) );
+		add_post_meta( $beaver->ID, '_fl_builder_enabled', '1' );
 		$this->assertStringContainsString( 'Beaver Builder', swiftling_visual_editor_supports( $beaver )->get_error_message() );
+		// SiteOrigin's block, only with a layout in it.
+		$origin = self::factory()->post->create_and_get( array( 'post_content' => self::CONTENT . "\n\n<!-- wp:siteorigin-panels/layout-block /-->" ) );
+		$this->assertTrue( swiftling_visual_editor_supports( $origin ) );
+		$origin = self::factory()->post->create_and_get( array( 'post_content' => '<!-- wp:siteorigin-panels/layout-block {"panelsData":{"widgets":[1]}} /-->' ) );
+		$this->assertStringContainsString( 'SiteOrigin', swiftling_visual_editor_supports( $origin )->get_error_message() );
 
 		// The translation editor names the builder too.
 		set_current_screen( 'toplevel_page_swiftling' );
@@ -613,5 +622,32 @@ class VisualEditorTest extends TestCase {
 		$this->assertStringContainsString( 'alt="Montagne"', $html );
 		$this->assertStringContainsString( 'Vue sur la <strong>montagne</strong></figcaption>', $html );
 		$this->assertSame( 1, substr_count( $html, '<figure' ) );
+	}
+
+	/**
+	 * A block of a plugin is shown as its page renders it, with the styles rendering it asks for;
+	 * what that enqueues for the page is not left in the admin's queues.
+	 */
+	public function test_blocks_of_plugins_as_the_page_renders_them() {
+		wp_register_style( 'acme-card-style', 'https://example.org/card.css', array(), '1' );
+		register_block_type(
+			'acme/card',
+			array(
+				'render_callback' => static function ( $attributes, $content ) {
+					wp_enqueue_style( 'acme-card-style' );
+					wp_add_inline_style( 'acme-card-style', '.acme-card{color:red}' );
+					return '<div class="acme-card">' . $content . '</div>';
+				},
+			)
+		);
+		$post     = self::factory()->post->create_and_get( array( 'post_content' => "<!-- wp:group -->\n<div class=\"wp-block-group\"><!-- wp:acme/card -->\n<p>Kartica</p>\n<!-- /wp:acme/card --></div>\n<!-- /wp:group -->" ) );
+		$queue    = wp_styles()->queue;
+		$rendered = swiftling_visual_plugin_blocks( $post, array() );
+		$this->assertSame( array( 'post:' . $post->ID . '|0/0' ), array_keys( $rendered['html'] ) );
+		$this->assertStringContainsString( '<div class="acme-card">', $rendered['html'][ 'post:' . $post->ID . '|0/0' ] );
+		$this->assertStringContainsString( 'card.css', $rendered['styles'] );
+		$this->assertStringContainsString( '.acme-card{color:red}', $rendered['styles'] );
+		$this->assertSame( $queue, wp_styles()->queue );
+		unregister_block_type( 'acme/card' );
 	}
 }

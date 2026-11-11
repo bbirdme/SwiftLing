@@ -331,7 +331,9 @@
 				raw.innerBlocks.forEach( unplace );
 			};
 			unplace( node );
-			return { blockName: 'swiftling/visual-static', attrs: { html: savedHtml( node ), title }, innerBlocks: [], innerHTML: '', innerContent: [] };
+			// As the page renders it, where the server could; else as it is saved.
+			const rendered = data.plugins && data.plugins.html ? data.plugins.html[ node.place ] : undefined;
+			return { blockName: 'swiftling/visual-static', attrs: { html: 'string' === typeof rendered ? rendered : savedHtml( node ), title }, innerBlocks: [], innerHTML: '', innerContent: [] };
 		}
 		node.innerBlocks = node.innerBlocks.map( staticize );
 		node.innerContent = node.innerContent.slice();
@@ -379,6 +381,13 @@
 
 	const rawTreeOf = ( object, content, depth ) => {
 		const raw = rawParse( content );
+		// Each block's place, as the server names the blocks of plugins it rendered.
+		const placeOf = ( list, path ) =>
+			list.forEach( ( node, index ) => {
+				node.place = object + '|' + ( '' === path ? '' : path + '/' ) + index;
+				placeOf( node.innerBlocks, ( '' === path ? '' : path + '/' ) + index );
+			} );
+		placeOf( raw, '' );
 		( textsBy[ object ] || [] ).forEach( ( text ) => {
 			const where = parsePath( text.path );
 			if ( ! where ) {
@@ -1059,6 +1068,33 @@
 		}
 	};
 
+	// A synced pattern shown twice is one text: a change to a block of one copy goes to the same
+	// block of every other copy, as it is typed, so no copy's text is lost when they are saved.
+	const mirror = ( next, before ) => {
+		const old = new Map();
+		walkBlocks( before, ( block ) => old.set( block.clientId, block.attributes ) );
+		const changed = new Map();
+		walkBlocks( next, ( block ) => {
+			if ( block.attributes.swl && old.get( block.clientId ) !== block.attributes ) {
+				block.attributes.swl.units.filter( ( unit ) => ! unit.override && ! unit.attrPath ).forEach( ( unit ) => changed.set( unit.key, block ) );
+			}
+		} );
+		if ( ! changed.size ) {
+			return next;
+		}
+		const follow = ( block ) => {
+			const innerBlocks = block.innerBlocks.map( follow );
+			const from = block.attributes.swl ? block.attributes.swl.units.map( ( unit ) => changed.get( unit.key ) ).find( ( other ) => other && other.clientId !== block.clientId && other.name === block.name ) : null;
+			if ( ! from ) {
+				return innerBlocks.some( ( inner, index ) => inner !== block.innerBlocks[ index ] ) ? { ...block, innerBlocks } : block;
+			}
+			const attributes = { ...from.attributes };
+			OWN_ATTRIBUTES.forEach( ( name ) => delete attributes[ name ] );
+			return { ...block, attributes: { ...block.attributes, ...attributes }, innerBlocks };
+		};
+		return next.map( follow );
+	};
+
 	/* The layout stays as it is. */
 
 	// Which blocks the page has, in which order and inside which: what translating never changes.
@@ -1293,22 +1329,26 @@
 
 		// Whatever changed the layout, a key, a paste or a menu, is undone at once: only texts and
 		// images change here.
+		const latest = useRef( blocks );
+		latest.current = blocks;
 		const accept = ( next ) => {
 			if ( shapeOf( next ) !== shape.current ) {
 				setBlocks( ( current ) => [ ...current ] );
 				note( __( 'The layout stays as in the original; only texts and images change here.', 'swiftling' ), 'info' );
 				return false;
 			}
-			setBlocks( next );
-			return true;
+			const mirrored = mirror( next, latest.current );
+			setBlocks( mirrored );
+			return mirrored;
 		};
 		// Undo and redo: the page as it was after each change the block editor settled, as it
 		// reports one once typing pauses; the screen keeps them, as the block editor alone keeps none.
 		const steps = useRef( { entries: [ blocks ], at: 0 } );
 		const settled = ( next ) => {
-			if ( accept( next ) && next !== steps.current.entries[ steps.current.at ] ) {
+			const accepted = accept( next );
+			if ( accepted && accepted !== steps.current.entries[ steps.current.at ] ) {
 				const memory = steps.current;
-				memory.entries = memory.entries.slice( Math.max( 0, memory.at - 99 ), memory.at + 1 ).concat( [ next ] );
+				memory.entries = memory.entries.slice( Math.max( 0, memory.at - 99 ), memory.at + 1 ).concat( [ accepted ] );
 				memory.at = memory.entries.length - 1;
 			}
 		};
@@ -1478,6 +1518,14 @@
 				const doc = frame && frame.contentDocument;
 				if ( ! doc || ! doc.body ) {
 					return;
+				}
+				// The styles the page loads for the blocks of plugins, as the server rendered them.
+				if ( data.plugins && data.plugins.styles && ! doc.getElementById( 'swiftling-visual-plugin-styles' ) ) {
+					const marker = doc.createElement( 'meta' );
+					marker.id = 'swiftling-visual-plugin-styles';
+					const template = doc.createElement( 'template' );
+					template.innerHTML = data.plugins.styles;
+					doc.head.append( marker, ...template.content.querySelectorAll( 'link, style' ) );
 				}
 				if ( data.target ) {
 					doc.documentElement.lang = data.target.lang;

@@ -68,10 +68,13 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 	if ( ! $post instanceof WP_Post || ! swiftling_subject( 'post:' . $post->ID ) ) {
 		return new WP_Error( 'swiftling_visual_subject', __( 'Open this screen with Translate, from Translations or the list of pages.', 'swiftling' ) );
 	}
-	if ( \SwiftLing\Builders\Registry::forPost( (int) $post->ID ) ) {
-		return new WP_Error( 'swiftling_visual_builder', __( 'This page is built with a page builder. Translate it in the translation editor, which knows the builder\'s fields.', 'swiftling' ) );
-	}
-	$builder = swiftling_visual_builder( $post );
+	$builders = array_map(
+		static function ( $builder ) {
+			return $builder->name();
+		},
+		array_values( \SwiftLing\Builders\Registry::forPost( (int) $post->ID ) )
+	);
+	$builder  = $builders ? wp_sprintf( '%l', $builders ) : swiftling_visual_builder( $post );
 	if ( '' !== $builder ) {
 		/* translators: %s: name of a page builder, e.g. Beaver Builder. */
 		return new WP_Error( 'swiftling_visual_builder', sprintf( __( 'This page is built with %s. Translate it in the translation editor, which knows the builder\'s fields.', 'swiftling' ), $builder ) );
@@ -92,8 +95,9 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 
 /**
  * Returns the name of the page builder that built a post, where SwiftLing has no class that tells,
- * or ''. Breakdance, Oxygen and Brizy keep the page in its meta, and can leave blocks in its
- * content from before; Beaver Builder and SiteOrigin Page Builder keep a whole layout in one block.
+ * or ''. Breakdance, Oxygen, Brizy, Beaver Builder and SiteOrigin Page Builder keep the page in its
+ * meta, and can leave blocks in its content from before; SiteOrigin can also keep a whole layout in
+ * one block.
  *
  * @param WP_Post $post Post.
  * @return string
@@ -113,12 +117,11 @@ function swiftling_visual_builder( $post ) {
 			return $builder;
 		}
 	}
-	foreach ( array(
-		'fl-builder/layout'              => 'Beaver Builder',
-		'siteorigin-panels/layout-block' => 'SiteOrigin Page Builder',
-	) as $block => $builder ) {
-		if ( has_block( $block, $post ) ) {
-			return $builder;
+	// SiteOrigin can keep a layout in a block of its own; one without a layout, as the empty block
+	// Beaver Builder adds, is no builder's page.
+	foreach ( parse_blocks( $post->post_content ) as $block ) {
+		if ( 'siteorigin-panels/layout-block' === $block['blockName'] && ! empty( $block['attrs']['panelsData'] ) ) {
+			return 'SiteOrigin Page Builder';
 		}
 	}
 	return '';
@@ -232,6 +235,107 @@ function swiftling_visual_editor_requested() {
 		$lang = (string) array_key_first( swiftling_languages()['targets'] );
 	}
 	return '' !== $lang && true === swiftling_visual_editor_supports( $post, $lang );
+}
+
+/**
+ * Renders the blocks of plugins of a post and of its synced patterns as its page renders them, for
+ * the visual editor, which shows them as they are: their HTML by the object and the place of the
+ * block ("post:12|0/3"), and the styles rendering them asks for, as the page would load them: the
+ * stylesheets plugins enqueue, with their inline CSS, and the CSS of block supports. What this
+ * enqueues for the page is taken out of the admin's queues again.
+ *
+ * @param WP_Post $post     Post.
+ * @param array   $patterns Synced patterns it shows, see swiftling_visual_patterns().
+ * @return array{html: array<string, string>, styles: string}
+ */
+function swiftling_visual_plugin_blocks( $post, $patterns ) {
+	$found   = array();
+	$collect = static function ( $blocks, $owner, $path ) use ( &$collect, &$found ) {
+		foreach ( $blocks as $index => $block ) {
+			$here = '' === $path ? (string) $index : $path . '/' . $index;
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+			if ( 0 !== strpos( $block['blockName'], 'core/' ) ) {
+				$found[ $owner . '|' . $here ] = $block;
+				continue;
+			}
+			$collect( $block['innerBlocks'], $owner, $here );
+		}
+	};
+	$collect( parse_blocks( $post->post_content ), 'post:' . $post->ID, '' );
+	foreach ( $patterns as $ref => $pattern ) {
+		$collect( parse_blocks( $pattern['content'] ), 'post:' . $ref, '' );
+	}
+	$rendered = array(
+		'html'   => array(),
+		'styles' => '',
+	);
+	if ( ! $found ) {
+		return $rendered;
+	}
+
+	$styles          = wp_styles();
+	$scripts         = wp_scripts();
+	$before          = array( $styles->queue, $styles->done, $scripts->queue );
+	$current         = isset( $GLOBALS['post'] ) ? $GLOBALS['post'] : null;
+	$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- As the page renders its blocks; put back below.
+	setup_postdata( $post );
+	$handles = array();
+	foreach ( $found as $place => $block ) {
+		$rendered['html'][ $place ] = render_block( $block );
+		$type                       = WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] );
+		$handles                    = array_merge( $handles, $type ? $type->style_handles : array() );
+	}
+	$handles = array_filter(
+		array_unique( array_merge( $handles, array_diff( $styles->queue, $before[0] ) ) ),
+		static function ( $handle ) {
+			return 0 !== strpos( $handle, 'swiftling' );
+		}
+	);
+	ob_start();
+	$styles->do_items( $handles );
+	$css                = wp_style_engine_get_stylesheet_from_context( 'block-supports', array( 'optimize' => true ) );
+	$rendered['styles'] = ob_get_clean() . ( '' !== $css ? '<style>' . $css . '</style>' : '' );
+	list( $styles->queue, $styles->done, $scripts->queue ) = $before;
+	// Many plugins write the styles of a page's blocks only as the page loads, into files of their
+	// own or the page's head: those of the page as visitors see it.
+	$rendered['styles'] .= swiftling_visual_page_styles( $post );
+	$GLOBALS['post']     = $current; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Put back as it was.
+	if ( $current instanceof WP_Post ) {
+		setup_postdata( $current );
+	}
+	return $rendered;
+}
+
+/**
+ * Returns the stylesheets of plugins and the styles in the head of a post's page as visitors see
+ * it, as the server checks pages (see swiftling_server_check()): those the visual editor needs to
+ * show the blocks of plugins as the page does. Not WordPress's own, which the editor has.
+ *
+ * @param WP_Post $post Post.
+ * @return string The link and style elements; '' when the page could not be read.
+ */
+function swiftling_visual_page_styles( $post ) {
+	$subject = swiftling_subject( 'post:' . $post->ID );
+	if ( ! $subject || '' === (string) $subject['url'] ) {
+		return '';
+	}
+	$page = swiftling_fetch_check_page( swiftling_check_page_url( $subject, 'control', get_current_user_id() ) );
+	if ( is_wp_error( $page ) ) {
+		return '';
+	}
+	preg_match_all( '~<link\b[^>]*\brel=["\']stylesheet["\'][^>]*>|<style\b[^>]*>.*?</style>~is', $page, $found );
+	$styles = '';
+	foreach ( $found[0] as $element ) {
+		if ( 0 === stripos( $element, '<link' ) ) {
+			$keep = 1 === preg_match( '~href=["\'][^"\']*/wp-content/(?:plugins|uploads)/~i', $element ) && false === stripos( $element, '/plugins/swiftling/' );
+		} else {
+			$keep = 1 !== preg_match( '~\bid=["\'](?:global-styles|wp-|swiftling|admin-bar)~i', $element );
+		}
+		$styles .= $keep ? $element : '';
+	}
+	return $styles;
 }
 
 /**
@@ -426,6 +530,8 @@ function swiftling_visual_editor_data( $post, $lang ) {
 		'subject'  => $texts['subject'],
 		'texts'    => $texts['texts'],
 		'patterns' => (object) swiftling_visual_patterns( $post->post_content ),
+		// The blocks of plugins as the page renders them, and the styles that asks for.
+		'plugins'  => swiftling_visual_plugin_blocks( $post, swiftling_visual_patterns( $post->post_content ) ),
 		'lang'     => $lang,
 		'language' => $language,
 		// The language and direction of the page in the language, as the canvas shows it.
