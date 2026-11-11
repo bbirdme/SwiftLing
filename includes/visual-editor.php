@@ -76,12 +76,13 @@ function swiftling_visual_editor_supports( $post, $lang = '' ) {
 		/* translators: %s: name of a page builder, e.g. Beaver Builder. */
 		return new WP_Error( 'swiftling_visual_builder', sprintf( __( 'This page is built with %s. Translate it in the translation editor, which knows the builder\'s fields.', 'swiftling' ), $builder ) );
 	}
-	$blocks = parse_blocks( $post->post_content );
-	if ( ! has_blocks( $post->post_content ) || swiftling_visual_loose_html( $blocks ) ) {
+	if ( ! has_blocks( $post->post_content ) ) {
 		return new WP_Error( 'swiftling_visual_classic', __( 'This page is not made of blocks. Translate it in the translation editor.', 'swiftling' ) );
 	}
-	// A block of a plugin is laid out by the plugin's own script; one that does not load shows as it
-	// is saved, its texts beside the page, see assets/js/visual.js.
+	if ( swiftling_visual_loose_html( parse_blocks( $post->post_content ) ) ) {
+		return new WP_Error( 'swiftling_visual_loose', __( 'This page holds text outside its blocks, or a classic block. Translate it in the translation editor.', 'swiftling' ) );
+	}
+	// A block of a plugin shows as it is saved, its texts beside the page, see assets/js/visual.js.
 	$language = '' === $lang ? null : swiftling_target_language( $lang );
 	if ( $language && 'translation' !== swiftling_language_mode( (int) $post->ID, $language['locale'] ) ) {
 		return new WP_Error( 'swiftling_visual_mode', __( 'This language shows a separate copy of this page or keeps the original. See the translation editor.', 'swiftling' ) );
@@ -104,6 +105,8 @@ function swiftling_visual_builder( $post ) {
 		'ct_builder_shortcodes' => 'Oxygen',
 		'ct_builder_json'       => 'Oxygen',
 		'brizy'                 => 'Brizy',
+		'_fl_builder_enabled'   => 'Beaver Builder',
+		'panels_data'           => 'SiteOrigin Page Builder',
 	);
 	foreach ( $meta as $key => $builder ) {
 		if ( ! empty( get_post_meta( $post->ID, $key, true ) ) ) {
@@ -137,7 +140,7 @@ function swiftling_visual_loose_html( $blocks ) {
 		}
 		if ( in_array( $block['blockName'], $layout, true ) ) {
 			foreach ( $block['innerContent'] as $part ) {
-				if ( is_string( $part ) && '' !== trim( html_entity_decode( wp_strip_all_tags( $part ) ) ) ) {
+				if ( is_string( $part ) && '' !== preg_replace( '/[\s\x{00A0}]+/u', '', html_entity_decode( wp_strip_all_tags( $part ), ENT_QUOTES, 'UTF-8' ) ) ) {
 					return true;
 				}
 			}
@@ -229,23 +232,6 @@ function swiftling_visual_editor_requested() {
 		$lang = (string) array_key_first( swiftling_languages()['targets'] );
 	}
 	return '' !== $lang && true === swiftling_visual_editor_supports( $post, $lang );
-}
-
-/**
- * Whether a post holds a block that only a script of the block editor registers, as many plugins'
- * blocks are, so the visual editor loads what the block editor loads for plugins.
- *
- * @param WP_Post $post Post.
- * @return bool
- */
-function swiftling_visual_scripted_blocks( $post ) {
-	$registry = WP_Block_Type_Registry::get_instance();
-	foreach ( swiftling_visual_block_names( parse_blocks( $post->post_content ) ) as $name ) {
-		if ( 0 !== strpos( $name, 'core/' ) && ! $registry->is_registered( $name ) ) {
-			return true;
-		}
-	}
-	return false;
 }
 
 /**
@@ -390,6 +376,8 @@ function swiftling_visual_editor_data( $post, $lang ) {
 			$place = __( 'Excerpt', 'swiftling' );
 		}
 		$text['label'] = $labels[ isset( $labels[ $text['kind'] ] ) ? $text['kind'] : 'text' ];
+		// Code is named as in the translation editor: a table, a quote, an image with a caption.
+		$text['codeLabel'] = swiftling_live_code_label( $text['original'] );
 		// HTML is edited as the translation editor edits it: its text with simple formatting, the
 		// tags around it kept as they are, or else as code.
 		if ( 'html' === $text['type'] ) {
@@ -397,8 +385,11 @@ function swiftling_visual_editor_data( $post, $lang ) {
 			if ( $parts ) {
 				$text['parts'] = array( $parts[0], $parts[1], $parts[2] );
 			} else {
-				$text['type'] = 'code';
+				$text['type']  = 'code';
+				$text['label'] = $text['codeLabel'];
 			}
+		} elseif ( 'code' === $text['type'] ) {
+			$text['label'] = $text['codeLabel'];
 		}
 		// The page's own title, wherever its page check found it.
 		if ( $key === $text['object'] && 'field/post_title' === $text['path'] ) {

@@ -280,13 +280,63 @@
 		save: () => h( InnerBlocks.Content ),
 	} );
 
+	// A block of a plugin, as it is saved: the page shows it, its texts are beside it. The block
+	// editor has only the core blocks here, without the scripts plugins load into it.
+	registerBlockType( 'swiftling/visual-static', {
+		apiVersion: 3,
+		title: __( 'Block of a plugin', 'swiftling' ),
+		category: 'design',
+		attributes: { html: { type: 'string', default: '' }, title: { type: 'string', default: '' } },
+		supports: { inserter: false, html: false, lock: false, reusable: false, customClassName: false, className: false },
+		edit: ( { attributes } ) => h( 'div', { ...useBlockProps( { className: 'swiftling-visual-static', 'data-swiftling-visual-title': attributes.title } ), dangerouslySetInnerHTML: { __html: attributes.html } } ),
+		save: () => null,
+	} );
+
 	/* The page's blocks, with SwiftLing's texts mapped onto them. */
 
 	const textsBy = {};
 	const placed = new Set();
+	// The figures of images with a caption, whose caption machine translation translates.
+	const figures = new Set();
+	const captionParts = ( html ) => {
+		const found = html.match( /^([\s\S]*<figcaption\b[^>]*>)([\s\S]*?)(<\/figcaption>[\s\S]*)$/i );
+		return found && ! isBlank( found[ 2 ] ) ? [ found[ 1 ], found[ 2 ], found[ 3 ] ] : null;
+	};
 	const READ_ONLY = [ 'core/html', 'core/shortcode', 'core/freeform', 'core/missing' ];
-	// The blocks the texts beside the page are of, where the page shows them as they are.
+	// The blocks the texts beside the page are of, where the page shows them as they are; and the
+	// blocks of plugins they are in, by name, for a heading beside the page.
 	const sideAs = {};
+	const sideIn = {};
+	// The name of a block of a plugin, as its type or its name tells: "kadence/accordion" is
+	// "Kadence Accordion".
+	const pluginTitle = ( name ) => {
+		const type = wp.blocks.getBlockType( name );
+		return type ? type.title : name.split( /[/-]/ ).map( ( word ) => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) ).join( ' ' );
+	};
+	// A block's HTML as saved, with the HTML of the blocks inside it.
+	const savedHtml = ( node ) => {
+		let inner = 0;
+		return node.innerContent.map( ( part ) => ( null === part ? savedHtml( node.innerBlocks[ inner++ ] ) : part ) ).join( '' );
+	};
+	// A block of a plugin, and every block inside it, shows as saved; all their texts are beside
+	// the page, under the name of the plugin's block. The core blocks around it stay as they are.
+	const staticize = ( node ) => {
+		if ( node.blockName && ! /^(core|swiftling)\//.test( node.blockName ) ) {
+			const title = pluginTitle( node.blockName );
+			const unplace = ( raw ) => {
+				( raw.keys || [] ).forEach( ( key ) => {
+					placed.delete( key );
+					sideIn[ key ] = title;
+				} );
+				raw.innerBlocks.forEach( unplace );
+			};
+			unplace( node );
+			return { blockName: 'swiftling/visual-static', attrs: { html: savedHtml( node ), title }, innerBlocks: [], innerHTML: '', innerContent: [] };
+		}
+		node.innerBlocks = node.innerBlocks.map( staticize );
+		node.innerContent = node.innerContent.slice();
+		return node;
+	};
 	data.texts.forEach( ( text ) => {
 		( textsBy[ text.object ] = textsBy[ text.object ] || [] ).push( text );
 	} );
@@ -341,6 +391,8 @@
 			if ( ! node || ( undefined !== where.c && 'string' !== typeof node.innerContent[ where.c ] ) ) {
 				return;
 			}
+			// Every text of the block, also one that does not go on it, for a block of a plugin.
+			( node.keys = node.keys || [] ).push( text.key );
 			// A link address inside the HTML (href) has no control on the page: it stays a sidebar field.
 			if ( where.attr && ! [ 'src', 'alt' ].includes( where.attr ) ) {
 				return;
@@ -355,6 +407,7 @@
 				node.swl = node.swl || [];
 				node.swl.push( { ...text, c: 0, attr: null, n: 0, attrPath: null, override: null, figure: true } );
 				placed.add( text.key );
+				figures.add( text.key );
 				return;
 			}
 			if ( 'code' === text.type || READ_ONLY.includes( node.blockName ) ) {
@@ -372,7 +425,10 @@
 			node.swl.push( { ...text, c: where.c, attr: where.attr, n: where.n, attrPath: where.attrPath || null, override: null } );
 			placed.add( text.key );
 		} );
-		return raw.filter( ( node ) => node.blockName ).map( ( node ) => expand( node, depth ) );
+		return raw
+			.filter( ( node ) => node.blockName )
+			.map( ( node ) => expand( node, depth ) )
+			.map( staticize );
 	};
 
 	const expand = ( node, depth ) => {
@@ -904,7 +960,15 @@
 		let field;
 		if ( 'html' === unit.type ) {
 			// The text between the tags around it, which stay as they are; emptied, no translation.
-			const [ prefix, middle, suffix ] = unit.parts || [ '', unit.original, '' ];
+			let [ prefix, middle, suffix ] = unit.parts || [ '', unit.original, '' ];
+			// An element around the whole text, as the link of a plugin's button, stays outside
+			// the editable part as it is, so a new text keeps it.
+			const wrapped = middle.match( /^(\s*<([a-z][a-z0-9-]*)\b[^>]*>)([\s\S]*)(<\/\2>\s*)$/i );
+			if ( wrapped && ! new RegExp( '<\\/?' + wrapped[ 2 ] + '\\b', 'i' ).test( wrapped[ 3 ] ) ) {
+				prefix += wrapped[ 1 ];
+				suffix = wrapped[ 4 ] + suffix;
+				middle = wrapped[ 3 ];
+			}
 			const value = other.value.startsWith( prefix ) && other.value.endsWith( suffix ) && other.value.length >= prefix.length + suffix.length ? other.value.slice( prefix.length, other.value.length - suffix.length ) : other.value;
 			field = h( HtmlField, { id, value, original: middle, onChange: ( text ) => onChange( isBlank( text ) ? '' : prefix + text + suffix ) } );
 		} else {
@@ -932,7 +996,15 @@
 					Card,
 					{ title: __( 'Texts outside the page', 'swiftling' ) },
 					h( 'p', { className: 'swiftling-live-frame' }, __( 'They have no place on the page itself: link addresses, code, the excerpt and SEO fields.', 'swiftling' ) ),
-					others.map( ( other, index ) => h( OtherField, { key: other.unit.key, other, onChange: ( value ) => setOthers( others.map( ( o, i ) => ( i === index ? { ...o, value, dirty: true } : o ) ) ) } ) )
+					// The texts of a block of a plugin, which the page shows as it is, under its name.
+					others.map( ( other, index ) =>
+						h(
+							Fragment,
+							{ key: other.unit.key },
+							other.unit.group && ( 0 === index || others[ index - 1 ].unit.group !== other.unit.group ) && h( 'h3', { className: 'swiftling-visual-group' }, other.unit.group ),
+							h( OtherField, { other, onChange: ( value ) => setOthers( others.map( ( o, i ) => ( i === index ? { ...o, value, dirty: true } : o ) ) ) } )
+						)
+					)
 				),
 			h( AddressCard, { address, setAddress, note } ),
 			h( WaysCard ),
@@ -1154,7 +1226,8 @@
 		const [ others, setOthers ] = useState( () =>
 			data.texts
 				.filter( ( text ) => ! placed.has( text.key ) && text !== titleUnit && ! text.follows )
-				.map( ( text ) => ( sideAs[ text.key ] ? { ...text, type: 'code', label: blockTitle( sideAs[ text.key ] ) } : text ) )
+				.map( ( text ) => ( sideAs[ text.key ] ? { ...text, type: 'code', label: text.codeLabel || text.label } : text ) )
+				.map( ( text ) => ( sideIn[ text.key ] ? { ...text, group: sideIn[ text.key ] } : text ) )
 				.map( ( unit ) => ( { unit, value: unit.translation, dirty: false } ) )
 		);
 		const [ address, setAddress ] = useState( data.address );
@@ -1298,7 +1371,8 @@
 			}
 			// The texts empty now: not those saved since the screen opened, as the changes just saved.
 			const empty = ( text ) => ( savedNow.has( text.key ) ? '' === savedNow.get( text.key ) : '' === text.translation );
-			const found = data.texts.filter( ( text ) => empty( text ) && ! text.follows && ! [ 'url', 'code' ].includes( text.type ) && '' !== text.original.trim() );
+			// An image's figure: its caption, the rest of the figure as it is.
+			const found = data.texts.filter( ( text ) => empty( text ) && ! text.follows && '' !== text.original.trim() && ( ! [ 'url', 'code' ].includes( text.type ) || ( figures.has( text.key ) && captionParts( text.original ) ) ) );
 			if ( ! found.length ) {
 				note( __( 'Every text field is filled in. Empty a field to translate it again.', 'swiftling' ), 'info' );
 				return;
@@ -1316,8 +1390,14 @@
 						sprintf( _n( 'Translating with %1$s: %2$s of %3$s field…', 'Translating with %1$s: %2$s of %3$s fields…', found.length, 'swiftling' ), service, done, found.length ),
 						'info'
 					);
-					const parts = new Map( batch.map( ( text ) => [ text.key, 'html' === text.type ? partsOf( text.original ) : [ '', text.original, '' ] ] ) );
-					const result = await apiFetch( { path: 'swiftling/v1/machine', method: 'POST', data: { subject: PAGE, lang: data.lang, items: batch.map( ( text ) => ( { key: text.key, text: parts.get( text.key )[ 1 ], html: 'html' === text.type } ) ) } } );
+					const partsFor = ( text ) => {
+						if ( figures.has( text.key ) ) {
+							return captionParts( text.original );
+						}
+						return 'html' === text.type ? partsOf( text.original ) : [ '', text.original, '' ];
+					};
+					const parts = new Map( batch.map( ( text ) => [ text.key, partsFor( text ) ] ) );
+					const result = await apiFetch( { path: 'swiftling/v1/machine', method: 'POST', data: { subject: PAGE, lang: data.lang, items: batch.map( ( text ) => ( { key: text.key, text: parts.get( text.key )[ 1 ], html: 'html' === text.type || figures.has( text.key ) } ) ) } } );
 					done += batch.length;
 					const saveItems = batch
 						.filter( ( text ) => 'string' === typeof result.translations[ text.key ] && '' !== result.translations[ text.key ].trim() )
@@ -1565,7 +1645,9 @@
 				languages,
 				h(
 					'div',
-					{ className: 'swiftling-editor-layout swiftling-visual-layout' + ( wide ? ' is-wide' : '' ) },
+					// While the service translates, the page and the fields beside it rest: what is typed
+					// then would be lost when the page loads again with the translations.
+					{ className: 'swiftling-editor-layout swiftling-visual-layout' + ( wide ? ' is-wide' : '' ) + ( machining ? ' is-busy' : '' ), inert: machining ? '' : undefined, 'aria-busy': machining ? 'true' : undefined },
 					h(
 						'div',
 						{ className: 'swiftling-card is-flush swiftling-live-editor swiftling-visual-editor' + ( highlight ? ' is-marking-empty' : '' ) },
@@ -1604,6 +1686,8 @@
 		.swiftling-visual-state-reviewed::after, .swiftling-visual-state-official::after { background: #e3f4ea; color: #1e8e5a; }
 		.swiftling-visual-state-edited::after { background: #121826; color: #fff; }
 		.swiftling-visual-own-image::before { content: attr(data-swiftling-visual-image); position: absolute; left: 10px; top: 10px; z-index: 2; font: 600 11px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 2px 10px; border-radius: 999px; background: #1e8e5a; color: #fff; box-shadow: 0 1px 2px rgba(18,24,38,.2); pointer-events: none; }
+		.swiftling-visual-static { position: relative; outline: 1px dashed rgba(91,98,114,.35); outline-offset: 4px; border-radius: 2px; margin-top: 28px; }
+		.swiftling-visual-static::before { content: attr(data-swiftling-visual-title); position: absolute; top: -4px; left: -4px; transform: translateY(-100%); z-index: 2; font: 600 10px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #5b6272; background: #efeae1; padding: 1px 8px; border-radius: 6px 6px 0 0; }
 		.swiftling-visual-pattern { position: relative; outline: 1px dashed rgba(91,98,114,.35); outline-offset: 4px; border-radius: 2px; margin-top: 28px; }
 		.swiftling-visual-pattern::before { content: attr(data-swiftling-visual-title); position: absolute; top: -4px; left: -4px; transform: translateY(-100%); z-index: 2; font: 600 10px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #5b6272; background: #efeae1; padding: 1px 8px; border-radius: 6px 6px 0 0; }
 		.swiftling-visual-title { margin: 0 auto 1.5em; max-width: var(--wp--style--global--content-size, 760px); }

@@ -534,7 +534,18 @@
 	white-space: pre-wrap;
 }
 
-/* The tours and welcome guides of plugins, which the block editor loads for them: not here. */
-body.swiftling-screen .components-modal__screen-overlay {
-	display: none !important;
+/* A block of a plugin, as it is saved: shown, not changed here. */
+.swiftling-visual-group {
+	margin: 12px 0 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--swiftling-muted);
+}
+
+/* While machine translation runs, the page and the fields beside it rest. */
+.swiftling-visual-layout.is-busy {
+	opacity: 0.6;
+	pointer-events: none;
 }
