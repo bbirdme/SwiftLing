@@ -219,7 +219,12 @@
 		if ( noteBox.classList.contains( 'is-success' ) ) {
 			note( '' );
 		}
-		dirty.add( input );
+		// The block editor's field, undone back to what is saved, has nothing to save.
+		if ( blockFields.has( input ) && input.value === input.dataset.saved ) {
+			dirty.delete( input );
+		} else {
+			dirty.add( input );
+		}
 		saveButton.disabled = false;
 		refreshEmpty( input.closest( 'tr' ) );
 		showUnsaved();
@@ -249,6 +254,7 @@
 
 	const startRichEditor = ( input ) => {
 		if ( blockField && '0' === input.dataset.blocks ) {
+			input.dataset.saved = input.value;
 			blockFields.set( input, blockField.start( input ) );
 			return;
 		}
@@ -598,6 +604,7 @@
 					broken.push( input );
 				} else if ( ! broken.includes( input ) ) {
 					dirty.delete( input );
+					input.dataset.saved = input.value;
 				}
 			} );
 			showUnsaved();

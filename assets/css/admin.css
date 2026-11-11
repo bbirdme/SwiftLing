@@ -1777,10 +1777,17 @@ body.swiftling-screen {
 	list-style: inherit;
 }
 
-/* The text of a summary beside its marker, as on the page. */
+/* The text of a summary beside its marker, as on the page, filling its line, so a click anywhere
+   on it reaches the field, also while it is empty. */
 .swiftling-block-field summary .block-editor-block-list__layout {
 	display: inline-block;
+	width: calc(100% - 1.5em);
 	padding: 0;
+	vertical-align: top;
+}
+
+.swiftling-block-field summary .swiftling-block-field__text {
+	display: block;
 }
 
 /* The text as on the page: the theme's element, fonts and colours. */

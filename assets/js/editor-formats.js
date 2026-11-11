@@ -241,9 +241,13 @@
 		}, [] );
 
 		const onChange = ( changed ) => {
-			// No link in a link, also not one pasted in: its words stay.
-			const content = contentOf( changed[ 0 ] ? changed[ 0 ].attributes.content || '' : '' );
-			setBlocks( [ { ...changed[ 0 ], attributes: { ...changed[ 0 ].attributes, content, note: '' === content ? note : '' } } ] );
+			// What is typed stays as typed, spaces included; only a link in a link goes, its words
+			// kept, also one pasted in.
+			const typed = String( changed[ 0 ] ? changed[ 0 ].attributes.content || '' : '' );
+			const tidy = tidyLinks( typed, own.tag );
+			const content = isBlank( tidy ) ? '' : tidy;
+			const noteNow = '' === content ? note : '';
+			setBlocks( content === typed && noteNow === changed[ 0 ].attributes.note ? changed : [ { ...changed[ 0 ], attributes: { ...changed[ 0 ].attributes, content, note: noteNow } } ] );
 			// The spaces around the original go around the translation, unless it has its own.
 			const value = '' === content ? '' : ( /^(\s|&nbsp;)/.test( content ) ? '' : before ) + content + ( /(\s|&nbsp;)$/.test( content ) ? '' : after );
 			remember( value, true );
