@@ -291,6 +291,7 @@
 				input.dataset.blocks = '0';
 				input.classList.replace( 'swiftling-live-wrapped', 'swiftling-live-rich' );
 			} );
+			table.querySelectorAll( 'textarea.swiftling-live-rich[data-blocks="0"]:not([disabled])' ).forEach( unwrap );
 		}
 		const inputs = [ ...table.querySelectorAll( 'textarea.swiftling-live-rich:not([disabled])' ) ];
 		if ( inputs.length <= RICH_AT_ONCE || ! window.IntersectionObserver ) {
@@ -311,6 +312,27 @@
 
 	// The text inside the editable part, as HTML.
 	const richContent = ( input ) => ( window.wp && window.wp.editor && window.wp.editor.getContent ? window.wp.editor.getContent( input.id ) : input.value ) || '';
+
+	// An element around the whole text, as the link of a button, stays outside the text the block
+	// editor's field edits, with the tags around it, and is put back as it is: it cannot be removed
+	// or doubled, and its attributes stay as they are. The field draws it around the text, so it
+	// still looks as on the page. Only where the translation has the same element, or none yet.
+	const WRAPPER = /^(\s*<([a-z][a-z0-9-]*)\b[^>]*>)([\s\S]*)(<\/\2>\s*)$/i;
+	const unwrap = ( input ) => {
+		const found = ( input.dataset.original || '' ).match( WRAPPER );
+		if ( ! found || new RegExp( '<\\/?' + found[ 2 ] + '\\b', 'i' ).test( found[ 3 ] ) ) {
+			return;
+		}
+		const [ open, close ] = [ found[ 1 ].trim(), found[ 4 ].trim() ];
+		const value = input.value.trim();
+		if ( '' !== value && ! ( value.startsWith( open ) && value.endsWith( close ) && value.length >= open.length + close.length ) ) {
+			return;
+		}
+		input.dataset.prefix += found[ 1 ];
+		input.dataset.suffix = found[ 4 ] + input.dataset.suffix;
+		input.dataset.original = found[ 3 ];
+		input.value = '' === value ? '' : value.slice( open.length, value.length - close.length );
+	};
 
 	const setRichContent = ( input, html ) => {
 		const editor = richEditor( input );

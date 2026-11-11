@@ -130,4 +130,58 @@ class EditorFormatsTest extends TestCase {
 		$html = apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, as a theme runs it.
 		$this->assertStringContainsString( 'Notre ' . $mark . 'podcast</mark> raconte</h2>', $html );
 	}
+
+	/**
+	 * The link of a button stays outside the text the field edits, with the tags around it, and is
+	 * put back as it is: a translation saved as the field writes it, also the original copied into
+	 * it, has the button's link exactly once, its attributes unchanged.
+	 */
+	public function test_button_link_stays_around_the_translation() {
+		$this->become( 'administrator' );
+		$link   = '<a class="wp-block-button__link wp-element-button" href="https://wordpress.org/podcast/">';
+		$post   = self::factory()->post->create_and_get(
+			array( 'post_content' => "<!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\">" . $link . "Slušajte</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons -->" )
+		);
+		$result = $this->check(
+			'post:' . $post->ID,
+			static function () use ( $post ) {
+				$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The loop of a theme sets it.
+				setup_postdata( $post );
+				apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, as a theme runs it.
+			}
+		);
+		$unit   = $this->found( $result, 'Slušajte' );
+		$key    = swiftling_place_key( 'post:' . $post->ID, swiftling_path_key( $unit['p'] ), swiftling_hash( $unit['v'] ) );
+
+		// The parts the editor's rows give, and the link the field leaves outside the text it edits,
+		// see unwrap() in assets/js/editor.js.
+		list( $prefix, $middle, $suffix ) = swiftling_rich_parts( $unit['v'] );
+		$this->assertSame( $link . 'Slušajte</a>', trim( $middle ) );
+		$open  = substr( $middle, 0, strpos( $middle, '>' ) + 1 );
+		$close = '</a>';
+		$inner = substr( trim( $middle ), strlen( $open ), -strlen( $close ) );
+		$this->assertSame( 'Slušajte', $inner );
+
+		foreach ( array( 'Écoutez', $inner ) as $text ) {
+			swiftling_save_texts(
+				'post:' . $post->ID,
+				'fr',
+				array(
+					array(
+						'key'      => $key,
+						'text'     => $prefix . $open . $text . $close . $suffix,
+						'original' => $unit['v'],
+					),
+				),
+				'reviewed'
+			);
+			$this->show_in( 'fr' );
+			$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The loop of a theme sets it.
+			setup_postdata( $post );
+			$html = apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, as a theme runs it.
+			$this->assertStringContainsString( '<div class="wp-block-button">' . $link . $text . '</a></div>', $html );
+			$this->assertSame( 1, substr_count( $html, '<a ' ), $text );
+			$this->reset_state();
+		}
+	}
 }

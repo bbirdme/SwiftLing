@@ -20,7 +20,7 @@
 	if ( ! config || ! wp || ! wp.blockEditor || ! wp.blocks || ! wp.element ) {
 		return;
 	}
-	const { createElement: h, createRoot, useState, useEffect, Fragment } = wp.element;
+	const { createElement: h, createRoot, useState, useEffect, useMemo, Fragment } = wp.element;
 	const { BlockEditorProvider, BlockList, BlockTools, BlockToolbar, BlockControls, RichText, useBlockProps, store: blockEditorStore } = wp.blockEditor;
 	const { SlotFillProvider, Popover, ToolbarGroup, ToolbarButton } = wp.components;
 	const { registerBlockType, createBlock } = wp.blocks;
@@ -53,6 +53,9 @@
 			chosen: { type: 'boolean', default: false },
 			// The element that says, while the field shows the original, that it is not translated.
 			note: { type: 'string', default: '' },
+			// The element the text is in on the page, which the field is: its tag, classes and style.
+			tag: { type: 'string', default: 'p' },
+			look: { type: 'object', default: {} },
 		},
 		supports: { inserter: false, html: false, lock: false, reusable: false, customClassName: false, className: false, multiple: false },
 		edit: ( { attributes, setAttributes, clientId, isSelected } ) => {
@@ -64,7 +67,8 @@
 				}
 			}, [] );
 			const props = useBlockProps( {
-				className: 'swiftling-block-field__text',
+				className: [ 'swiftling-block-field__text', attributes.look.className ].filter( Boolean ).join( ' ' ),
+				style: attributes.look.style,
 				'aria-describedby': attributes.note,
 			} );
 			return h(
@@ -85,16 +89,39 @@
 				),
 				h( RichText, {
 					...props,
-					tagName: 'p',
+					tagName: attributes.tag,
 					value: attributes.content,
 					onChange: ( content ) => setAttributes( { content } ),
 					placeholder: config.placeholder,
 					__unstableAllowPrefixTransformations: false,
+					// A link in a link would break it: the text of a button or a link gets no links, as
+					// in the block editor's own button.
+					withoutInteractiveFormatting: 'a' === attributes.tag,
 				} )
 			);
 		},
-		save: ( { attributes } ) => h( RichText.Content, { tagName: 'p', value: attributes.content } ),
+		save: ( { attributes } ) => h( RichText.Content, { tagName: attributes.tag, value: attributes.content } ),
 	} );
+
+	// The elements a text is in on the page, from the tags before it, as the browser reads them:
+	// each with its tag, classes and style, nothing that does something, as the address of a link.
+	// The last one is the element the field edits; those around it are drawn around the field.
+	const elementsAround = ( prefix ) => {
+		const template = document.createElement( 'template' );
+		template.innerHTML = prefix + '<i data-swiftling-text></i>';
+		const chain = [];
+		for ( let element = template.content.querySelector( '[data-swiftling-text]' ).parentElement; element; element = element.parentElement ) {
+			const style = {};
+			for ( const name of element.style ) {
+				style[ name.startsWith( '--' ) ? name : name.replace( /-([a-z])/g, ( match, letter ) => letter.toUpperCase() ) ] = element.style.getPropertyValue( name );
+			}
+			chain.unshift( { tag: element.tagName.toLowerCase(), look: { className: element.getAttribute( 'class' ) || undefined, style } } );
+		}
+		// The browser opens and closes details by their summary, and presses a button: inside them,
+		// the text is edited in an element of its own.
+		const own = chain.length && ! [ 'summary', 'button' ].includes( chain[ chain.length - 1 ].tag ) ? chain.pop() : { tag: 'span', look: {} };
+		return [ chain, own ];
+	};
 
 	const settings = {
 		...config.settings,
@@ -109,7 +136,8 @@
 	const Field = ( { input, api, note } ) => {
 		const original = inner( input.dataset.original || '' );
 		const [ before, after ] = edges( input.dataset.original || '' );
-		const blockOf = ( value ) => createBlock( NAME, { content: inner( '' === value ? original : value ), original, note } );
+		const [ outer, own ] = useMemo( () => elementsAround( input.dataset.prefix || '' ), [] );
+		const blockOf = ( value ) => createBlock( NAME, { content: inner( '' === value ? original : value ), original, note, tag: own.tag, look: own.look } );
 		const [ blocks, setBlocks ] = useState( () => [ blockOf( input.value ) ] );
 		const [ faded, setFaded ] = useState( '' === input.value && '' !== original );
 		const [ code, setCode ] = useState( false );
@@ -121,8 +149,14 @@
 			};
 		}, [] );
 
-		const onChange = ( next ) => {
-			const attributes = next[ 0 ] ? next[ 0 ].attributes : { content: '' };
+		const onChange = ( changed ) => {
+			let next = changed;
+			let attributes = next[ 0 ] ? next[ 0 ].attributes : { content: '' };
+			// The text of a link gets no link of its own, also not one pasted in: its words stay.
+			if ( 'a' === own.tag && /<a\b/i.test( String( attributes.content || '' ) ) ) {
+				attributes = { ...attributes, content: String( attributes.content ).replace( /<\/?a\b[^>]*>/gi, '' ) };
+				next = [ { ...next[ 0 ], attributes } ];
+			}
 			const content = String( attributes.content || '' );
 			// Untouched, the faded original is no translation.
 			if ( faded && content === original && ! attributes.chosen ) {
@@ -167,7 +201,7 @@
 							__( 'HTML', 'swiftling' )
 						)
 					),
-					! code && h( BlockTools, null, h( BlockList ) ),
+					! code && h( BlockTools, null, outer.reduceRight( ( inside, element ) => h( element.tag, element.look, inside ), h( BlockList ) ) ),
 					h( Popover.Slot )
 				)
 			),
@@ -199,7 +233,15 @@
 	if ( wp.blockEditor.__unstableEditorStyles && config.styles ) {
 		const styles = document.createElement( 'div' );
 		document.body.appendChild( styles );
-		createRoot( styles ).render( h( wp.blockEditor.__unstableEditorStyles, { styles: config.styles, scope: '.swiftling-block-field' } ) );
+		// The original beside each field shows in them too, so both look as on the page.
+		createRoot( styles ).render(
+			h(
+				Fragment,
+				null,
+				h( wp.blockEditor.__unstableEditorStyles, { styles: config.styles, scope: '.swiftling-block-field' } ),
+				h( wp.blockEditor.__unstableEditorStyles, { styles: config.styles, scope: '.swiftling-live-html' } )
+			)
+		);
 	}
 
 	window.swiftlingBlockField = { start };

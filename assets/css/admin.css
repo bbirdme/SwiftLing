@@ -1729,13 +1729,31 @@ body.swiftling-screen {
 	padding: 8px 10px;
 }
 
-/* The theme's fonts and colours, at the size of the table, not of the page. */
+/* The original and the field get the theme's styles, see assets/js/editor-formats.js; the page's
+   background stays the table's. */
+.swiftling .swiftling-live-editor .swiftling-live-html {
+	background-color: transparent;
+}
+
+.swiftling .swiftling-live-editor .swiftling-block-field {
+	background-color: var(--swiftling-surface);
+}
+
+.swiftling .swiftling-live-editor tr.is-empty .swiftling-block-field {
+	background-color: #fffaf7;
+}
+
+/* The text of a summary beside its marker, as on the page. */
+.swiftling-block-field summary .block-editor-block-list__layout {
+	display: inline-block;
+	padding: 0;
+}
+
+/* The text as on the page: the theme's element, fonts and colours. */
 .swiftling-block-field .swiftling-block-field__text {
 	min-height: 1.5em;
 	margin: 0;
 	outline: none;
-	font-size: 16px;
-	line-height: 1.5;
 }
 
 .swiftling-block-field .block-editor-block-list__block.is-selected,
