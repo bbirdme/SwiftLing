@@ -145,6 +145,16 @@ $swiftling_confirm = isset( $_GET['swiftling_confirm'] );
 		</div>
 	</section>
 
+	<section class="swiftling-card">
+		<h2><?php esc_html_e( 'Translation editor', 'swiftling' ); ?></h2>
+		<p class="swiftling-muted"><?php esc_html_e( 'Which editor Translate opens for a page made of blocks. Pages built with a page builder, classic content, templates, categories, menus and forms always open in the table editor. Each editor has a link to the other.', 'swiftling' ); ?></p>
+		<fieldset class="swiftling-choice">
+			<legend class="screen-reader-text"><?php esc_html_e( 'Translation editor', 'swiftling' ); ?></legend>
+			<label><input type="radio" name="editor" value="table" <?php checked( 'table', $swiftling_settings['editor'] ); ?>> <?php esc_html_e( 'Table: every text in a row, the original beside the translation', 'swiftling' ); ?></label>
+			<label><input type="radio" name="editor" value="visual" <?php checked( 'visual', $swiftling_settings['editor'] ); ?>> <?php esc_html_e( 'Visual: the page as its blocks, translated in place, the original beside the chosen text', 'swiftling' ); ?></label>
+		</fieldset>
+	</section>
+
 	<section class="swiftling-card swiftling-search-card">
 		<h2><?php esc_html_e( 'Search', 'swiftling' ); ?></h2>
 		<p class="swiftling-muted"><?php esc_html_e( 'What visitors find when they search in their own language.', 'swiftling' ); ?></p>

@@ -215,6 +215,8 @@ if ( '' === $swiftling_view_url ) {
 }
 // Where the header, footer and menu around a post are translated.
 $swiftling_frame = $swiftling_is_post ? swiftling_post_view_subject( $swiftling_subject['post'] ) : null;
+// A page the visual editor lays out can be translated there too, whichever editor the settings choose.
+$swiftling_visual = $swiftling_is_post && true === swiftling_visual_editor_supports( $swiftling_subject['post'], $swiftling_lang ) ? swiftling_visual_editor_url( $swiftling_subject['post']->ID, $swiftling_lang ) : '';
 
 // A list of terms checks its page only when it needs to, see swiftling_term_list_needs_check().
 $swiftling_probes = $swiftling_subject['probe'] && ( 'terms' !== $swiftling_subject['kind'] || $swiftling_check ) ? array(
@@ -310,6 +312,12 @@ $swiftling_config = array(
 			/* translators: %s: language name, e.g. Deutsch. */
 			echo esc_html( sprintf( __( 'View in %s', 'swiftling' ), $swiftling_target['name'] ) );
 			?>
+		</a>
+	<?php endif; ?>
+	<?php if ( '' !== $swiftling_visual ) : ?>
+		<a class="swiftling-button is-ghost" href="<?php echo esc_url( $swiftling_visual ); ?>" title="<?php esc_attr_e( 'The page as its blocks, translated in place.', 'swiftling' ); ?>">
+			<span class="dashicons dashicons-welcome-view-site" aria-hidden="true"></span>
+			<?php esc_html_e( 'Visual view', 'swiftling' ); ?>
 		</a>
 	<?php endif; ?>
 	<?php if ( 'translation' === $swiftling_mode ) : ?>

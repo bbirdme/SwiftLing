@@ -13,6 +13,8 @@
  * The translations and machine routes do what includes/api.php does for translating without the
  * editor's screen, with the same functions.
  * - POST swiftling/v1/slug: saves the address of a post or a term in a language, see slugs.php.
+ * - POST swiftling/v1/fill: fills the empty texts of a subject with the machine translation
+ *   service and saves them, for the visual editor, see includes/visual-editor.php.
  *
  * @package SwiftLing
  */
@@ -201,6 +203,52 @@ function swiftling_register_machine_route() {
 	);
 }
 add_action( 'rest_api_init', 'swiftling_register_machine_route' );
+
+/**
+ * Registers the route that fills the empty texts of a subject with the machine translation service,
+ * as the Translate everything run fills a page, see swiftling_machine_translate_subject(). The
+ * visual editor asks for it, then shows the page again with the translations to review.
+ */
+function swiftling_register_fill_route() {
+	register_rest_route(
+		'swiftling/v1',
+		'/fill',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'swiftling_rest_fill',
+			'permission_callback' => static function ( $request ) {
+				return swiftling_rest_can_edit( $request ) && swiftling_can_machine_translate();
+			},
+			'args'                => array(
+				'subject' => array(
+					'type'              => 'string',
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'lang'    => array(
+					'type'              => 'string',
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_key',
+					'validate_callback' => static function ( $lang ) {
+						return null !== swiftling_target_language( sanitize_key( $lang ) );
+					},
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'swiftling_register_fill_route' );
+
+/**
+ * Fills the empty texts of a subject in a language with the machine translation service and saves
+ * them as machine translations, see swiftling_machine_translate_subject().
+ *
+ * @param WP_REST_Request $request Request.
+ * @return array|WP_Error
+ */
+function swiftling_rest_fill( $request ) {
+	return swiftling_machine_translate_subject( (string) $request['subject'], (string) $request['lang'] );
+}
 
 /**
  * Registers the route that chooses how a language shows a post, for the panel in the block editor.
