@@ -54,4 +54,40 @@ if ( ! function_exists( 'wpbc_save_booking_meta_option' ) ) {
 		);
 		return array( 'content' => str_replace( '[name]', (string) $data, $pair['content'] ) );
 	}
+
+	/**
+	 * Answers WordPress's locale with the language of the page the plugin's request came from, as the
+	 * plugin does in its own requests.
+	 *
+	 * @return string
+	 */
+	function wpbc_get_maybe_reloaded_booking_locale() {
+		return 'de_DE';
+	}
+
+	/**
+	 * Returns the values of the placeholders of the email to the site's owner: the dates of the booking
+	 * as the plugin formats them, in the language WordPress runs in, which its own locale filter decides
+	 * while it is on.
+	 *
+	 * @param int    $booking_id The booking.
+	 * @param int    $type       The resource.
+	 * @param string $data       The booking's data.
+	 * @return array
+	 */
+	function wpbc__get_replace_shortcodes__email_new_admin( $booking_id, $type, $data ) {
+		$german  = false !== has_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale' ) || '' !== swiftling_writing_language();
+		$date    = $german ? '11 Dez. 2026' : '11 Dec 2026';
+		$replace = apply_filters(
+			'wpbc_replace_params_for_booking',
+			array(
+				'dates'         => $date . ' - 12 ' . ( $german ? 'Dez.' : 'Dec' ) . ' 2026',
+				'check_in_date' => $date,
+			),
+			$booking_id,
+			$type,
+			$data
+		);
+		return $replace;
+	}
 }

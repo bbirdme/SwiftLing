@@ -237,4 +237,23 @@ class BookingCalendarTest extends TestCase {
 		$this->assertSame( $written( $site ), apply_filters( 'wpbc_email_api_get_content_after', $written( $site ), 'new_admin', 'html' ), 'A booking in the original' );
 		// phpcs:enable
 	}
+
+	/**
+	 * The email to the site's owner about a booking sent from a page in a language has the booking's
+	 * dates as the site's language writes them: the plugin formats them once, in the page's language,
+	 * and answers WordPress's locale with it in its own requests. The plugin's filter is back after;
+	 * the email to the visitor keeps the page's dates.
+	 */
+	public function test_owner_email_has_the_dates_in_the_original() {
+		$this->show_in( 'de' );
+		add_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale', 999 );
+		wpbc__get_replace_shortcodes__email_new_admin( 7, 1, 'Eva' );
+		$this->assertSame( 999, has_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale' ), 'The plugin\'s locale is back' );
+		$this->assertSame( 'de', swiftling_writing_language() );
+		// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The plugin's own filter, as it runs it.
+		$this->assertSame( 'Za: 11 Dec 2026 - 12 Dec 2026, dolazak 11 Dec 2026', apply_filters( 'wpbc_email_api_get_content_after', 'Za: 11 Dez. 2026 - 12 Dez. 2026, dolazak 11 Dez. 2026', 'new_admin', 'plain' ) );
+		$this->assertSame( 'Hvala: 11 Dez. 2026', apply_filters( 'wpbc_email_api_get_content_after', 'Hvala: 11 Dez. 2026', 'new_visitor', 'plain' ), 'The email to the visitor' );
+		// phpcs:enable
+		remove_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale', 999 );
+	}
 }
