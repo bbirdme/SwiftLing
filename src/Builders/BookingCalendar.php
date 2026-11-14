@@ -68,6 +68,27 @@ class BookingCalendar extends SettingsTexts {
 	private $booking = 0;
 
 	/**
+	 * The placeholders of a booking's emails that hold its dates, which the plugin formats in the
+	 * language of the request.
+	 */
+	const DATES = array( 'dates', 'only_dates', 'dates_only', 'check_in_date', 'check_out_date', 'check_in_only_date', 'check_out_only_date', 'check_out_plus1day', 'current_date' );
+
+	/**
+	 * The dates of the booking the plugin writes emails for from a page in another language, as written
+	 * there, each with how the site's own language writes them.
+	 *
+	 * @var array<string, string>
+	 */
+	private $dates = array();
+
+	/**
+	 * Whether this class works the placeholders out again in the original, see noteBooking().
+	 *
+	 * @var bool
+	 */
+	private $rebuilding = false;
+
+	/**
 	 * Returns the class's ID.
 	 */
 	public function id(): string {
@@ -328,7 +349,11 @@ class BookingCalendar extends SettingsTexts {
 	 * @return mixed
 	 */
 	public function noteBooking( $replace, $booking_id = 0, $type = 1, $data = '' ) {
+		if ( $this->rebuilding ) {
+			return $replace;
+		}
 		$this->booking = is_numeric( $booking_id ) ? (int) $booking_id : 0;
+		$this->noteOriginalDates( $replace, $booking_id, $type, $data );
 		if ( ! is_array( $replace ) || ! isset( $replace['content'] ) || '' !== self::pageSlug() || ! function_exists( 'wpbc__legacy__get_form_content_arr' ) ) {
 			return $replace;
 		}
@@ -346,6 +371,43 @@ class BookingCalendar extends SettingsTexts {
 			$replace['content'] = $summary['content'];
 		}
 		return $replace;
+	}
+
+	/**
+	 * Notes how the site's own language writes the dates of a booking sent from a page in another
+	 * language: the plugin works the placeholders of its emails out once, in the language of the page,
+	 * so the email to the site's owner had the visitor's dates, as "12 Dez. 2026". They are worked out
+	 * again here, in the original, as the plugin works out those of the email to the site's owner.
+	 *
+	 * @param mixed $replace    The values of the email's placeholders, in the language of the page.
+	 * @param mixed $booking_id The booking.
+	 * @param mixed $type       The booking's resource.
+	 * @param mixed $data       The booking's data, as the plugin keeps it.
+	 */
+	private function noteOriginalDates( $replace, $booking_id, $type, $data ): void {
+		$this->dates = array();
+		if ( ! is_array( $replace ) || '' === self::pageSlug() || ! function_exists( 'wpbc__get_replace_shortcodes__email_new_admin' ) ) {
+			return;
+		}
+		$this->rebuilding = true;
+		// In its own requests from a page, the plugin answers WordPress's locale with the page's at 999,
+		// over any switch, the site's own included.
+		$reloaded = remove_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale', 999 );
+		swiftling_pause_translation();
+		try {
+			$original = wpbc__get_replace_shortcodes__email_new_admin( $booking_id, $type, $data );
+		} finally {
+			swiftling_resume_translation();
+			if ( $reloaded ) {
+				add_filter( 'locale', 'wpbc_get_maybe_reloaded_booking_locale', 999 );
+			}
+			$this->rebuilding = false;
+		}
+		foreach ( self::DATES as $key ) {
+			if ( isset( $replace[ $key ], $original[ $key ] ) && is_string( $replace[ $key ] ) && is_string( $original[ $key ] ) && '' !== trim( $replace[ $key ] ) && $replace[ $key ] !== $original[ $key ] ) {
+				$this->dates[ $replace[ $key ] ] = $original[ $key ];
+			}
+		}
 	}
 
 	/**
@@ -395,9 +457,10 @@ class BookingCalendar extends SettingsTexts {
 
 	/**
 	 * Returns the email to the site's owner about a booking sent from a page in another language with
-	 * the labels of the booking's summary in the original: the plugin writes the summary once, in the
-	 * language of the page, for the visitor and the owner alike. The addresses of the site's pages lead
-	 * to the original too, as [siteurl], which the plugin fills with the home page in the language.
+	 * the labels of the booking's summary and its dates in the original: the plugin writes them once, in
+	 * the language of the page, for the visitor and the owner alike, see noteOriginalDates(). The
+	 * addresses of the site's pages lead to the original too, as [siteurl], which the plugin fills with
+	 * the home page in the language.
 	 *
 	 * @param mixed $content  The email, written.
 	 * @param mixed $email_id The plugin's ID of the email.
@@ -411,6 +474,15 @@ class BookingCalendar extends SettingsTexts {
 		foreach ( $this->summaryLabels() as $translated => $original ) {
 			$content = 'html' === $type ? str_replace( '>' . $translated . '<', '>' . $original . '<', $content ) : str_replace( $translated, $original, $content );
 		}
+		// The longest first: a range of dates holds the check-in date.
+		$dates = $this->dates;
+		uksort(
+			$dates,
+			static function ( $a, $b ) {
+				return strlen( (string) $b ) <=> strlen( (string) $a );
+			}
+		);
+		$content = strtr( $content, $dates );
 		return swiftling_addresses_in( $content, '' );
 	}
 

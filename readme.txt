@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.16
+Stable tag: 1.0.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -186,6 +186,9 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.17 =
+* Booking Calendar: the email to you about a booking made on a page in another language has the booking's dates in your language. Booking Calendar wrote them in the visitor's language, as "12 Dez. 2026".
 
 = 1.0.16 =
 * Job boards and directories: WP Job Manager, WP Job Openings, Classified Listing, GeoDirectory and Business Directory Plugin are translated. A job's description in WP Job Manager, the names of WP Job Openings' job specifications, the values of GeoDirectory's custom fields and the fields of Business Directory Plugin, with their names and choices, were left in the original and are translated now. Job listings of WP Job Manager are on the Translations lists, as pages visitors open.
