@@ -188,6 +188,7 @@ Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.co
 == Changelog ==
 
 = 1.0.17 =
+* Translation editor: a text with a highlight or a text colour of the block editor gets a "Formats of the original" button. It puts the same highlight or colour on the words you mark, with the theme's colours. The highlight was lost, as the editor's toolbar has no such button.
 * The translation editor checks a page as a visitor sees it who came straight to it. It checked it as if the visitor came from the admin, and a plugin that shows something else then, as Business Directory Plugin's "Return to Directory" link, kept that text out of the editor.
 * Booking Calendar: the email to you about a booking made on a page in another language has the booking's dates in your language. Booking Calendar wrote them in the visitor's language, as "12 Dez. 2026".
 
