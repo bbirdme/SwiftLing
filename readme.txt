@@ -188,6 +188,7 @@ Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.co
 == Changelog ==
 
 = 1.0.17 =
+* The translation editor checks a page as a visitor sees it who came straight to it. It checked it as if the visitor came from the admin, and a plugin that shows something else then, as Business Directory Plugin's "Return to Directory" link, kept that text out of the editor.
 * Booking Calendar: the email to you about a booking made on a page in another language has the booking's dates in your language. Booking Calendar wrote them in the visitor's language, as "12 Dez. 2026".
 
 = 1.0.16 =

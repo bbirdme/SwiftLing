@@ -79,6 +79,7 @@ function swiftling_maybe_start_probe() {
 	}
 
 	swiftling_protect_probe();
+	swiftling_forget_admin_referer();
 
 	$state = &swiftling_state();
 	if ( $subject ) {
@@ -103,6 +104,24 @@ function swiftling_maybe_start_probe() {
 	}
 }
 add_action( 'init', 'swiftling_maybe_start_probe', 0 );
+
+/**
+ * Forgets that a page check came from the admin. The editor checks a page in a frame of the admin,
+ * so the browser names the editor as the page the visitor came from, and no visitor comes from
+ * there: a plugin that prints something else for a visitor who came from another page, as Business
+ * Directory Plugin's "Go back" where a visitor who came straight to a listing reads "Return to
+ * Directory", showed the check another page than visitors see, and its texts were never offered.
+ */
+function swiftling_forget_admin_referer() {
+	if ( empty( $_SERVER['HTTP_REFERER'] ) || ! is_string( $_SERVER['HTTP_REFERER'] ) ) {
+		return;
+	}
+	$referer = (string) wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ), PHP_URL_PATH );
+	$admin   = (string) wp_parse_url( admin_url(), PHP_URL_PATH );
+	if ( '' !== $admin && 0 === strpos( trailingslashit( $referer ), trailingslashit( $admin ) ) ) {
+		unset( $_SERVER['HTTP_REFERER'] );
+	}
+}
 
 /**
  * Looks up the subject of a page check that was not known when the check started, once every

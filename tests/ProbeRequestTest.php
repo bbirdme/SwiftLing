@@ -256,4 +256,19 @@ class ProbeRequestTest extends TestCase {
 			unregister_post_type( 'swl_product' );
 		}
 	}
+
+	/**
+	 * A page check forgets that the editor in the admin opened it, as no visitor comes from there; a
+	 * page of the site the browser names stays.
+	 */
+	public function test_check_forgets_an_admin_referer() {
+		$_SERVER['HTTP_REFERER'] = admin_url( 'admin.php?page=swiftling-content&swiftling_subject=post:5' );
+		swiftling_forget_admin_referer();
+		$this->assertArrayNotHasKey( 'HTTP_REFERER', $_SERVER );
+
+		$_SERVER['HTTP_REFERER'] = home_url( '/imenik/' );
+		swiftling_forget_admin_referer();
+		$this->assertSame( home_url( '/imenik/' ), isset( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '' );
+		unset( $_SERVER['HTTP_REFERER'] );
+	}
 }
