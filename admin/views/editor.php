@@ -276,6 +276,9 @@ $swiftling_config = array(
 		'failed'     => __( 'The page could not be checked. Reload the editor to try again.', 'swiftling' ),
 		'pickImage'  => __( 'Choose the image for this language', 'swiftling' ),
 		'useImage'   => __( 'Use this image', 'swiftling' ),
+		'formats'    => __( 'Formats of the original', 'swiftling' ),
+		/* translators: %s: the words of the original a format is on, e.g. Stories. */
+		'formatLike' => __( 'As “%s” in the original', 'swiftling' ),
 		'saving'     => __( 'Saving…', 'swiftling' ),
 		'saved'      => __( 'Saved.', 'swiftling' ),
 		'nothing'    => __( 'No changes to save.', 'swiftling' ),

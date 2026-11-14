@@ -241,12 +241,38 @@
 	const isRich = ( input ) => input.classList.contains( 'swiftling-live-rich' );
 	const richEditor = ( input ) => window.tinymce && window.tinymce.get( input.id );
 
+	// The formats of the original the toolbar has no button for, as a highlight or a text colour of the
+	// block editor: each element around words of the original that carries a class or a style, once.
+	// The translation gets the same element around the words it marks, so the theme's colours apply.
+	const FORMAT_TAGS = [ 'mark', 'span', 'code', 'kbd', 's', 'u', 'small' ];
+	const originalFormats = ( original ) => {
+		const formats = new Map();
+		if ( ! original || ! original.includes( '<' ) ) {
+			return [];
+		}
+		const body = new window.DOMParser().parseFromString( '<body>' + original + '</body>', 'text/html' ).body;
+		body.querySelectorAll( FORMAT_TAGS.join( ',' ) ).forEach( ( element ) => {
+			if ( ! element.hasAttribute( 'class' ) && ! element.hasAttribute( 'style' ) ) {
+				return;
+			}
+			const copy = element.cloneNode( false );
+			const open = copy.outerHTML.slice( 0, copy.outerHTML.lastIndexOf( '</' ) );
+			if ( ! formats.has( open ) ) {
+				formats.set( open, { open, close: '</' + element.tagName.toLowerCase() + '>', words: element.textContent.trim().slice( 0, 30 ) } );
+			}
+		} );
+		return [ ...formats.values() ];
+	};
+
 	const startRichEditor = ( input ) => {
+		const formats = originalFormats( input.dataset.original );
 		window.wp.editor.initialize( input.id, {
 			tinymce: {
 				wpautop: false,
 				forced_root_block: '1' === input.dataset.blocks ? 'p' : false,
-				toolbar1: 'bold,italic,link,unlink,superscript,subscript,removeformat,undo,redo',
+				toolbar1: 'bold,italic,link,unlink,superscript,subscript,' + ( formats.length ? 'swiftling_formats,' : '' ) + 'removeformat,undo,redo',
+				// The elements of the original's formats keep their classes and styles.
+				extended_valid_elements: FORMAT_TAGS.map( ( tag ) => tag + '[class|style]' ).join( ',' ),
 				toolbar2: '',
 				menubar: false,
 				statusbar: false,
@@ -255,7 +281,27 @@
 				autoresize_min_height: 40,
 				autoresize_max_height: 600,
 				content_style: 'body { margin: 8px 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.5; } p { margin: 0 0 8px; }',
-				setup: ( editor ) => editor.on( 'input change keyup undo redo', () => markDirty( input ) ),
+				setup: ( editor ) => {
+					editor.on( 'input change keyup undo redo', () => markDirty( input ) );
+					if ( ! formats.length ) {
+						return;
+					}
+					editor.addButton( 'swiftling_formats', {
+						type: 'menubutton',
+						text: strings.formats,
+						menu: formats.map( ( format ) => ( {
+							text: strings.formatLike.replace( '%s', format.words || format.open ),
+							onclick: () => {
+								const marked = editor.selection.getContent();
+								if ( '' === marked.trim() ) {
+									return;
+								}
+								editor.undoManager.transact( () => editor.selection.setContent( format.open + marked + format.close ) );
+								markDirty( input );
+							},
+						} ) ),
+					} );
+				},
 			},
 			quicktags: { buttons: 'strong,em,link,code,close' },
 			mediaButtons: false,
