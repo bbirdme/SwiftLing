@@ -156,14 +156,13 @@ class SportsPress extends Builder {
 			$this->labels = array();
 			foreach ( get_posts(
 				array(
-					'post_type'        => self::LABELS,
-					'post_status'      => 'publish',
-					'posts_per_page'   => 100,
-					'orderby'          => array(
+					'post_type'      => self::LABELS,
+					'post_status'    => 'publish',
+					'posts_per_page' => 100,
+					'orderby'        => array(
 						'menu_order' => 'ASC',
 						'ID'         => 'ASC',
 					),
-					'suppress_filters' => true,
 				)
 			) as $post ) {
 				if ( '' !== trim( $post->post_title ) && preg_match( '/\p{L}/u', $post->post_title ) ) {
