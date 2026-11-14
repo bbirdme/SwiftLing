@@ -32,9 +32,10 @@ defined( 'ABSPATH' ) || exit;
  *         'never'          => array( 'project' ),        // Post types never translated.
  *         'hidden_address' => 'original',                // Or '404'.
  *         'search'         => true,                      // Search also reads translations.
+ *         'editor'         => 'table',                   // Or 'visual', see includes/visual-editor.php.
  *     )
  *
- * @return array{untranslated: array<string, string>, never: string[], hidden_address: string, search: bool}
+ * @return array{untranslated: array<string, string>, never: string[], hidden_address: string, search: bool, editor: string}
  */
 function swiftling_settings() {
 	return swiftling_memo( 'settings', 'swiftling_build_settings' );
@@ -54,6 +55,8 @@ function swiftling_build_settings() {
 		'hidden_address' => isset( $saved['hidden_address'] ) && '404' === $saved['hidden_address'] ? '404' : 'original',
 		// Sites that saved their settings before the index existed search translations too.
 		'search'         => ! isset( $saved['search'] ) || (bool) $saved['search'],
+		// Which editor Translate opens for a page the visual editor can lay out.
+		'editor'         => isset( $saved['editor'] ) && 'visual' === $saved['editor'] ? 'visual' : 'table',
 	);
 }
 
@@ -562,6 +565,7 @@ function swiftling_save_settings() {
 	}
 	$settings['hidden_address'] = isset( $_POST['hidden_address'] ) && '404' === sanitize_key( wp_unslash( $_POST['hidden_address'] ) ) ? '404' : 'original';
 	$settings['search']         = isset( $_POST['search'] );
+	$settings['editor']         = isset( $_POST['editor'] ) && 'visual' === sanitize_key( wp_unslash( $_POST['editor'] ) ) ? 'visual' : 'table';
 
 	update_option( 'swiftling_settings', $settings, true );
 

@@ -59,6 +59,7 @@ function swiftling_server_check( $key, $user_id = null ) {
 		}
 		$pages[ $variant ] = $page;
 	}
+	swiftling_checked_page( $subject['key'], $user_id, $pages['control'] );
 
 	$reader = new \SwiftLing\PageCheck\Reader();
 	$marked = $reader->marked( $pages['marked'] );
@@ -91,17 +92,39 @@ function swiftling_check_page_url( $subject, $variant, $user_id ) {
 }
 
 /**
+ * Returns the page as visitors see it that the server's last page check in this request read, for
+ * what reads it too, as the visual editor does for its styles, see swiftling_visual_page_styles():
+ * the site is not asked for it again. Only the last is kept, so checking many pages in a request
+ * does not keep them all.
+ *
+ * @param string      $key     Subject key.
+ * @param int         $user_id User the page rendered for.
+ * @param string|null $page    The page, to keep it.
+ * @return string|null The page; null when the last check was not of this subject for this user.
+ */
+function swiftling_checked_page( $key, $user_id, $page = null ) {
+	static $last = null;
+
+	$of = $key . '|' . (int) $user_id;
+	if ( null !== $page ) {
+		$last = array( $of, $page );
+	}
+	return null !== $last && $of === $last[0] ? $last[1] : null;
+}
+
+/**
  * Asks the site for a page of a check, through the loopback.
  *
- * @param string $url    Address.
- * @param int    $status The status the page answers with: 200, or 404 for one that is not found.
+ * @param string $url     Address.
+ * @param int    $status  The status the page answers with: 200, or 404 for one that is not found.
+ * @param int    $timeout Seconds to wait for it.
  * @return string|WP_Error The page.
  */
-function swiftling_fetch_check_page( $url, $status = 200 ) {
+function swiftling_fetch_check_page( $url, $status = 200, $timeout = 45 ) {
 	$response = wp_remote_get(
 		$url,
 		array(
-			'timeout'     => 45,
+			'timeout'     => $timeout,
 			'redirection' => 3,
 			// As WordPress asks itself for its own pages: a local certificate need not be signed.
 			'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter.

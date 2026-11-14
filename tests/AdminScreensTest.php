@@ -68,7 +68,7 @@ class AdminScreensTest extends TestCase {
 	 */
 	public function data_screens() {
 		$views = array();
-		foreach ( array( 'overview', 'content', 'translate-all', 'templates', 'menus', 'forms', 'terms', 'themes-plugins', 'languages', 'addresses', 'service', 'switcher', 'settings', 'setup', 'editor' ) as $view ) {
+		foreach ( array( 'overview', 'content', 'translate-all', 'templates', 'menus', 'forms', 'terms', 'themes-plugins', 'languages', 'addresses', 'service', 'switcher', 'settings', 'setup', 'editor', 'visual' ) as $view ) {
 			$views[ $view ] = array( $view );
 		}
 		return $views;

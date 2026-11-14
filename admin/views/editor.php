@@ -199,6 +199,10 @@ if ( $swiftling_is_post ) {
 		},
 		array_values( Registry::forPost( $swiftling_subject['post']->ID ) )
 	);
+	// A builder SwiftLing tells by the page's data, see swiftling_visual_builder().
+	if ( ! $swiftling_built && '' !== swiftling_visual_builder( $swiftling_subject['post'] ) ) {
+		$swiftling_built = array( swiftling_visual_builder( $swiftling_subject['post'] ) );
+	}
 	if ( $swiftling_built ) {
 		/* translators: 1: kind of content, e.g. Page, 2: builders, e.g. Elementor. */
 		$swiftling_subtitle = sprintf( __( '%1$s, built with %2$s', 'swiftling' ), $swiftling_subject['type'], wp_sprintf( '%l', $swiftling_built ) );
@@ -215,6 +219,8 @@ if ( '' === $swiftling_view_url ) {
 }
 // Where the header, footer and menu around a post are translated.
 $swiftling_frame = $swiftling_is_post ? swiftling_post_view_subject( $swiftling_subject['post'] ) : null;
+// A page the visual editor lays out can be translated there too, whichever editor the settings choose.
+$swiftling_visual = $swiftling_is_post && true === swiftling_visual_editor_supports( $swiftling_subject['post'], $swiftling_lang ) ? swiftling_visual_view_url( $swiftling_subject['post']->ID, $swiftling_lang ) : '';
 
 // A list of terms checks its page only when it needs to, see swiftling_term_list_needs_check().
 $swiftling_probes = $swiftling_subject['probe'] && ( 'terms' !== $swiftling_subject['kind'] || $swiftling_check ) ? array(
@@ -315,9 +321,13 @@ $swiftling_config = array(
 			?>
 		</a>
 	<?php endif; ?>
+	<?php if ( '' !== $swiftling_visual ) : ?>
+		<a class="swiftling-button is-ghost" href="<?php echo esc_url( $swiftling_visual ); ?>" title="<?php esc_attr_e( 'The page as its blocks, translated in place.', 'swiftling' ); ?>">
+			<span class="dashicons dashicons-welcome-view-site" aria-hidden="true"></span>
+			<?php esc_html_e( 'Visual view', 'swiftling' ); ?>
+		</a>
+	<?php endif; ?>
 	<?php if ( 'translation' === $swiftling_mode ) : ?>
-		<?php // How many fields changed since the last save, next to the button that saves them. ?>
-		<span class="swiftling-live-unsaved" id="swiftling-live-unsaved" aria-live="polite"></span>
 	<button type="button" class="swiftling-button is-accent swiftling-live-save" id="swiftling-live-save" disabled>
 		<span class="swiftling-spinner" aria-hidden="true"></span>
 		<?php esc_html_e( 'Save and mark reviewed', 'swiftling' ); ?>
@@ -329,8 +339,11 @@ $swiftling_config = array(
 	<div class="swiftling-editor-bar__status">
 		<div class="swiftling-editor-bar__messages">
 			<p class="swiftling-live-status" id="swiftling-live-status" role="status"><?php esc_html_e( 'Checking the page…', 'swiftling' ); ?></p>
-			<?php // What the last save or tool did, under the Save button. ?>
-			<p class="swiftling-live-note" id="swiftling-live-note" role="status"></p>
+			<?php // How many fields changed since the last save, and what the last save or tool did, under the Save button: the buttons above never move. ?>
+			<div class="swiftling-editor-bar__end">
+				<span class="swiftling-live-unsaved" id="swiftling-live-unsaved" aria-live="polite"></span>
+				<p class="swiftling-live-note" id="swiftling-live-note" role="status"></p>
+			</div>
 		</div>
 		<div class="swiftling-live-progress" id="swiftling-live-progress">
 			<div class="swiftling-bar" role="progressbar" aria-label="<?php esc_attr_e( 'Progress', 'swiftling' ); ?>" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="is-progress"></span></div>

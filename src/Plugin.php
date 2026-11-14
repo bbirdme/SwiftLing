@@ -39,7 +39,7 @@ final class Plugin {
 	/**
 	 * The files of includes/ the translation editor renders with, see loadEditor().
 	 */
-	public const EDITOR_INCLUDES = array( 'probe-results', 'progress', 'live-editor', 'translate-all' );
+	public const EDITOR_INCLUDES = array( 'probe-results', 'progress', 'live-editor', 'translate-all', 'visual-editor' );
 
 	/**
 	 * Registers the hooks of every part of the plugin.

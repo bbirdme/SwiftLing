@@ -1,0 +1,551 @@
+/*
+ * The visual translation screen, built from SwiftLing's own pieces: the editor bar, the language
+ * tabs, cards, buttons and state icons. Here only what it adds: the page, the panel under it with
+ * the original of the chosen block, and the sidebar with what belongs to the whole page.
+ *
+ * Nothing moves while translating: the bar's counter and message keep their room, the panel under
+ * the page has a fixed height, and the sidebar holds nothing that depends on the chosen block.
+ */
+
+.swiftling-visual {
+	--swiftling-visual-dock: 164px;
+}
+
+/* Loading. */
+.swiftling-visual-loading {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--swiftling-muted);
+	font-weight: 600;
+}
+
+.swiftling-visual-loading__spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--swiftling-field);
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: swiftling-spin 0.7s linear infinite;
+}
+
+/* Buttons that cannot do anything yet, and a button at work, as SwiftLing's own. */
+.swiftling-visual .swiftling-button:disabled,
+.swiftling-visual .swiftling-live-switch:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.swiftling-visual .swiftling-button:disabled:hover {
+	border-color: var(--swiftling-field);
+}
+
+.swiftling-visual .swiftling-button.is-accent:disabled:hover {
+	border-color: var(--swiftling-swift);
+}
+
+.swiftling-visual .swiftling-button.is-busy {
+	position: relative;
+	color: transparent !important;
+}
+
+.swiftling-visual .swiftling-button.is-busy .swiftling-spinner {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid var(--swiftling-ink);
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: swiftling-spin 0.7s linear infinite;
+}
+
+.swiftling-visual .swiftling-button.is-link {
+	color: var(--swiftling-ink);
+	font-weight: 600;
+}
+
+/* The editor: its head, the page, and the original under it. */
+.swiftling-visual-editor {
+	display: flex;
+	flex-direction: column;
+	padding: 8px 12px 12px;
+}
+
+.swiftling-visual-head {
+	display: grid;
+	grid-template-columns: minmax(180px, 1fr) auto;
+	align-items: center;
+	gap: 10px 16px;
+	padding: 4px 2px 12px;
+}
+
+/* On a wide window everything is one row; otherwise the tools that fill the empty texts take the
+   second row, always the same way. */
+.swiftling-visual-head .swiftling-live-fill {
+	grid-column: 1 / -1;
+	grid-row: 2;
+	justify-self: start;
+}
+
+@media (min-width: 1700px) {
+	.swiftling-visual-head {
+		grid-template-columns: minmax(180px, 1fr) auto auto;
+	}
+
+	.swiftling-visual-head .swiftling-live-fill {
+		grid-column: auto;
+		grid-row: auto;
+	}
+}
+
+.swiftling-visual-layout.is-wide .swiftling-visual-head {
+	grid-template-columns: minmax(180px, 1fr) auto auto;
+}
+
+.swiftling-visual-layout.is-wide .swiftling-visual-head .swiftling-live-fill {
+	grid-column: auto;
+	grid-row: auto;
+}
+
+.swiftling-visual-head__progress {
+	display: grid;
+	gap: 6px;
+	max-width: 420px;
+}
+
+.swiftling .swiftling-visual-head .swiftling-live-summary {
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.swiftling-visual-head .swiftling-live-meter {
+	margin: 0;
+	height: 6px;
+}
+
+.swiftling-visual-head .swiftling-live-fill {
+	padding: 6px 8px 6px 12px;
+}
+
+.swiftling .swiftling-visual-head .swiftling-live-fill .swiftling-button {
+	min-height: 32px;
+	padding: 0 12px;
+}
+
+.swiftling-visual-head__end {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.swiftling .swiftling-visual-panel-toggle {
+	min-height: 32px;
+	padding: 0 8px;
+}
+
+/* The page and the panel under it fill the window as it opens; the page scrolls inside. */
+.swiftling-visual-canvas {
+	position: relative;
+	height: var(--swiftling-visual-canvas-h, 480px);
+	overflow: hidden;
+	border: 1px solid var(--swiftling-line);
+	border-bottom: 0;
+	border-radius: 12px 12px 0 0;
+	background: #fff;
+}
+
+.swiftling-visual-canvas > div,
+.swiftling-visual-canvas iframe[name="editor-canvas"] {
+	width: 100%;
+	height: 100% !important;
+}
+
+/* The core image block's own Replace would read as a change of the page itself: the language's
+   image has its own, named control. The block's type, its place and its menu belong to the
+   original. */
+.swiftling-visual .block-editor-media-replace-flow,
+.swiftling-visual .block-editor-block-toolbar__block-controls,
+.swiftling-visual .block-editor-block-settings-menu,
+.swiftling-visual .block-editor-block-mover {
+	display: none !important;
+}
+
+/* The original of the chosen block: always the same height, whatever is chosen. */
+.swiftling-visual-dock {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	gap: 8px;
+	height: var(--swiftling-visual-dock);
+	box-sizing: border-box;
+	padding: 10px 14px 12px;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 0 0 12px 12px;
+	background: #faf8f4;
+	font-size: 13px;
+}
+
+.swiftling-visual-dock.is-empty {
+	grid-template-rows: 1fr;
+	place-items: center;
+}
+
+.swiftling .swiftling-visual-dock__hint {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	max-width: 620px;
+	margin: 0;
+	color: var(--swiftling-muted);
+}
+
+.swiftling-visual-dock__hint .dashicons {
+	flex: none;
+	width: 32px;
+	height: 32px;
+	border-radius: 9px;
+	background: #fdeee8;
+	color: var(--swiftling-swift);
+	font-size: 18px;
+	line-height: 32px;
+	text-align: center;
+}
+
+.swiftling-visual-dock__head {
+	display: flex;
+	align-items: center;
+	gap: 6px 16px;
+	min-width: 0;
+	white-space: nowrap;
+}
+
+.swiftling-visual-dock__title {
+	overflow: hidden;
+	font-family: var(--swiftling-font-display);
+	font-size: 13px;
+	text-overflow: ellipsis;
+}
+
+.swiftling .swiftling-visual-unit-states {
+	display: flex;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	color: var(--swiftling-muted);
+	list-style: none;
+}
+
+.swiftling-visual-unit-states li {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin: 0;
+}
+
+.swiftling-visual-unit-states .swiftling-status {
+	flex: none;
+	transform: scale(0.7);
+}
+
+.swiftling-visual-dock__shared {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--swiftling-chip);
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.swiftling-visual-dock__shared .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+}
+
+.swiftling .swiftling-visual-dock__action {
+	margin-left: auto;
+	font-size: 12px;
+}
+
+.swiftling-visual-dock__body {
+	min-height: 0;
+	overflow: auto;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 10px;
+	background: #fff;
+	scrollbar-width: thin;
+}
+
+.swiftling-visual-original-preview {
+	padding: 2px 8px;
+}
+
+.swiftling-visual-original-preview .block-editor-block-preview__container {
+	min-height: 24px;
+}
+
+/* An image: the original's and the language's, the image to choose and the alt text beside them. */
+.swiftling-visual-dock__image {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 16px;
+	padding: 8px 10px;
+}
+
+.swiftling-visual-image-pair {
+	display: grid;
+	grid-template-columns: 96px 96px;
+	gap: 10px;
+}
+
+.swiftling-visual-image-pair figure {
+	display: grid;
+	grid-template-rows: 72px auto;
+	gap: 4px;
+	margin: 0;
+}
+
+.swiftling-visual-image-pair img,
+.swiftling-visual-image-same {
+	display: block;
+	width: 96px;
+	height: 72px;
+	box-sizing: border-box;
+	object-fit: cover;
+	border: 1px solid var(--swiftling-line);
+	border-radius: 8px;
+	background: var(--swiftling-chip);
+}
+
+.swiftling-visual-image-same {
+	display: grid;
+	place-items: center;
+	padding: 8px;
+	border-style: dashed;
+	background: transparent;
+	color: var(--swiftling-muted);
+	font-size: 12px;
+	text-align: center;
+}
+
+.swiftling-visual-image-pair .is-own img {
+	border-color: var(--swiftling-reviewed);
+	box-shadow: 0 0 0 1px var(--swiftling-reviewed);
+}
+
+.swiftling-visual-image-pair figcaption {
+	overflow: hidden;
+	color: var(--swiftling-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.swiftling-visual-image-pair .is-own figcaption {
+	color: var(--swiftling-reviewed);
+}
+
+.swiftling-visual-dock__fields {
+	display: grid;
+	align-content: start;
+	gap: 8px;
+	min-width: 0;
+}
+
+.swiftling-visual-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 14px;
+}
+
+/* A field: label (with the original beside it), the translation. */
+.swiftling-visual-field {
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+}
+
+.swiftling-visual-field + .swiftling-visual-field {
+	padding-top: 12px;
+	border-top: 1px solid var(--swiftling-line);
+}
+
+.swiftling-visual-field label {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.swiftling-visual-field__original {
+	color: var(--swiftling-muted);
+	font-weight: 400;
+	overflow-wrap: anywhere;
+}
+
+.swiftling-visual-field label .swiftling-status {
+	transform: scale(0.7);
+	margin: -2px;
+}
+
+.swiftling .swiftling-visual-source {
+	display: grid;
+	gap: 2px;
+	margin: 0;
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: #faf8f4;
+	color: #3a4150;
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+
+.swiftling .swiftling-visual-source__label {
+	display: block;
+	margin: 0;
+	color: var(--swiftling-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.swiftling .swiftling-visual-field textarea {
+	min-height: 60px;
+	resize: vertical;
+}
+
+.swiftling .swiftling-visual-field.is-missing textarea,
+.swiftling .swiftling-visual-field.is-missing input[type="text"] {
+	border: 1.5px dashed var(--swiftling-swift);
+	background: #fffaf7;
+}
+
+.swiftling .swiftling-visual-use-original {
+	justify-self: start;
+	font-size: 12px;
+}
+
+/* The sidebar: what belongs to the whole page. As high as the page and the panel; it scrolls
+   inside, and it can be hidden. */
+.swiftling-editor-layout__aside.swiftling-visual-aside {
+	flex-basis: 300px;
+	align-self: flex-start;
+	max-height: var(--swiftling-visual-aside-h, 640px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	border-radius: var(--swiftling-radius);
+	scrollbar-width: thin;
+	scrollbar-color: var(--swiftling-field) transparent;
+}
+
+.swiftling-visual-layout.is-wide .swiftling-visual-aside {
+	display: none;
+}
+
+.swiftling-visual-aside .swiftling-side {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.swiftling .swiftling-visual-aside .swiftling-button {
+	justify-self: start;
+	min-height: 36px;
+	padding-block: 8px;
+	line-height: 1.3;
+	text-align: left;
+	white-space: normal;
+}
+
+.swiftling .swiftling-visual-panel-toggle[aria-pressed="false"] {
+	background: var(--swiftling-chip);
+}
+
+@media (max-width: 1180px) {
+	.swiftling-editor-layout__aside.swiftling-visual-aside {
+		max-height: none;
+		overflow: visible;
+	}
+}
+
+/* The image's choice and its alt text, side by side in the panel. */
+.swiftling-visual-dock__fields .swiftling-button {
+	min-height: 32px;
+}
+
+.swiftling .swiftling-visual-dock__fields input[type="text"] {
+	min-height: 34px;
+}
+
+/* A text with formatting beside the page: as it reads, its HTML a click away. */
+.swiftling .swiftling-visual-html {
+	min-height: 60px;
+	padding: 8px 10px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 8px;
+	background: var(--swiftling-surface);
+	overflow-wrap: anywhere;
+}
+
+.swiftling .swiftling-visual-html:empty::before {
+	content: attr(data-placeholder);
+	color: var(--swiftling-muted);
+}
+
+.swiftling .swiftling-visual-html > :first-child {
+	margin-top: 0;
+}
+
+.swiftling .swiftling-visual-html > :last-child {
+	margin-bottom: 0;
+}
+
+.swiftling-visual-html-toggle {
+	justify-self: end;
+	padding: 2px 8px;
+	border: 1px solid var(--swiftling-field);
+	border-radius: 6px;
+	background: var(--swiftling-surface);
+	color: var(--swiftling-muted);
+	font: 11px/1.6 var(--swiftling-font-mono);
+	cursor: pointer;
+}
+
+.swiftling-visual-html-toggle[aria-pressed="true"] {
+	border-color: var(--swiftling-ink);
+	background: var(--swiftling-ink);
+	color: #fff;
+}
+
+/* Code beside the page, as the translation editor shows it. */
+.swiftling .swiftling-visual-field pre.swiftling-visual-source {
+	max-height: 160px;
+	overflow: auto;
+	font-size: 12px;
+	white-space: pre-wrap;
+}
+
+/* A block of a plugin, as it is saved: shown, not changed here. */
+.swiftling-visual-group {
+	margin: 12px 0 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--swiftling-muted);
+}
+
+/* While machine translation runs, the page and the fields beside it rest. */
+.swiftling-visual-layout.is-busy {
+	opacity: 0.6;
+	pointer-events: none;
+}

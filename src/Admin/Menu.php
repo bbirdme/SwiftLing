@@ -94,7 +94,8 @@ final class Menu {
 	 * library, from which it can let the user choose an image, for registered stylesheets, such as
 	 * the one of the language switcher it previews, for the script that checks a page of the site in
 	 * hidden frames (checks), see assets/js/page-check.js, and for what the screens that machine
-	 * translate share (machine), see assets/js/machine.js.
+	 * translate share (machine), see assets/js/machine.js, and for the block editor, whose blocks,
+	 * formats and theme styles the screen's script lays out (blocks), see assets/js/visual.js.
 	 *
 	 * Another plugin adds screens through the filter swiftling_admin_screens: its own view file
 	 * (file), a path to a PHP file that prints the screen, and its scripts and styles through the
@@ -105,7 +106,7 @@ final class Menu {
 	 * Until the first setup is answered, every screen leads to it, but one that opens before it
 	 * (before_setup), as an import that sets the languages up from another plugin's.
 	 *
-	 * @return array<string, array{menu: string, view: string, file?: string, group?: string, part?: string, icon?: string, tint?: string, hidden?: bool, count?: int, script?: string, checks?: bool, machine?: bool, editor?: bool, media?: bool, styles?: string[], before_setup?: bool}>
+	 * @return array<string, array{menu: string, view: string, file?: string, group?: string, part?: string, icon?: string, tint?: string, hidden?: bool, count?: int, script?: string, checks?: bool, machine?: bool, editor?: bool, media?: bool, blocks?: bool, styles?: string[], before_setup?: bool}>
 	 */
 	public static function screens(): array {
 		$screens = array(
@@ -258,6 +259,17 @@ final class Menu {
 				'machine' => true,
 				'editor'  => true,
 				'media'   => true,
+			),
+			'swiftling-visual'         => array(
+				'cap'     => SWIFTLING_TRANSLATE,
+				'menu'    => __( 'Visual editor', 'swiftling' ),
+				'view'    => 'visual',
+				'hidden'  => true,
+				'script'  => 'visual',
+				'media'   => true,
+				'machine' => true,
+				'blocks'  => true,
+				'styles'  => array( 'swiftling-visual' ),
 			),
 		);
 
@@ -577,6 +589,16 @@ final class Menu {
 			wp_safe_redirect( admin_url( 'admin.php?page=swiftling-languages' ) );
 			exit;
 		}
+		// Table view and Visual view remember the editor the user chose; a page the visual editor
+		// lays out opens there, when the user or the settings choose it.
+		if ( in_array( $screen['view'], array( 'editor', 'visual' ), true ) ) {
+			swiftling_remember_editor();
+		}
+		$visual = 'editor' === $screen['view'] ? swiftling_visual_editor_redirect() : '';
+		if ( '' !== $visual ) {
+			wp_safe_redirect( $visual );
+			exit;
+		}
 
 		add_action(
 			'admin_enqueue_scripts',
@@ -595,6 +617,7 @@ final class Menu {
 	 */
 	public function enqueueAssets( array $screen ): void {
 		wp_enqueue_style( 'swiftling-admin', SWIFTLING_URL . 'assets/css/admin.css', array( Ui::registerStatesStyle() ), SWIFTLING_VERSION );
+		wp_register_style( 'swiftling-visual', SWIFTLING_URL . 'assets/css/visual.css', array( 'swiftling-admin', 'wp-components', 'wp-block-editor' ), SWIFTLING_VERSION );
 		foreach ( $screen['styles'] ?? array() as $style ) {
 			wp_enqueue_style( $style );
 		}
@@ -610,6 +633,16 @@ final class Menu {
 		if ( ! empty( $screen['checks'] ) ) {
 			wp_enqueue_script( 'swiftling-page-check', SWIFTLING_URL . 'assets/js/page-check.js', array(), SWIFTLING_VERSION, true );
 			$dependencies[] = 'swiftling-page-check';
+		}
+		// The block editor of the visual editor, for a post it can lay out; otherwise its screen only
+		// says why not.
+		if ( ! empty( $screen['blocks'] ) && ( 'swiftling-visual' !== ( $screen['slug'] ?? '' ) || swiftling_visual_editor_requested() ) ) {
+			// The block editor with every core block and the inline formats, as the editor of a post
+			// loads it, and the media utilities for the image of a language.
+			foreach ( array( 'wp-components', 'wp-block-editor', 'wp-block-editor-content', 'wp-block-library', 'wp-edit-blocks', 'wp-format-library', 'wp-reset-editor-styles' ) as $style ) {
+				wp_enqueue_style( $style );
+			}
+			$dependencies = array_merge( $dependencies, array( 'wp-blocks', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-media-utils', 'wp-components', 'wp-element', 'wp-data', 'wp-hooks', 'wp-api-fetch', 'wp-block-serialization-default-parser', 'wp-dom-ready' ) );
 		}
 		if ( ! empty( $screen['machine'] ) ) {
 			wp_enqueue_script( 'swiftling-machine', SWIFTLING_URL . 'assets/js/machine.js', array(), SWIFTLING_VERSION, true );

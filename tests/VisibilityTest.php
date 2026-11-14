@@ -69,6 +69,7 @@ class VisibilityTest extends TestCase {
 				'never'          => array(),
 				'hidden_address' => 'original',
 				'search'         => true,
+				'editor'         => 'table',
 			),
 			swiftling_settings()
 		);
@@ -408,6 +409,7 @@ class VisibilityTest extends TestCase {
 				'never'          => array(),
 				'hidden_address' => '404',
 				'search'         => true,
+				'editor'         => 'table',
 			),
 			get_option( 'swiftling_settings' )
 		);
