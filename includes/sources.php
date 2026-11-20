@@ -1456,8 +1456,17 @@ function swiftling_filter_navigation( $inner_blocks ) {
 }
 
 /**
+ * Taxonomies of WordPress whose term names are keys, not texts: the theme a template or template
+ * part saved in the Site Editor belongs to, which WordPress makes the template's ID from, and the
+ * area of a template part, as header. Marked or translated, the template had another ID and the
+ * part another area (issue #66).
+ */
+const SWIFTLING_KEY_TAXONOMIES = array( 'wp_theme', 'wp_template_part_area' );
+
+/**
  * A category, tag or other term, wherever WordPress hands one over: in archive titles, lists of
- * categories, the terms of a post and menus. Its name and description are its texts.
+ * categories, the terms of a post and menus. Its name and description are its texts; not those of
+ * a taxonomy whose names are keys, see SWIFTLING_KEY_TAXONOMIES.
  *
  * In probe mode only terms read while the page renders are marked, as for options: terms read
  * while WordPress sets up the request are looked up by name or slug, not shown.
@@ -1467,7 +1476,7 @@ function swiftling_filter_navigation( $inner_blocks ) {
  */
 function swiftling_filter_term( $term ) {
 	$state = &swiftling_state();
-	if ( ! $term instanceof WP_Term || $state['guard'] || ( 'probe' === $state['mode'] && ! did_action( 'template_redirect' ) ) ) {
+	if ( ! $term instanceof WP_Term || in_array( $term->taxonomy, SWIFTLING_KEY_TAXONOMIES, true ) || $state['guard'] || ( 'probe' === $state['mode'] && ! did_action( 'template_redirect' ) ) ) {
 		return $term;
 	}
 
