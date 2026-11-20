@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.17
+Stable tag: 1.0.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,11 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.18 =
+* A template of a block theme that you changed in the Site Editor can be translated. Its page check was refused as "another template", so its texts never reached the editor; a template part changed there showed in the page check as another area.
+* A template of a block theme for a type of post a plugin adds, as a single service or product, can be translated. Its page check was refused as expired before the plugin had added the type.
+* Checking a page on the server from WP-CLI or WP-Cron works. It stopped with a fatal error on a page with a text from a theme or plugin.
 
 = 1.0.17 =
 * Reviews, recipes and sports: Site Reviews, WP Recipe Maker and SportsPress are translated. These plugins print a review's title and text, a recipe's name and summary, and the labels of a sport straight from their posts, so they stayed in the original; they are translated now. A unit or an ingredient of one word, as "tsp" or "honey", is offered for translation too. The message after a visitor sends a review is in the language of the page.
