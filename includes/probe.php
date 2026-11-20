@@ -69,9 +69,14 @@ function swiftling_maybe_start_probe() {
 
 	// A plugin registers its post types and taxonomies on init, later than this: WooCommerce its
 	// products and their categories at priority 5. A subject not known yet is looked up again once
-	// every type is registered, before the page renders, see swiftling_check_late_probe(). The
-	// check starts now all the same, so nothing read in between is missed.
+	// every type is registered, before the page renders, see swiftling_check_late_probe(). So is a
+	// template of a block theme that has no example page yet, as the single page of such a type: the
+	// theme lists it, but the posts that show it are not there until the type is. The check starts
+	// now all the same, so nothing read in between is missed.
 	$subject = swiftling_subject( $key );
+	if ( $subject && 'template' === $subject['kind'] && ! $subject['probe'] ) {
+		$subject = null;
+	}
 	if ( $subject ) {
 		swiftling_check_probe_subject( $subject );
 	} else {

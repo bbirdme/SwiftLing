@@ -28,7 +28,9 @@ const SWIFTLING_CHECK_TOKEN_LIFE = 300;
  * @return array{result: array}|WP_Error What was stored, see swiftling_store_page_check().
  */
 function swiftling_server_check( $key, $user_id = null ) {
-	require_once SWIFTLING_DIR . 'includes/probe-results.php';
+	// What it stores goes through functions of the translation editor's files, which a request that
+	// did not start in the admin or the REST API, as WP-CLI or WP-Cron, has not loaded yet.
+	\SwiftLing\Plugin::loadEditor();
 	$user_id = null === $user_id ? get_current_user_id() : (int) $user_id;
 	$subject = swiftling_subject( (string) $key );
 	if ( ! $subject || ! $subject['probe'] || '' === (string) $subject['url'] ) {
