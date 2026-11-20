@@ -206,4 +206,53 @@ class BlockThemeTest extends TestCase {
 		$this->assertStringContainsString( '>Über uns</a>', wp_list_pages( array( 'echo' => false ) ), 'A classic theme\'s list, which runs the_title too, once' );
 		$this->assertSame( 'O nama', get_post( $page )->post_title, 'The post itself keeps its title' );
 	}
+
+	/**
+	 * A template and a template part changed in the Site Editor keep their theme and area, in a page
+	 * check and on a page in a language (issue #66). WordPress makes the ID of such a template from the
+	 * name of its wp_theme term, and the area of a part from its wp_template_part_area term: marked in
+	 * a page check, the template reported another ID, and the check was refused as another template.
+	 * Their names are keys, not texts: none is offered, and a translation saved for one is not used.
+	 */
+	public function test_templates_saved_in_the_site_editor_keep_their_theme_and_area() {
+		$template = self::factory()->post->create(
+			array(
+				'post_type'    => 'wp_template',
+				'post_name'    => 'single',
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:post-title /-->',
+			)
+		);
+		wp_set_object_terms( $template, get_stylesheet(), 'wp_theme' );
+		$this->part( 'header', 'header', '<!-- wp:site-title /-->' );
+		$read     = static function () {
+			$template = get_block_template( 'twentytwentyfive//single', 'wp_template' );
+			$part     = get_block_template( 'twentytwentyfive//header', 'wp_template_part' );
+			return array( $template->id, $template->source, $part->id, $part->area );
+		};
+		$expected = array( 'twentytwentyfive//single', 'custom', 'twentytwentyfive//header', 'header' );
+
+		$seen   = null;
+		$leaves = $this->probe(
+			static function () use ( $read, &$seen ) {
+				$seen = $read();
+			}
+		);
+		$this->assertSame( $expected, $seen, 'In a page check' );
+		$terms = array_filter(
+			wp_list_pluck( $leaves, 'o' ),
+			static function ( $owner ) {
+				return 0 === strpos( $owner, 'term:' );
+			}
+		);
+		$this->assertSame( array(), array_values( $terms ), 'No term offered' );
+
+		// A translation a page check of another page could store before, which would rename them.
+		$theme = get_term_by( 'slug', get_stylesheet(), 'wp_theme' );
+		$area  = get_term_by( 'slug', 'header', 'wp_template_part_area' );
+		$this->translate( 'term:' . $theme->term_id, 'field/name', $theme->name, 'de', 'zweiundzwanzig' );
+		$this->translate( 'term:' . $area->term_id, 'field/name', $area->name, 'de', 'Kopfzeile' );
+		$this->show_in( 'de' );
+		$this->assertSame( $expected, $read(), 'On a page in a language' );
+	}
 }
