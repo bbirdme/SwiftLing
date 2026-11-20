@@ -189,4 +189,29 @@ class ServerCheckTest extends TestCase {
 		$this->assertSame( 'Naslov', $control['title'] );
 		$this->assertNull( $reader->marked( '<html><body><p>No list</p></body></html>' ) );
 	}
+
+	/**
+	 * The check loads the files of the translation editor itself: stored, what it found goes through
+	 * functions of them, and a request that did not start in the admin or the REST API, as WP-CLI or
+	 * WP-Cron, has not loaded them (issue #62).
+	 *
+	 * The suite's bootstrap loads them before every test, so a call that forgot them passes in the
+	 * other tests and stops with a fatal error in WP-CLI. This reads the function instead, without
+	 * its comments, and asks for the call that loads them.
+	 */
+	public function test_server_check_loads_the_editor_files_itself() {
+		$function = new \ReflectionFunction( 'swiftling_server_check' );
+		$source   = implode(
+			'',
+			array_slice( (array) file( (string) $function->getFileName() ), $function->getStartLine() - 1, $function->getEndLine() - $function->getStartLine() + 1 )
+		);
+		$code     = '';
+		foreach ( token_get_all( '<?php ' . $source ) as $token ) {
+			if ( is_array( $token ) && in_array( $token[0], array( T_COMMENT, T_DOC_COMMENT, T_WHITESPACE ), true ) ) {
+				continue;
+			}
+			$code .= is_array( $token ) ? $token[1] : $token;
+		}
+		$this->assertTrue( false !== strpos( $code, 'Plugin::loadEditor()' ), 'swiftling_server_check() must load the editor files, see Plugin::EDITOR_INCLUDES' );
+	}
 }
