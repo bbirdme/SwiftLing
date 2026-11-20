@@ -218,6 +218,132 @@ class ProbeRequestTest extends TestCase {
 	}
 
 	/**
+	 * Runs a test with a block theme active and a template of a type a plugin registers later, as
+	 * "Single Product" is for a plugin's products, and puts the theme back.
+	 *
+	 * @param callable $test Gets the key of the template.
+	 */
+	private function with_template_of_a_later_type( $test ) {
+		$theme = get_stylesheet();
+		switch_theme( 'twentytwentyfive' );
+		swiftling_forget_memo();
+		$name = 'swiftling-tests//single-swl_product';
+		register_block_template(
+			$name,
+			array(
+				'title'   => 'Single Product',
+				'content' => '<!-- wp:post-title /-->',
+			)
+		);
+		try {
+			// Listed under the theme's name, as a template of the theme itself.
+			$test( 'template:twentytwentyfive//single-swl_product' );
+		} finally {
+			unregister_post_type( 'swl_product' );
+			unregister_block_template( $name );
+			switch_theme( $theme );
+			swiftling_forget_memo();
+		}
+	}
+
+	/**
+	 * A template of a block theme for a type a plugin registers after the check starts, as a plugin's
+	 * single page of its own posts, is checked: the template is known at once, but without an example
+	 * page, which exists only once the type does, so it is looked up again once every type is there
+	 * (issue #63). It was refused at once, with the 403 of a page check that has expired.
+	 */
+	public function test_template_of_a_type_registered_later() {
+		$this->become( 'administrator' );
+		$this->with_template_of_a_later_type(
+			function ( $key ) {
+				self::factory()->post->create( array( 'post_type' => 'swl_product' ) );
+				$this->assertFalse( post_type_exists( 'swl_product' ), 'Not registered yet, as at init 0' );
+				$this->assertFalse( swiftling_subject( $key )['probe'], 'Known, but without an example page yet' );
+				$_GET = array(
+					'swiftling_probe'   => 'marked',
+					'swiftling_subject' => $key,
+					'swiftling_nonce'   => wp_create_nonce( 'swiftling_probe_' . $key ),
+				);
+				$this->start_without_transaction();
+				$this->assertSame( 'probe', swiftling_mode() );
+				$this->assertNotFalse( has_action( 'wp_loaded', 'swiftling_check_late_probe' ), 'Looked up again later' );
+
+				register_post_type( 'swl_product', array( 'public' => true ) );
+				swiftling_check_late_probe();
+				$state = &swiftling_state();
+				$this->assertSame( array( -1, $key ), array( $state['probe'], $state['subject'] ) );
+			}
+		);
+	}
+
+	/**
+	 * A template that still has no example page once every type is registered is refused then, before
+	 * the page renders.
+	 */
+	public function test_template_without_an_example_refused_later() {
+		$this->become( 'administrator' );
+		$this->with_template_of_a_later_type(
+			function ( $key ) {
+				// No post of the type, so no page shows the template, also once the type exists.
+				$_GET = array(
+					'swiftling_probe'   => 'control',
+					'swiftling_subject' => $key,
+					'swiftling_nonce'   => wp_create_nonce( 'swiftling_probe_' . $key ),
+				);
+				$this->start_without_transaction();
+				$this->assertNotFalse( has_action( 'wp_loaded', 'swiftling_check_late_probe' ) );
+				register_post_type( 'swl_product', array( 'public' => true ) );
+				try {
+					swiftling_check_late_probe();
+					$this->fail( 'A template no page shows was checked.' );
+				} catch ( WPDieException $refused ) {
+					$this->assertStringContainsString( 'expired', $refused->getMessage() );
+				}
+			}
+		);
+	}
+
+	/**
+	 * A template with an example page is checked at once, as before: nothing is looked up again.
+	 */
+	public function test_template_with_an_example_is_checked_at_once() {
+		$this->become( 'administrator' );
+		$this->with_template_of_a_later_type(
+			function () {
+				$post = self::factory()->post->create();
+				$key  = 'template:twentytwentyfive//single';
+				$this->assertTrue( swiftling_subject( $key )['probe'] );
+				$_GET = array(
+					'swiftling_probe'   => 'marked',
+					'swiftling_subject' => $key,
+					'swiftling_nonce'   => wp_create_nonce( 'swiftling_probe_' . $key ),
+				);
+				$this->start_without_transaction();
+				$state = &swiftling_state();
+				$this->assertSame( array( -1, $key ), array( $state['probe'], $state['subject'] ) );
+				$this->assertFalse( has_action( 'wp_loaded', 'swiftling_check_late_probe' ) );
+				$this->assertSame( get_permalink( $post ), swiftling_subject( $key )['url'] );
+			}
+		);
+	}
+
+	/**
+	 * Only a template can get its example page later. A list of terms with no page to check, as of a
+	 * taxonomy without terms, is refused at once, as before.
+	 */
+	public function test_subject_without_a_page_refused_at_once() {
+		$this->become( 'administrator' );
+		$this->assertFalse( swiftling_subject( 'terms:post_tag' )['probe'], 'No tag, so no page of one' );
+		$_GET = array(
+			'swiftling_probe'   => 'control',
+			'swiftling_subject' => 'terms:post_tag',
+			'swiftling_nonce'   => wp_create_nonce( 'swiftling_probe_terms:post_tag' ),
+		);
+		$this->expectException( WPDieException::class );
+		$this->start_without_transaction();
+	}
+
+	/**
 	 * A subject that is still unknown once every type is registered is refused then, before the
 	 * page renders.
 	 */
