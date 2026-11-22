@@ -487,6 +487,39 @@ class ApiTest extends TestCase {
 	}
 
 	/**
+	 * A translation with the model that did not answer the check shows it answers again; a failed
+	 * translation, or one with another model, says nothing about it.
+	 */
+	public function test_translation_clears_the_model_that_did_not_answer() {
+		FakeService::connect();
+		self::reset_static( \SwiftLing\Translation\Services::class, 'services' );
+		\SwiftLing\Translation\Services::update(
+			'fake',
+			array(
+				'models'     => array(
+					'small'  => 'Fake Small',
+					'medium' => 'Fake Medium',
+				),
+				'model'      => 'medium',
+				'unanswered' => 'medium',
+			)
+		);
+
+		FakeService::$failure = new \WP_Error( 'fake_busy', 'Busy.' );
+		$this->assertInstanceOf( \WP_Error::class, swiftling_machine_translate_subject( $this->key, 'de' ) );
+		$this->assertSame( 'medium', \SwiftLing\Translation\Services::setting( 'fake', 'unanswered', '' ), 'It failed' );
+
+		FakeService::$failure = null;
+		\SwiftLing\Translation\Services::update( 'fake', array( 'model' => 'small' ) );
+		swiftling_machine_translate_subject( $this->key, 'de' );
+		$this->assertSame( 'medium', \SwiftLing\Translation\Services::setting( 'fake', 'unanswered', '' ), 'Another model answered' );
+
+		\SwiftLing\Translation\Services::update( 'fake', array( 'model' => 'medium' ) );
+		swiftling_machine_translate_subject( $this->key, 'de', array( 'machine' ) );
+		$this->assertSame( '', \SwiftLing\Translation\Services::setting( 'fake', 'unanswered', '' ), 'It answered' );
+	}
+
+	/**
 	 * A language that shows a page of its own for the post, a duplicate here, has nothing to fill in,
 	 * and a translator the manager keeps from machine translation is refused.
 	 */

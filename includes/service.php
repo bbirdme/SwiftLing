@@ -76,6 +76,7 @@ function swiftling_check_service_key( $service, $key ) {
 				'error'       => $result->get_error_message(),
 				'checked'     => time(),
 				'fingerprint' => $service->fingerprint( $key ),
+				'unanswered'  => null,
 			)
 		);
 		return false;
@@ -89,6 +90,8 @@ function swiftling_check_service_key( $service, $key ) {
 			'fingerprint' => $service->fingerprint( $key ),
 			'languages'   => $result['languages'],
 			'models'      => isset( $result['models'] ) && is_array( $result['models'] ) ? swiftling_clean_service_models( $result['models'] ) : null,
+			// A model that did not answer although the key works, which the screen names.
+			'unanswered'  => isset( $result['unanswered'] ) && is_string( $result['unanswered'] ) && '' !== $result['unanswered'] ? sanitize_text_field( $result['unanswered'] ) : null,
 		)
 	);
 	return true;
@@ -240,6 +243,8 @@ function swiftling_forget_saved_key( $service ) {
 			'fingerprint' => null,
 			'languages'   => null,
 			'models'      => null,
+			'unanswered'  => null,
+			'standby'     => null,
 		);
 	}
 	Services::update( $service->id(), $forget );
@@ -269,7 +274,14 @@ function swiftling_save_service_model() {
 	if ( ! isset( $service->models()[ $model ] ) ) {
 		swiftling_service_redirect( 'model_unknown', $service );
 	}
-	Services::update( $service->id(), array( 'model' => $model ) );
+	// A model chosen by hand ends any stand-in for a model that did not answer.
+	Services::update(
+		$service->id(),
+		array(
+			'model'   => $model,
+			'standby' => null,
+		)
+	);
 	swiftling_service_redirect( 'model', $service );
 }
 add_action( 'admin_post_swiftling_save_service_model', 'swiftling_save_service_model' );

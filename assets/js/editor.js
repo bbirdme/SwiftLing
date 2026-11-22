@@ -794,6 +794,7 @@
 		let failed = 0;
 		let stopped = '';
 		machineBusy( true );
+		const clock = window.swiftlingMachine.startClock( noteBox );
 		try {
 			for ( const batch of machineBatches( inputs ) ) {
 				note(
@@ -806,6 +807,7 @@
 					),
 					'info'
 				);
+				clock.draw();
 				const result = await api( 'machine', {
 					subject: config.subject,
 					lang: config.lang,
@@ -860,10 +862,11 @@
 				}
 			}
 		} catch ( error ) {
-			stopped = error.serverMessage || strings.machineOff;
+			stopped = error.serverMessage || window.swiftlingMachine.noAnswer();
 			// eslint-disable-next-line no-console
 			console.error( 'SwiftLing:', error );
 		} finally {
+			clock.stop();
 			machineBusy( false );
 		}
 
@@ -949,6 +952,7 @@
 		machineBusy( true );
 		machineAllButton.disabled = true;
 		machineAllButton.classList.add( 'is-busy' );
+		const clock = window.swiftlingMachine.startClock( noteBox );
 		try {
 			for ( ;; ) {
 				note(
@@ -961,6 +965,7 @@
 					),
 					'info'
 				);
+				clock.draw();
 				const batch = await api( 'comment-batch', { subject: config.subject, lang: config.lang, after, for: config.comments.for, find: config.comments.find } );
 				if ( ! batch.items.length && ! batch.left ) {
 					break;
@@ -974,10 +979,11 @@
 				}
 			}
 		} catch ( error ) {
-			stopped = error.serverMessage || strings.machineOff;
+			stopped = error.serverMessage || window.swiftlingMachine.noAnswer();
 			// eslint-disable-next-line no-console
 			console.error( 'SwiftLing:', error );
 		}
+		clock.stop();
 		if ( ! stopped ) {
 			const url = new URL( window.location.href );
 			url.searchParams.set( 'translated', String( translated ) );

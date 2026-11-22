@@ -48,11 +48,13 @@ abstract class Service {
 	 * Checks a key: that the service accepts it and can translate with it.
 	 *
 	 * @param string $key API key.
-	 * @return array{languages: string[], models?: array<string, string>}|\WP_Error The codes of the
-	 *         languages the service translates, and for a service with models to choose from, as a
-	 *         language model, the models the key may use: ID => name. The Translation service screen
-	 *         offers those, see model(). An error whose data has the reason "billing" is a key that
-	 *         works on an account that cannot pay: no credits, billing off, a spend limit reached.
+	 * @return array{languages: string[], models?: array<string, string>, unanswered?: string}|\WP_Error
+	 *         The codes of the languages the service translates, and for a service with models to
+	 *         choose from, as a language model, the models the key may use: ID => name. The
+	 *         Translation service screen offers those, see model(). Unanswered is the ID of a model
+	 *         that did not answer the check although the key works, which the screen names. An error
+	 *         whose data has the reason "billing" is a key that works on an account that cannot pay:
+	 *         no credits, billing off, a spend limit reached.
 	 */
 	abstract public function check( string $key );
 
