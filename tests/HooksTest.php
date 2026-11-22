@@ -69,7 +69,7 @@ class HooksTest extends TestCase {
 	 * what it needs.
 	 */
 	public function test_hooks_have_a_version() {
-		$this->assertSame( 27, SWIFTLING_HOOKS );
+		$this->assertSame( 28, SWIFTLING_HOOKS );
 	}
 
 	/**

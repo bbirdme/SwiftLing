@@ -87,5 +87,46 @@
 		return { texts, characters };
 	};
 
-	window.swiftlingMachine = { batches, translateItems, MAX_TEXTS, MAX_CHARACTERS };
+	// What a screen says when a request ended without a message from SwiftLing, as when the web server
+	// cut off a request that waited too long for the service.
+	const noAnswer = () =>
+		window.wp.i18n.__(
+			'The translation stopped because the server gave no usable answer. The service may be busy: try again later, or choose another model or service on the Translation service screen.',
+			'swiftling'
+		);
+
+	// A clock at the end of a status line while a translation waits for its service, which can take
+	// half a minute for a page and says nothing meanwhile. Its seconds are hidden from screen readers,
+	// so a line with role="status" is not read out again every second. draw() puts it back after the
+	// line's text changed; stop() takes it away.
+	const startClock = ( line ) => {
+		const { __, sprintf } = window.wp.i18n;
+		const started = Date.now();
+		const clock = document.createElement( 'span' );
+		clock.className = 'swiftling-machine-clock';
+		const seconds = document.createElement( 'span' );
+		seconds.setAttribute( 'aria-hidden', 'true' );
+		const hint = document.createElement( 'span' );
+		hint.textContent = ' ' + __( 'A long page can take up to a minute.', 'swiftling' );
+		clock.append( seconds, hint );
+
+		const draw = () => {
+			/* translators: %s: seconds the translation has been running. */
+			seconds.textContent = ' · ' + sprintf( __( '%s s.', 'swiftling' ), Math.floor( ( Date.now() - started ) / 1000 ) );
+			if ( ! line.contains( clock ) ) {
+				line.append( clock );
+			}
+		};
+		draw();
+		const timer = setInterval( draw, 1000 );
+		return {
+			draw,
+			stop: () => {
+				clearInterval( timer );
+				clock.remove();
+			},
+		};
+	};
+
+	window.swiftlingMachine = { batches, translateItems, noAnswer, startClock, MAX_TEXTS, MAX_CHARACTERS };
 } )();

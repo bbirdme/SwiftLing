@@ -59,6 +59,13 @@ class FakeService extends Service {
 	public static $models = array();
 
 	/**
+	 * The model that did not answer the check of a key, as a busy language model: none when empty.
+	 *
+	 * @var string
+	 */
+	public static $unanswered = '';
+
+	/**
 	 * Tokens each translated text takes, as a language model counts them: none when 0.
 	 *
 	 * @var int
@@ -99,7 +106,9 @@ class FakeService extends Service {
 		if ( 'unpaid' === $key ) {
 			return new \WP_Error( 'fake_credit', 'You have no credits remaining. Add credits to continue using the API at https://fake.example/settings/organization/billing/overview.', array( 'reason' => 'billing' ) );
 		}
-		return array( 'languages' => array( 'hr', 'de', 'fr' ) ) + ( self::$models ? array( 'models' => self::$models ) : array() );
+		return array( 'languages' => array( 'hr', 'de', 'fr' ) )
+			+ ( self::$models ? array( 'models' => self::$models ) : array() )
+			+ ( '' !== self::$unanswered ? array( 'unanswered' => self::$unanswered ) : array() );
 	}
 
 	/**
@@ -165,6 +174,7 @@ class FakeService extends Service {
 		self::$failure     = null;
 		self::$stopped     = '';
 		self::$models      = array();
+		self::$unanswered  = '';
 		self::$tokens      = 0;
 	}
 }

@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.18
+Stable tag: 1.0.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,11 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.19 =
+* For a translation service with models to choose from, the Translation service screen says which model did not answer the last check, that your key works, and which model translates for now.
+* When a translation stops without a usable answer from the server, the message says what to do instead of only that it stopped.
+* While a page is being translated, in the editor and on Translate everything, a clock shows that the work is going on.
 
 = 1.0.18 =
 * A template of a block theme that you changed in the Site Editor can be translated. Its page check was refused as "another template", so its texts never reached the editor; a template part changed there showed in the page check as another area.

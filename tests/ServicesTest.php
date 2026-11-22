@@ -712,6 +712,128 @@ class ServicesTest extends TestCase {
 	}
 
 	/**
+	 * A model that did not answer the check is named above the Model menu while it is the one in
+	 * use, with the key shown as working. Another model, or a check it answers, takes the warning away.
+	 */
+	public function test_screen_says_which_model_did_not_answer() {
+		$warning = 'Fake Medium did not answer the last check. The key works: choose another model, or try again later.';
+		$this->connect_model_service();
+		$this->become( 'administrator' );
+		$_GET                    = array();
+		FakeService::$unanswered = 'medium';
+		$this->post_form(
+			'swiftling_save_service_key',
+			array(
+				'service' => 'fake',
+				'key'     => 'fake-key',
+			)
+		);
+		$this->assertStringContainsString( 'swiftling_notice=working', $this->redirect_of( 'swiftling_save_service_key' ) );
+		$_GET = array();
+		$html = $this->render_screen( 'service' );
+		$this->assertMatchesRegularExpression( '~' . preg_quote( $warning, '~' ) . '.*?name="action" value="swiftling_save_service_model"~s', $html, 'Above the Model menu' );
+
+		$this->post_form(
+			'swiftling_save_service_model',
+			array(
+				'service' => 'fake',
+				'model'   => 'small',
+			)
+		);
+		$this->redirect_of( 'swiftling_save_service_model' );
+		$_GET = array();
+		$this->assertStringNotContainsString( 'did not answer', $this->render_screen( 'service' ), 'Another model is in use' );
+
+		$this->post_form(
+			'swiftling_save_service_model',
+			array(
+				'service' => 'fake',
+				'model'   => 'medium',
+			)
+		);
+		$this->redirect_of( 'swiftling_save_service_model' );
+		$_GET = array();
+		$this->assertStringContainsString( $warning, $this->render_screen( 'service' ), 'Back on the model that did not answer' );
+
+		FakeService::$unanswered = '';
+		$this->post_form( 'swiftling_test_service_key', array( 'service' => 'fake' ) );
+		$this->redirect_of( 'swiftling_test_service_key' );
+		$_GET = array();
+		$this->assertStringNotContainsString( 'did not answer', $this->render_screen( 'service' ), 'It answered the next check' );
+	}
+
+	/**
+	 * Removing the key forgets which model did not answer and which one stands in for it.
+	 */
+	public function test_removing_the_key_forgets_the_model_that_did_not_answer() {
+		$this->connect_model_service();
+		$this->become( 'administrator' );
+		Services::update(
+			'fake',
+			array(
+				'unanswered' => 'medium',
+				'standby'    => 'small',
+			)
+		);
+		$this->post_form( 'swiftling_remove_service_key', array( 'service' => 'fake' ) );
+		$this->redirect_of( 'swiftling_remove_service_key' );
+		$this->assertSame( '', Services::setting( 'fake', 'unanswered', '' ) );
+		$this->assertSame( '', Services::setting( 'fake', 'standby', '' ) );
+	}
+
+	/**
+	 * A model standing in for one that did not answer is named with it, so the site owner knows which
+	 * model translates now and that another can be chosen.
+	 */
+	public function test_screen_says_which_model_stands_in() {
+		$this->connect_model_service();
+		$service = new class() extends FakeService {
+			/**
+			 * The model standing in, as a service with a standby model answers.
+			 */
+			public function model(): string {
+				return 'small';
+			}
+		};
+		add_filter(
+			'swiftling_translation_services',
+			static function ( $services ) use ( $service ) {
+				$services['fake'] = $service;
+				return $services;
+			},
+			20
+		);
+		self::reset_static( Services::class, 'services' );
+		Services::update(
+			'fake',
+			array(
+				'models'     => FakeService::$models,
+				'unanswered' => 'medium',
+				'standby'    => 'small',
+			)
+		);
+		$this->become( 'administrator' );
+		$_GET = array();
+		$this->assertStringContainsString(
+			'Fake Medium did not answer the last check, so Fake Small translates for now. To use another model, choose it below.',
+			$this->render_screen( 'service' )
+		);
+
+		// The same model chosen by hand is the owner's choice, no longer a stand-in.
+		$this->post_form(
+			'swiftling_save_service_model',
+			array(
+				'service' => 'fake',
+				'model'   => 'small',
+			)
+		);
+		$this->redirect_of( 'swiftling_save_service_model' );
+		$this->assertSame( '', Services::setting( 'fake', 'standby', '' ) );
+		$_GET = array();
+		$this->assertStringNotContainsString( 'translates for now', $this->render_screen( 'service' ) );
+	}
+
+	/**
 	 * Google has no models to choose, so its row has no model field and counts no tokens.
 	 */
 	public function test_machine_service_has_no_model_field() {

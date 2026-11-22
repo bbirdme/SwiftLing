@@ -289,10 +289,12 @@
 
 				/* translators: %s: title of a page. */
 				showProgress( done + skipped, total, sprintf( __( 'Translating %s…', 'swiftling' ), page.title ) );
+				const clock = machine.startClock( currentLine );
 				try {
 					const pageDone = await machine.translateItems( api, page.key, lang, found, ( batchTexts, batchCharacters ) =>
 						showCounters( texts + batchTexts, characters + batchCharacters, skipped )
 					);
+					clock.stop();
 					texts += pageDone.texts;
 					characters += pageDone.characters;
 					++done;
@@ -307,9 +309,10 @@
 					} );
 				} catch ( error ) {
 					// The service stopped: nothing more is sent, so the key is not spent on failures.
+					clock.stop();
 					++skipped;
 					states.get( page.key ).textContent = labels.skipped;
-					stopped = error.serverMessage || __( 'The translation stopped.', 'swiftling' );
+					stopped = error.serverMessage || window.swiftlingMachine.noAnswer();
 					await api( 'translate-all/progress', {
 						lang,
 						page: page.key,

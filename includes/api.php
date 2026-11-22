@@ -578,6 +578,10 @@ function swiftling_machine_translate( $key, $lang, $items ) {
 		return $result;
 	}
 	\SwiftLing\Translation\Services::addUsage( $service->id(), $result['characters'], isset( $result['tokens'] ) ? (int) $result['tokens'] : 0 );
+	// The model that did not answer the key's check has answered now: the screen stops naming it.
+	if ( $result['translations'] && '' !== $service->model() && \SwiftLing\Translation\Services::setting( $service->id(), 'unanswered', '' ) === $service->model() ) {
+		\SwiftLing\Translation\Services::update( $service->id(), array( 'unanswered' => null ) );
+	}
 	if ( '' !== (string) $result['error'] ) {
 		swiftling_log(
 			'error',

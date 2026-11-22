@@ -612,7 +612,8 @@ final class Menu {
 			$dependencies[] = 'swiftling-page-check';
 		}
 		if ( ! empty( $screen['machine'] ) ) {
-			wp_enqueue_script( 'swiftling-machine', SWIFTLING_URL . 'assets/js/machine.js', array(), SWIFTLING_VERSION, true );
+			wp_enqueue_script( 'swiftling-machine', SWIFTLING_URL . 'assets/js/machine.js', array( 'wp-i18n' ), SWIFTLING_VERSION, true );
+			wp_set_script_translations( 'swiftling-machine', 'swiftling' );
 			$dependencies[] = 'swiftling-machine';
 		}
 

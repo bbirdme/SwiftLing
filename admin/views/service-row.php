@@ -159,6 +159,31 @@ $swiftling_badge = array(
 					</div>
 				<?php endif; ?>
 				<?php if ( $swiftling_connected && $swiftling_models ) : ?>
+					<?php
+					// The model in use did not answer the last check, though the key works; or another
+					// stands in for the one that did not.
+					$swiftling_unanswered = (string) Services::setting( $swiftling_id, 'unanswered', '' );
+					$swiftling_standby    = (string) Services::setting( $swiftling_id, 'standby', '' );
+					if ( $swiftling_standby === $swiftling_row_service->model() && isset( $swiftling_models[ $swiftling_standby ], $swiftling_models[ $swiftling_unanswered ] ) ) {
+						Ui::notice(
+							'warning',
+							array(
+								/* translators: 1: model that did not answer, e.g. Gemini 3.8 Flash, 2: model that translates instead, e.g. Gemini 3.7 Flash. */
+								'text'    => sprintf( __( '%1$s did not answer the last check, so %2$s translates for now. To use another model, choose it below.', 'swiftling' ), $swiftling_models[ $swiftling_unanswered ], $swiftling_models[ $swiftling_standby ] ),
+								'compact' => true,
+							)
+						);
+					} elseif ( $swiftling_unanswered === $swiftling_row_service->model() && isset( $swiftling_models[ $swiftling_unanswered ] ) ) {
+						Ui::notice(
+							'warning',
+							array(
+								/* translators: %s: name of a language model, e.g. Gemini 3.8 Flash. */
+								'text'    => sprintf( __( '%s did not answer the last check. The key works: choose another model, or try again later.', 'swiftling' ), $swiftling_models[ $swiftling_unanswered ] ),
+								'compact' => true,
+							)
+						);
+					}
+					?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="swiftling-service__key swiftling-service__model">
 						<input type="hidden" name="action" value="swiftling_save_service_model">
 						<input type="hidden" name="service" value="<?php echo esc_attr( $swiftling_id ); ?>">
