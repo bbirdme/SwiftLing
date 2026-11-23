@@ -173,4 +173,54 @@ class AddressesTest extends TestCase {
 		$this->assertStringContainsString( 'Fixed words in addresses', $html );
 		$this->assertMatchesRegularExpression( '~<nav class="swiftling-segmented swiftling-bases__languages".*?<img class="swiftling-segmented__flag" src="' . preg_quote( esc_url( \SwiftLing\Switcher\Flags::countryUrl( 'de' ) ), '~' ) . '"~s', $html );
 	}
+
+	/**
+	 * Choosing a format must not move the options of "Language in the URL": a tester saw Subdomain
+	 * jump up and the "How to set it up" box push the save buttons off the screen. The layout is
+	 * CSS alone, so these two tests read the rules the layout comes from; the click-through that
+	 * measures the options in a browser is in the MR description.
+	 *
+	 * First, the column of help: when the screen has help at all it is there for every format, so
+	 * the options keep their width when a host format opens it.
+	 */
+	public function test_help_column_is_there_for_every_format_when_there_is_help() {
+		$this->use_pretty_permalinks();
+		$this->become( 'administrator' );
+		$_GET = array();
+
+		foreach ( array( 'parameter', 'directory' ) as $format ) {
+			$this->set_languages( array( 'de_DE' => 'de' ), $format );
+			$this->assertMatchesRegularExpression( '~class="swiftling-format-layout[^"]*\bhas-help\b~', $this->render_screen( 'addresses' ), "Help column with the format $format" );
+		}
+
+		$this->set_languages( array(), 'parameter' );
+		$this->assertDoesNotMatchRegularExpression( '~\bhas-help\b~', $this->render_screen( 'addresses' ), 'No help without a language to set up' );
+	}
+
+	/**
+	 * Second, the rules: nothing about the layout depends on which format is chosen, except what
+	 * shows in the column of help and the table of hosts, both below or beside the options.
+	 */
+	public function test_layout_of_the_options_does_not_depend_on_the_chosen_format() {
+		$css = (string) file_get_contents( SWIFTLING_DIR . 'assets/css/admin.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A file of the plugin.
+		preg_match_all( '/([^{}]+)\{([^{}]*)\}/', $css, $rules, PREG_SET_ORDER );
+
+		$sticky_foot = false;
+		foreach ( $rules as $rule ) {
+			list( , $selectors, $body ) = $rule;
+
+			// What the hosts and the help add must not push the buttons off the screen.
+			if ( false !== strpos( $selectors, 'swiftling-format-form .swiftling-card__foot' ) && preg_match( '/position:\s*sticky/', $body ) ) {
+				$sticky_foot = true;
+			}
+
+			if ( false !== strpos( $selectors, 'swiftling-format__source' ) ) {
+				$this->assertDoesNotMatchRegularExpression( '/display:\s*none/', $body, 'The "in a folder too" row stays in place for every format, muted when it does not apply: ' . trim( $selectors ) );
+			}
+			if ( false !== strpos( $selectors, 'swiftling-format-layout' ) && false !== strpos( $body, 'grid-template-columns' ) ) {
+				$this->assertStringNotContainsString( ':checked', $selectors, 'The columns do not depend on the chosen format: ' . trim( $selectors ) );
+			}
+		}
+		$this->assertTrue( $sticky_foot, 'The foot with Save changes sticks to the bottom of the screen.' );
+	}
 }

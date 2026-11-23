@@ -35,6 +35,8 @@ $swiftling_typed_domains = isset( $_GET['swiftling_typed'] ) && is_array( $_GET[
 // phpcs:enable
 $swiftling_hosted   = ! is_multisite();
 $swiftling_selected = $swiftling_hosted && in_array( $swiftling_checked, array( 'subdomain', 'domain' ), true ) ? $swiftling_checked : $swiftling_format;
+// The hosts and how to set them up, for the formats that need a step at the host.
+$swiftling_has_help = $swiftling_hosted && $swiftling_languages['targets'];
 
 // The host of every language in each host format, with what its last check found; a format is
 // ready once every host leads here.
@@ -294,7 +296,7 @@ Ui::screenHeader(
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="swiftling-card swiftling-format-form" id="swiftling-format">
 		<input type="hidden" name="action" value="swiftling_save_url_format">
 		<?php wp_nonce_field( 'swiftling_save_url_format' ); ?>
-		<div class="swiftling-format-layout">
+		<div class="swiftling-format-layout<?php echo $swiftling_has_help ? ' has-help' : ''; ?>">
 			<div class="swiftling-format-main">
 				<fieldset class="swiftling-format">
 					<legend><h2><?php esc_html_e( 'Language in the URL', 'swiftling' ); ?></h2></legend>
@@ -466,7 +468,7 @@ Header set Access-Control-Allow-Origin "*"
 				<?php endif; ?>
 			</div>
 
-			<?php if ( $swiftling_hosted && $swiftling_languages['targets'] ) : ?>
+			<?php if ( $swiftling_has_help ) : ?>
 				<?php
 				$swiftling_first = (string) key( $swiftling_languages['targets'] );
 				$swiftling_home  = swiftling_home_host();
@@ -564,11 +566,11 @@ Header set Access-Control-Allow-Origin "*"
 		<?php endif; ?>
 		<div class="swiftling-card__foot">
 			<span class="swiftling-muted swiftling-format__note"><?php esc_html_e( 'The address of each language, such as de, is set on Languages.', 'swiftling' ); ?></span>
-			<?php if ( $swiftling_hosted && $swiftling_languages['targets'] ) : ?>
+			<?php if ( $swiftling_has_help ) : ?>
 				<span class="swiftling-format__save-note"><?php esc_html_e( 'Save changes checks every address first, and switches once all of them lead here.', 'swiftling' ); ?></span>
 			<?php endif; ?>
 			<span class="swiftling-format__buttons">
-				<?php if ( $swiftling_hosted && $swiftling_languages['targets'] ) : ?>
+				<?php if ( $swiftling_has_help ) : ?>
 					<button type="submit" name="swiftling_do" value="check" class="swiftling-button swiftling-format__check"><?php esc_html_e( 'Check again', 'swiftling' ); ?></button>
 				<?php endif; ?>
 				<button type="submit" name="swiftling_do" value="save" class="swiftling-button is-primary"><?php esc_html_e( 'Save changes', 'swiftling' ); ?></button>
