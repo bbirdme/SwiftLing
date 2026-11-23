@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.19
+Stable tag: 1.0.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,10 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.20 =
+* When the site has a language to switch to and no language switcher yet, the Languages screen offers to add one at the end of every page. It says when a language is still hidden from visitors, who would not see it in the switcher.
+* On the URLs screen, choosing a format no longer moves the options, and Save changes stays in reach when the hosts and the help open.
 
 = 1.0.19 =
 * For a translation service with models to choose from, the Translation service screen says which model did not answer the last check, that your key works, and which model translates for now.
