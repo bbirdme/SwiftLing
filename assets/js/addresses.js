@@ -11,6 +11,19 @@
 	}
 	const { __ } = window.wp.i18n;
 
+	// The original's folder is an option of language folders only. It stays in place for every format,
+	// muted by CSS; here it also leaves the keyboard. Inert keeps its value in the form, so what was
+	// ticked is saved as it is, see swiftling_save_url_format().
+	const source = form.querySelector( '.swiftling-format__source' );
+	if ( source ) {
+		const sync = () => {
+			const chosen = form.querySelector( 'input[name="format"]:checked' );
+			source.inert = !! chosen && 'directory' !== chosen.value;
+		};
+		form.querySelectorAll( 'input[name="format"]' ).forEach( ( radio ) => radio.addEventListener( 'change', sync ) );
+		sync();
+	}
+
 	form.querySelectorAll( '[data-swiftling-domain]' ).forEach( ( input ) => {
 		const checked = input.value;
 		input.addEventListener( 'input', () => {

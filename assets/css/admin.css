@@ -1617,11 +1617,6 @@ body.swiftling-screen {
 	white-space: nowrap;
 }
 
-/* The original's folder: an option of language folders only. */
-.swiftling-format-form:has(input[name="format"][value="parameter"]:checked) .swiftling-format__source {
-	display: none;
-}
-
 .swiftling-pagination {
 	margin-top: 16px !important;
 }
@@ -5260,19 +5255,36 @@ tr.is-format-error textarea.swiftling-live-input {
 }
 
 /* Addresses: a subdomain or an own domain per language. The hosts and how to set them up show for
-   the format that is chosen, with CSS alone. */
+   the format that is chosen, with CSS alone.
+
+   Choosing a format must not move the options. So the column of help is there for every format
+   (empty until a host format is chosen), the options keep their width, and on a narrow screen the
+   help opens below them. The original's folder stays between the options, muted when it does not
+   apply, and the foot with the buttons sticks to the bottom of the screen, where the hosts and the
+   help push it. */
 .swiftling-format-layout {
 	display: grid;
 	gap: 20px;
 	align-items: start;
 }
 
-.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format-layout,
-.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format-layout {
+.swiftling-format-layout.has-help {
 	grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
 }
 
-.swiftling-format-form:has(input[name="format"]:not([value="directory"]):checked) .swiftling-format__source,
+.swiftling-format-form:has(input[name="format"]:not([value="directory"]):checked) .swiftling-format__source {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.swiftling-format-form .swiftling-card__foot {
+	position: sticky;
+	z-index: 10;
+	bottom: 0;
+	padding-bottom: 16px;
+	background: var(--swiftling-surface);
+}
+
 .swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format__permalinks,
 .swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format__permalinks,
 .swiftling-hosts,
@@ -5436,9 +5448,8 @@ tr.is-format-error textarea.swiftling-live-input {
 	overflow-wrap: anywhere;
 }
 
-@media (max-width: 960px) {
-	.swiftling-format-form:has(input[name="format"][value="subdomain"]:checked) .swiftling-format-layout,
-	.swiftling-format-form:has(input[name="format"][value="domain"]:checked) .swiftling-format-layout {
+@media (max-width: 1100px) {
+	.swiftling-format-layout.has-help {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
