@@ -34,7 +34,8 @@ defined( 'ABSPATH' ) || exit;
  * it saved at the top, see show().
  * Flags and the texts of the suggestion are keyed by locale, like translations, so changing the
  * address of a language keeps them. "suggest" is the suggestion of the browser's language, see
- * Suggestion; an empty text is its default.
+ * Suggestion; an empty text is its default. "offer" is 'dismissed' once the Languages screen's offer
+ * of a switcher was said no to; it is no field of the Switcher screen, which keeps it.
  */
 final class Settings {
 	/**
@@ -88,7 +89,66 @@ final class Settings {
 	 */
 	public function register(): void {
 		add_action( 'admin_post_swiftling_save_switcher', array( $this, 'save' ) );
+		add_action( 'admin_post_swiftling_switcher_offer', array( $this, 'offer' ) );
 		add_action( 'update_option_' . self::OPTION, array( self::class, 'forget' ) );
+	}
+
+	/**
+	 * Whether some place shows the switcher: the end of every page, a menu that is ticked while menus
+	 * are on, or the block in a template part or navigation of the theme. A widget, a shortcode or a
+	 * call in a theme cannot be told from here, which is why the offer can be said no to.
+	 */
+	public static function hasPlace(): bool {
+		$settings = self::get();
+		return $settings['footer']['enabled']
+			|| ( $settings['menu']['enabled'] && $settings['menu']['menus'] )
+			|| (bool) Block::places();
+	}
+
+	/**
+	 * Whether the site is offered a switcher: no place shows one, and the offer was not said no to.
+	 */
+	public static function offered(): bool {
+		$saved = get_option( self::OPTION, array() );
+		return ! ( is_array( $saved ) && isset( $saved['offer'] ) && 'dismissed' === $saved['offer'] ) && ! self::hasPlace();
+	}
+
+	/**
+	 * Returns the address of a link of the offer, with its nonce.
+	 *
+	 * @param string $operation add (the switcher at the end of every page) or dismiss (not now).
+	 */
+	public static function offerUrl( string $operation ): string {
+		return wp_nonce_url( admin_url( 'admin-post.php?action=swiftling_switcher_offer&operation=' . $operation ), 'swiftling_switcher_offer' );
+	}
+
+	/**
+	 * Follows a link of the offer: puts the switcher at the end of every page, where every theme has
+	 * a place and the Switcher screen can change it, or remembers that the offer is not wanted.
+	 */
+	public function offer(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You may not change the language switcher of this site.', 'swiftling' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'swiftling_switcher_offer' );
+
+		$saved = get_option( self::OPTION, array() );
+		$saved = is_array( $saved ) ? $saved : array();
+		$args  = array();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Verified above.
+		if ( isset( $_GET['operation'] ) && 'add' === sanitize_key( wp_unslash( $_GET['operation'] ) ) ) {
+			// What the end of the page had saved stays; what it never had comes from the defaults.
+			$saved['footer'] = array_merge( isset( $saved['footer'] ) && is_array( $saved['footer'] ) ? $saved['footer'] : array(), array( 'enabled' => true ) );
+			$args            = array( 'swiftling_notice' => 'switcher_added' );
+		} else {
+			$saved['offer'] = 'dismissed';
+		}
+		update_option( self::OPTION, $saved, true );
+		// The first save of an option is an add, which does not run the hook that forgets.
+		self::forget();
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php?page=swiftling-languages' ) ) );
+		exit;
 	}
 
 	/**
@@ -302,6 +362,12 @@ final class Settings {
 			if ( array_filter( $clean ) ) {
 				$settings['suggest']['texts'][ $locale ] = $clean;
 			}
+		}
+
+		// Not a field of the screen: the offer, once said no to, stays said no to.
+		$kept = get_option( self::OPTION, array() );
+		if ( is_array( $kept ) && isset( $kept['offer'] ) ) {
+			$settings['offer'] = $kept['offer'];
 		}
 
 		update_option( self::OPTION, $settings, true );
