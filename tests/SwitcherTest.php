@@ -1038,4 +1038,171 @@ class SwitcherTest extends TestCase {
 		$this->assertStringContainsString( 'The Language switcher block is in: Zaglavlje and Podnožje', $html );
 		$this->assertStringNotContainsString( 'Stara tema', $html, 'A template part of another theme' );
 	}
+
+	/**
+	 * Follows the offer's link, as an administrator does.
+	 *
+	 * @param string $operation add or dismiss.
+	 * @return string Where the browser is sent.
+	 */
+	private function follow_offer( $operation ) {
+		$_GET     = array(
+			'_wpnonce'  => wp_create_nonce( 'swiftling_switcher_offer' ),
+			'operation' => $operation,
+		);
+		$_REQUEST = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The link the test follows, nonce included.
+		return $this->redirect_of( array( new Settings(), 'offer' ) );
+	}
+
+	/**
+	 * A site is offered a switcher until some place shows one: the end of every page, a menu it
+	 * ticked, or the block. Menus on, with no menu ticked, show nothing, as on a new site.
+	 */
+	public function test_offer_is_made_until_a_place_shows_the_switcher() {
+		$this->assertTrue( Settings::offered(), 'A new site: menus on, none ticked' );
+
+		$this->settings( array( 'footer' => array( 'enabled' => true ) ) );
+		$this->assertFalse( Settings::offered(), 'The end of every page' );
+
+		$this->settings(
+			array(
+				'menu' => array(
+					'enabled' => true,
+					'menus'   => array( 7 ),
+				),
+			)
+		);
+		$this->assertFalse( Settings::offered(), 'A menu ticked' );
+
+		$this->settings(
+			array(
+				'menu' => array(
+					'enabled' => false,
+					'menus'   => array( 7 ),
+				),
+			)
+		);
+		$this->assertTrue( Settings::offered(), 'Menus switched off show nothing, whatever was ticked' );
+
+		$part = self::factory()->post->create(
+			array(
+				'post_type'    => 'wp_template_part',
+				'post_status'  => 'publish',
+				'post_title'   => 'Zaglavlje',
+				'post_content' => '<!-- wp:swiftling/language-switcher /-->',
+			)
+		);
+		wp_set_object_terms( $part, get_stylesheet(), 'wp_theme' );
+		$this->assertFalse( Settings::offered(), 'The block, in the theme\'s template part' );
+	}
+
+	/**
+	 * "Add the switcher" puts it at the end of every page, where every theme has a place, and keeps
+	 * what the site had set for that place.
+	 */
+	public function test_offer_adds_the_switcher_at_the_end_of_every_page() {
+		$this->become( 'administrator' );
+		$this->settings(
+			array(
+				'footer' => array(
+					'enabled'  => false,
+					'position' => 'floating-right',
+					'style'    => 'dropdown',
+				),
+			)
+		);
+
+		$location = $this->follow_offer( 'add' );
+
+		$this->assertTrue( Settings::get()['footer']['enabled'] );
+		$this->assertSame( 'floating-right', Settings::get()['footer']['position'], 'Kept' );
+		$this->assertSame( 'dropdown', Settings::get()['footer']['style'], 'Kept' );
+		$this->assertFalse( Settings::offered() );
+		$this->assertStringContainsString( 'page=swiftling-languages', $location );
+		$this->assertStringContainsString( 'swiftling_notice=switcher_added', $location );
+	}
+
+	/**
+	 * "Not now" is kept, and so it survives saving the Switcher screen with no place on.
+	 */
+	public function test_offer_can_be_dismissed_for_good() {
+		$this->become( 'administrator' );
+		$this->follow_offer( 'dismiss' );
+		$this->assertFalse( Settings::offered() );
+		$this->assertFalse( Settings::get()['footer']['enabled'], 'Dismissing adds nothing' );
+
+		$this->post_form( 'swiftling_save_switcher', array( 'tab' => 'footer' ) );
+		$this->redirect_of( array( new Settings(), 'save' ) );
+		Settings::forget();
+		$this->assertFalse( Settings::offered(), 'Still not offered after the screen was saved with no place on' );
+	}
+
+	/**
+	 * Only whoever manages the site, with the link's own nonce, changes the switcher.
+	 */
+	public function test_offer_needs_the_right_and_the_nonce() {
+		$this->become( 'editor' );
+		try {
+			$this->follow_offer( 'add' );
+			$this->fail( 'An editor may not change the switcher.' );
+		} catch ( \WPDieException $died ) {
+			$this->assertFalse( Settings::get()['footer']['enabled'] );
+		}
+
+		$this->become( 'administrator' );
+		$_GET     = array(
+			'_wpnonce'  => 'wrong',
+			'operation' => 'add',
+		);
+		$_REQUEST = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- A link with a nonce that is wrong.
+		$this->expectException( \WPDieException::class );
+		( new Settings() )->offer();
+	}
+
+	/**
+	 * The Languages screen makes the offer once there is a language to switch to, warns that a
+	 * language still hidden from visitors is not in the switcher for them, and says what was done.
+	 */
+	public function test_languages_screen_offers_the_switcher() {
+		$this->become( 'administrator' );
+		$_GET = array();
+		Settings::forget();
+
+		$this->set_languages( array() );
+		$this->assertStringNotContainsString( 'Visitors cannot switch language yet', $this->render_screen( 'languages' ), 'No language to switch to' );
+
+		$this->set_languages(
+			array(
+				'es_ES' => array(
+					'slug'    => 'es',
+					'visible' => false,
+				),
+			)
+		);
+		$html = $this->render_screen( 'languages' );
+		$this->assertStringContainsString( 'Visitors cannot switch language yet', $html );
+		$this->assertStringContainsString( 'action=swiftling_switcher_offer&#038;operation=add', $html );
+		$this->assertStringContainsString( 'action=swiftling_switcher_offer&#038;operation=dismiss', $html );
+		$this->assertStringContainsString( 'page=swiftling-switcher', $html, 'Or choose the place oneself' );
+		$this->assertStringContainsString( 'still hidden from visitors', $html );
+
+		$this->set_languages( array( 'es_ES' => 'es' ) );
+		$this->assertStringNotContainsString( 'still hidden from visitors', $this->render_screen( 'languages' ), 'Nothing hidden' );
+
+		$this->follow_offer( 'add' );
+		$_GET = array( 'swiftling_notice' => 'switcher_added' );
+		$html = $this->render_screen( 'languages' );
+		$this->assertStringContainsString( 'The switcher is at the end of every page', $html );
+		$this->assertStringNotContainsString( 'Visitors cannot switch language yet', $html, 'Made, so not offered' );
+
+		$this->set_languages(
+			array(
+				'es_ES' => array(
+					'slug'    => 'es',
+					'visible' => false,
+				),
+			)
+		);
+		$this->assertStringContainsString( 'still hidden from visitors', $this->render_screen( 'languages' ), 'The warning stays after the switcher was added' );
+	}
 }

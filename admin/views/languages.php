@@ -14,6 +14,7 @@ declare( strict_types=1 );
 namespace SwiftLing\Admin\Views;
 
 use SwiftLing\Admin\Ui;
+use SwiftLing\Switcher\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,6 +31,7 @@ $swiftling_messages = array(
 	'custom_invalid' => __( 'A custom language needs a name and a language code such as cnr or es_MX, of at most 12 characters.', 'swiftling' ),
 	'custom_exists'  => __( 'The site already has a language with that code.', 'swiftling' ),
 	'forget_refused' => __( 'Nothing was deleted: that language is on the site again.', 'swiftling' ),
+	'switcher_added' => __( 'The switcher is at the end of every page.', 'swiftling' ),
 );
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only: which language's warning is open, and which one was deleted.
 $swiftling_forget    = isset( $_GET['swiftling_forget'] ) ? sanitize_text_field( wp_unslash( $_GET['swiftling_forget'] ) ) : '';
@@ -71,7 +73,15 @@ Ui::screenHeader(
 );
 ?>
 <?php if ( isset( $swiftling_messages[ $swiftling_notice ] ) ) : ?>
-	<?php Ui::notice( in_array( $swiftling_notice, array( 'saved', 'forgotten' ), true ) ? 'success' : ( 'forget_refused' === $swiftling_notice ? 'warning' : 'info' ), array( 'text' => $swiftling_messages[ $swiftling_notice ] ) ); ?>
+	<?php
+	Ui::notice(
+		in_array( $swiftling_notice, array( 'saved', 'forgotten', 'switcher_added' ), true ) ? 'success' : ( 'forget_refused' === $swiftling_notice ? 'warning' : 'info' ),
+		array(
+			'text' => $swiftling_messages[ $swiftling_notice ],
+			'link' => 'switcher_added' === $swiftling_notice ? array( __( 'Choose where it sits and how it looks', 'swiftling' ), admin_url( 'admin.php?page=swiftling-switcher' ) ) : array(),
+		)
+	);
+	?>
 <?php elseif ( 'forget_unticked' === $swiftling_notice ) : ?>
 	<?php Ui::notice( 'warning', array( 'text' => __( 'Nothing was deleted: tick that you understand the translations cannot be brought back.', 'swiftling' ) ) ); ?>
 <?php endif; ?>
@@ -129,6 +139,39 @@ foreach ( '' !== $swiftling_hosts ? $swiftling_languages['targets'] : array() as
 			/* translators: %s: language names, e.g. Deutsch and Français. */
 			'text' => sprintf( _n( '%s is not on the site until its address leads here.', '%s are not on the site until their addresses lead here.', count( $swiftling_unreached ), 'swiftling' ), wp_sprintf( '%l', $swiftling_unreached ) ),
 			'link' => array( __( 'Check on URLs', 'swiftling' ), admin_url( 'admin.php?page=swiftling-addresses#swiftling-format' ) ),
+		)
+	);
+	?>
+<?php endif; ?>
+<?php
+// The end of the setup: once there is a language to switch to, a site with no switcher is offered one.
+// A language still hidden from visitors is in the switcher only for people who can edit content.
+$swiftling_offer  = $swiftling_languages['targets'] && Settings::offered();
+$swiftling_hidden = wp_list_filter( $swiftling_languages['targets'], array( 'visible' => false ) );
+?>
+<?php if ( $swiftling_offer ) : ?>
+	<?php
+	Ui::notice(
+		'info',
+		array(
+			'title'   => __( 'Visitors cannot switch language yet', 'swiftling' ),
+			'text'    => __( 'Add a language switcher at the end of every page. You can move it, or put it in a menu, on the Switcher screen.', 'swiftling' ),
+			'actions' => array(
+				array( __( 'Add the switcher', 'swiftling' ), Settings::offerUrl( 'add' ) ),
+				array( __( 'Choose the place myself', 'swiftling' ), admin_url( 'admin.php?page=swiftling-switcher' ) ),
+				array( __( 'Not now', 'swiftling' ), Settings::offerUrl( 'dismiss' ) ),
+			),
+		)
+	);
+	?>
+<?php endif; ?>
+<?php if ( $swiftling_hidden && ( $swiftling_offer || 'switcher_added' === $swiftling_notice ) ) : ?>
+	<?php
+	Ui::notice(
+		'warning',
+		array(
+			/* translators: %s: names of languages, e.g. Deutsch and Français. */
+			'text' => sprintf( _n( '%s is still hidden from visitors, so they do not see it in the switcher; only people who can edit content do, faded. Tick Visible for it below when it is ready.', '%s are still hidden from visitors, so they do not see them in the switcher; only people who can edit content do, faded. Tick Visible for them below when they are ready.', count( $swiftling_hidden ), 'swiftling' ), wp_sprintf( '%l', wp_list_pluck( $swiftling_hidden, 'name' ) ) ),
 		)
 	);
 	?>
