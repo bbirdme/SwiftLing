@@ -715,7 +715,7 @@ function swiftling_redirect_copy() {
 	if ( $same && ( '' === $lang || false !== strpos( (string) wp_parse_url( $asked, PHP_URL_QUERY ), $lang ) ) ) {
 		return;
 	}
-	wp_safe_redirect( $target, 302, 'SwiftLing' );
+	swiftling_redirect_for_now( $target );
 	exit;
 }
 add_action( 'template_redirect', 'swiftling_redirect_copy', 3 );

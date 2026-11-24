@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.20
+Stable tag: 1.0.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,7 @@ SwiftLing finds the texts of a page as visitors see them, wherever they come fro
 
 = Works with =
 
-* **Caching plugins:** when a translation changes, SwiftLing empties the pages concerned in WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze, Nginx Helper, Proxy Cache Purge and Cloudflare.
+* **Caching plugins:** when a translation changes, SwiftLing empties the pages concerned in WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze, Nginx Helper, Proxy Cache Purge and the Cloudflare plugin. A CDN set up without a plugin, as Cloudflare in its dashboard only, keeps its pages until they expire, or until you empty its cache yourself.
 * **Networks of sites:** each site has its languages and translations of its own.
 
 = SwiftLing Pro =
@@ -187,6 +187,9 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.21 =
+* A redirect to another language is kept by no cache. On a site with a subdomain or a domain per language, a CDN that caches whole pages, as Cloudflare with "Cache Everything", could keep the redirect of an address with ?lang= for the same address without it, and send every visitor of the original page to the other language until it expired. The same holds for the other temporary redirects: from a hidden page, to a separate copy, and to the original language's folder.
 
 = 1.0.20 =
 * When the site has a language to switch to and no language switcher yet, the Languages screen offers to add one at the end of every page. It says when a language is still hidden from visitors, who would not see it in the switcher.

@@ -307,7 +307,7 @@ function swiftling_redirect_to_language_host() {
 	if ( ! swiftling_is_host_format() ) {
 		$former = swiftling_former_host_language();
 		if ( '' !== $former ) {
-			wp_safe_redirect( swiftling_language_url( $home . substr( $uri, strlen( $base ) ), $former ), 302, 'SwiftLing' );
+			swiftling_redirect_for_now( swiftling_language_url( $home . substr( $uri, strlen( $base ) ), $former ) );
 			exit;
 		}
 		return;
@@ -317,7 +317,7 @@ function swiftling_redirect_to_language_host() {
 	$on_host = swiftling_requested_host_language();
 	if ( '' !== $on_host ) {
 		if ( '' === swiftling_translation_language() ) {
-			wp_safe_redirect( (string) preg_replace( '#^([a-z][a-z0-9+.\-]*://[^/?\#]*).*$#is', '$1', $home ) . $uri, 302, 'SwiftLing' );
+			swiftling_redirect_for_now( (string) preg_replace( '#^([a-z][a-z0-9+.\-]*://[^/?\#]*).*$#is', '$1', $home ) . $uri );
 			exit;
 		}
 		return;
@@ -332,7 +332,7 @@ function swiftling_redirect_to_language_host() {
 		$folder = $base . '/' . $slug;
 		if ( preg_match( '#^' . preg_quote( $folder, '#' ) . '(/|$)#', $path ) && ! url_to_postid( $home . '/' . $slug . '/' ) ) {
 			$rest = (string) substr( $path, strlen( $folder ) );
-			wp_safe_redirect( swiftling_language_url( $home . ( '' === $rest ? '/' : $rest ) . $after, (string) $slug ), 302, 'SwiftLing' );
+			swiftling_redirect_for_now( swiftling_language_url( $home . ( '' === $rest ? '/' : $rest ) . $after, (string) $slug ) );
 			exit;
 		}
 	}
@@ -341,7 +341,7 @@ function swiftling_redirect_to_language_host() {
 	$lang      = isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '';
 	$languages = swiftling_languages()['targets'];
 	if ( '' !== $lang && isset( $languages[ $lang ] ) && $languages[ $lang ]['reachable'] ) {
-		wp_safe_redirect( swiftling_language_url( remove_query_arg( 'lang', $home . substr( $uri, strlen( $base ) ) ), $lang ), 302, 'SwiftLing' );
+		swiftling_redirect_for_now( swiftling_language_url( remove_query_arg( 'lang', $home . substr( $uri, strlen( $base ) ) ), $lang ) );
 		exit;
 	}
 }

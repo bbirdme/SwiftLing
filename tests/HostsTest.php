@@ -344,6 +344,7 @@ class HostsTest extends TestCase {
 			'a'    => '1',
 		);
 		$this->assertSame( 'http://fr.example.org/kontakt/?a=1', $this->redirect_of( 'swiftling_redirect_to_language_host' ) );
+		$this->assertSame( 302, $this->redirect_status );
 		$_GET = array();
 
 		// Pages of the original, folders that are no language, and forms stay where they are.
@@ -354,6 +355,59 @@ class HostsTest extends TestCase {
 		$_SERVER['REQUEST_URI']    = '/de/kontakt/';
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$this->assert_no_redirect( 'swiftling_redirect_to_language_host' );
+	}
+
+	/**
+	 * No cache keeps a redirect to another language, as it depends on more than the address: a cache
+	 * that leaves ?lang= out of its key would otherwise send every visitor of /kontakt/ to the
+	 * German host, and SwiftLing could not empty it. Issue #74.
+	 *
+	 * In a process of its own: in the shared one the test run has printed before the test starts,
+	 * so WordPress sends no headers, and a page cache's constant stays from an earlier test.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_redirects_to_a_language_are_never_cached() {
+		$this->assertFalse( defined( 'DONOTCACHEPAGE' ), 'A fresh process' );
+		$this->use_pretty_permalinks();
+		$this->use_hosts( 'subdomain' );
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$_SERVER['HTTP_HOST']      = 'example.org';
+
+		// ?lang= on the site address.
+		$_SERVER['REQUEST_URI'] = '/kontakt/?lang=de';
+		$_GET                   = array( 'lang' => 'de' );
+		$this->assertSame( 'http://de.example.org/kontakt/', $this->redirect_of( 'swiftling_redirect_to_language_host' ) );
+		$this->assertSame( 302, $this->redirect_status );
+		$this->assert_redirect_not_cached();
+		$this->assertTrue( defined( 'DONOTCACHEPAGE' ), 'Page caching plugins are told too.' );
+		$_GET = array();
+
+		// A language's old folder.
+		$_SERVER['REQUEST_URI'] = '/de/kontakt/';
+		$this->assertSame( 'http://de.example.org/kontakt/', $this->redirect_of( 'swiftling_redirect_to_language_host' ) );
+		$this->assert_redirect_not_cached();
+
+		// The host of a language this visitor may not see: who is asking decides.
+		$this->set_languages(
+			array(
+				'de_DE' => array(
+					'slug'    => 'de',
+					'visible' => false,
+				),
+			),
+			'subdomain'
+		);
+		$_SERVER['HTTP_HOST']   = 'de.example.org';
+		$_SERVER['REQUEST_URI'] = '/kontakt/';
+		$this->assertSame( 'http://example.org/kontakt/', $this->redirect_of( 'swiftling_redirect_to_language_host' ) );
+		$this->assert_redirect_not_cached();
+
+		// A language's former host, after going back to folders.
+		$this->set_languages( array( 'de_DE' => 'de' ), 'directory' );
+		$this->assertSame( 'http://example.org/de/kontakt/', $this->redirect_of( 'swiftling_redirect_to_language_host' ) );
+		$this->assert_redirect_not_cached();
 	}
 
 	/**

@@ -413,4 +413,33 @@ class CacheTest extends TestCase {
 			$this->assertContains( $call, $calls );
 		}
 	}
+
+	/**
+	 * Every temporary redirect of the site's pages goes through swiftling_redirect_for_now(), so no
+	 * cache keeps one (#74). Such a redirect names its status, or SwiftLing as the redirecting
+	 * application; a redirect after an admin form names neither and is left to WordPress. A
+	 * permanent redirect (301) is meant to be kept.
+	 */
+	public function test_temporary_redirects_are_kept_by_no_cache() {
+		$files = array_merge( glob( SWIFTLING_DIR . 'includes/*.php' ), array( SWIFTLING_DIR . 'swiftling.php' ) );
+		$tree  = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( SWIFTLING_DIR . 'src', \FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $tree as $file ) {
+			if ( 'php' === $file->getExtension() ) {
+				$files[] = $file->getPathname();
+			}
+		}
+		$cached = array();
+		foreach ( $files as $file ) {
+			$name = substr( $file, strlen( SWIFTLING_DIR ) );
+			foreach ( file( $file ) as $number => $line ) {
+				$redirect  = preg_match( '/\bwp_(safe_)?redirect\s*\(/', $line );
+				$temporary = preg_match( '/\b302\b|\'SwiftLing\'/', $line ) && ! preg_match( '/\b301\b/', $line );
+				$helper    = 'includes/cache.php' === $name && false !== strpos( $line, 'wp_safe_redirect( $location, 302' );
+				if ( $redirect && $temporary && ! $helper ) {
+					$cached[] = $name . ':' . ( $number + 1 ) . ' ' . trim( $line );
+				}
+			}
+		}
+		$this->assertSame( array(), $cached, 'Use swiftling_redirect_for_now() for these.' );
+	}
 }

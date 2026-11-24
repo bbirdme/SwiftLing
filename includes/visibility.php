@@ -380,7 +380,7 @@ function swiftling_open_hidden_post() {
 		return;
 	}
 	// Temporary: the post may be translated tomorrow.
-	wp_safe_redirect( swiftling_current_url( '' ), 302 );
+	swiftling_redirect_for_now( swiftling_current_url( '' ) );
 	exit;
 }
 add_action( 'template_redirect', 'swiftling_open_hidden_post', 2 );
