@@ -343,3 +343,35 @@ foreach ( array( 'swiftling_languages', 'swiftling_settings', 'swiftling_switche
 	add_action( 'update_option_' . $swiftling_option, 'swiftling_purge_after_settings' );
 }
 unset( $swiftling_option );
+
+/*
+ * Answers no cache keeps.
+ */
+
+/**
+ * Sends the browser to another address for now, in an answer no cache keeps. Every temporary
+ * redirect of the site's pages goes through here; CacheTest checks that none is written otherwise.
+ *
+ * A temporary redirect depends on more than its address: on ?lang=, on who may see a language,
+ * on settings and posts that change. A page cache or a CDN that kept one would send every visitor of
+ * the address on, and would go on after the cause is gone. With ?lang= it is worse: a cache that
+ * leaves the query out of its key keeps the redirect for the address without it, the original page.
+ * SwiftLing cannot empty a CDN it has no plugin for (see cache-plugins.php), so the answer says no
+ * cache may keep it at all:
+ *
+ * - nocache_headers(): Cache-Control no-store and private, which a CDN obeys even when it caches
+ *   HTML; only a rule that ignores the origin's cache headers overrides it;
+ * - DONOTCACHEPAGE: the constant the page caching plugins check.
+ *
+ * Permanent redirects (301) are meant to be kept and do not come here. The caller exits after it,
+ * as after wp_safe_redirect().
+ *
+ * @param string $location Address to send the browser to.
+ */
+function swiftling_redirect_for_now( $location ) {
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Name agreed between caching plugins.
+	}
+	nocache_headers();
+	wp_safe_redirect( $location, 302, 'SwiftLing' );
+}

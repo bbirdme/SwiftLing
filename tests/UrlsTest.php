@@ -284,4 +284,20 @@ class UrlsTest extends TestCase {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$this->assert_no_redirect( 'swiftling_redirect_to_source_folder' );
 	}
+
+	/**
+	 * The way to the original's folder is kept by no cache: the option can be turned off again
+	 * (#74). In a process of its own, see HostsTest::test_redirects_to_a_language_are_never_cached().
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_redirect_to_the_originals_folder_is_never_cached() {
+		$this->use_pretty_permalinks();
+		$this->set_languages( array( 'de_DE' => 'de' ), 'directory', array( 'source_folder' => true ) );
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$_SERVER['REQUEST_URI']    = '/kontakt/';
+		$this->assertSame( 'http://example.org/hr/kontakt/', $this->redirect_of( 'swiftling_redirect_to_source_folder' ) );
+		$this->assert_redirect_not_cached();
+	}
 }

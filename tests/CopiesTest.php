@@ -191,6 +191,28 @@ class CopiesTest extends TestCase {
 	}
 
 	/**
+	 * The way to a copy is kept by no cache: the copy may be unpublished tomorrow (#74). In a process
+	 * of its own, see HostsTest::test_redirects_to_a_language_are_never_cached().
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_redirect_to_a_copy_is_never_cached() {
+		$this->use_pretty_permalinks();
+		$this->set_languages( array( 'de_DE' => 'de' ), 'directory' );
+		$copy_id = swiftling_make_copy( $this->original, 'de' );
+		wp_publish_post( $copy_id );
+		swiftling_published_copies( 'de_DE', true );
+		$this->show_in( 'de' );
+		swiftling_keep_folder( 'de' );
+
+		$this->go_to( 'http://example.org/de/?p=' . $copy_id );
+		$this->assertSame( get_permalink( $copy_id ), $this->redirect_of( 'swiftling_redirect_copy' ) );
+		$this->assertSame( 302, $this->redirect_status );
+		$this->assert_redirect_not_cached();
+	}
+
+	/**
 	 * A copy at its original's address with a slug in another script is not sent to itself when the
 	 * request spells it in upper case (#83); the copy's own slug still leads there.
 	 */

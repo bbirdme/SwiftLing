@@ -564,7 +564,7 @@ function swiftling_redirect_to_source_folder() {
 	$target = swiftling_add_language_directory( $uri, $folder );
 	if ( $target !== $uri ) {
 		$origin = (string) preg_replace( '#^([a-z][a-z0-9+.\-]*://[^/?\#]*).*$#is', '$1', home_url() );
-		wp_safe_redirect( $origin . $target, 302, 'SwiftLing' );
+		swiftling_redirect_for_now( $origin . $target );
 		exit;
 	}
 }

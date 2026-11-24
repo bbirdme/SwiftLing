@@ -367,6 +367,23 @@ class VisibilityTest extends TestCase {
 	}
 
 	/**
+	 * The way from a hidden post to the original is kept by no cache: the post may be translated
+	 * tomorrow (#74). In a process of its own, see
+	 * HostsTest::test_redirects_to_a_language_are_never_cached().
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_hidden_post_redirect_is_never_cached() {
+		$other = $this->post( 'O nama' );
+		$this->hide( array( 'post' ) );
+		$this->show_in( 'de' );
+		$this->go_to( add_query_arg( 'lang', 'de', get_permalink( $other ) ) );
+		$this->assertSame( get_permalink( $other ), $this->redirect_of( 'swiftling_open_hidden_post' ) );
+		$this->assert_redirect_not_cached();
+	}
+
+	/**
 	 * The Settings screen counts the untranslated published posts per type and language.
 	 */
 	public function test_untranslated_counts() {

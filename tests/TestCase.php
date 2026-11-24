@@ -259,6 +259,14 @@ abstract class TestCase extends WP_UnitTestCase {
 	protected $redirect_status = 0;
 
 	/**
+	 * Cache-Control header the code sent with nocache_headers() before the last redirect
+	 * redirect_of() caught, or null when it sent none.
+	 *
+	 * @var string|null
+	 */
+	protected $redirect_cache_control = null;
+
+	/**
 	 * Runs code that ends with a redirect and returns where it sends the browser. The redirect is
 	 * stopped before WordPress sends it, so the code's exit never runs.
 	 *
@@ -271,6 +279,16 @@ abstract class TestCase extends WP_UnitTestCase {
 			$this->fail( 'The code did not redirect.' );
 		}
 		return (string) $location;
+	}
+
+	/**
+	 * Asserts that the last redirect redirect_of() caught told every cache not to keep it: no-store
+	 * and private, which a CDN obeys whether or not it follows the origin's other cache headers.
+	 */
+	protected function assert_redirect_not_cached() {
+		$this->assertNotNull( $this->redirect_cache_control, 'The redirect sent no Cache-Control header.' );
+		$this->assertStringContainsString( 'no-store', (string) $this->redirect_cache_control );
+		$this->assertStringContainsString( 'private', (string) $this->redirect_cache_control );
 	}
 
 	/**
@@ -296,7 +314,14 @@ abstract class TestCase extends WP_UnitTestCase {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Caught below, never shown.
 			throw new RuntimeException( 'swiftling-redirect:' . $location );
 		};
+		// The headers themselves are not sent in a test, so note what nocache_headers() would send.
+		$this->redirect_cache_control = null;
+		$note                         = function ( $headers ) {
+			$this->redirect_cache_control = isset( $headers['Cache-Control'] ) ? (string) $headers['Cache-Control'] : null;
+			return $headers;
+		};
 		add_filter( 'wp_redirect', $catch, 1, 2 );
+		add_filter( 'nocache_headers', $note, PHP_INT_MAX );
 		try {
 			$code();
 		} catch ( RuntimeException $redirect ) {
@@ -306,6 +331,7 @@ abstract class TestCase extends WP_UnitTestCase {
 			throw $redirect;
 		} finally {
 			remove_filter( 'wp_redirect', $catch, 1 );
+			remove_filter( 'nocache_headers', $note, PHP_INT_MAX );
 		}
 		return null;
 	}
