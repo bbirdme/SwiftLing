@@ -277,12 +277,19 @@ function swiftling_transform( $owner, $path, $source, $value ) {
 				// there: a text, or an address, at this path.
 				$map          = swiftling_object_map( $owner );
 				$translations = null !== $translations ? $translations : swiftling_object_translations( $owner );
+				$here         = false;
 				foreach ( array( swiftling_path_key( $leaf_path ), swiftling_link_key( $leaf_path ) ) as $unit_key ) {
-					if ( isset( $map['keys'][ $unit_key ], $translations[ $unit_key ] ) && $map['keys'][ $unit_key ] === $hash ) {
-						return swiftling_localize_value( $translations[ $unit_key ] );
+					if ( isset( $map['keys'][ $unit_key ] ) && $map['keys'][ $unit_key ] === $hash ) {
+						if ( isset( $translations[ $unit_key ] ) ) {
+							return swiftling_localize_value( $translations[ $unit_key ] );
+						}
+						$here = true;
 					}
 				}
-				return swiftling_localize_value( $leaf );
+				// Words found at another place of the object: the text moved since the page was
+				// checked, as a block does when one is added above it.
+				$moved = $here || ! swiftling_follows_its_words( $rule ) ? null : swiftling_moved_translation( $owner, $hash );
+				return swiftling_localize_value( null !== $moved ? $moved : $leaf );
 			},
 			$path,
 			$source
@@ -759,6 +766,68 @@ function swiftling_object_translations( $owner ) {
 	}
 
 	return $state['strings'][ $owner ];
+}
+
+/**
+ * Whether a value at another place than its page check found it may show the translation of the
+ * same words there: only what is text by its nature, as what a block saved between its tags or a
+ * field a builder declares as text. A setting can read like a text, as a block's class named like
+ * the page's title, and must stay as it is.
+ *
+ * @param string $rule Rule key of the value.
+ * @return bool
+ */
+function swiftling_follows_its_words( $rule ) {
+	return ( swiftling_is_block_html_rule( $rule ) && ! swiftling_is_shortcode_attribute_rule( $rule ) ) || \SwiftLing\Builders\Registry::declaresText( $rule );
+}
+
+/**
+ * Returns the translation into the current language of words that moved to another place of an
+ * object since its page was checked, as the place they stood at has it. When the same words stand at
+ * several places and their translations differ, no translation is guessed. A check of the page moves
+ * the translations to their new places, see swiftling_carry_moved_translations().
+ *
+ * @param string $owner Object key.
+ * @param string $hash  Hash of the words.
+ * @return string|null Null when the words have no translation at any place, or several.
+ */
+function swiftling_moved_translation( $owner, $hash ) {
+	$state = &swiftling_state();
+	$memo  = 'moved|' . $state['locale'] . '|' . $owner . '|' . $hash;
+	if ( array_key_exists( $memo, $state['values'] ) ) {
+		return $state['values'][ $memo ];
+	}
+
+	$keys = array();
+	foreach ( swiftling_object_map( $owner )['keys'] as $unit_key => $known ) {
+		if ( $known === $hash && ! swiftling_is_link_key( (string) $unit_key ) ) {
+			$keys[] = (string) $unit_key;
+		}
+	}
+
+	$texts = array();
+	if ( $keys && swiftling_reads_by_value( $owner ) ) {
+		$places = array();
+		foreach ( $keys as $unit_key ) {
+			$places[] = swiftling_place_key( $owner, $unit_key, $hash );
+		}
+		foreach ( swiftling_get_translations( $state['locale'], $places ) as $row ) {
+			if ( SWIFTLING_OFFICIAL !== $row['status'] ) {
+				$texts[] = $row['text'];
+			}
+		}
+	} elseif ( $keys ) {
+		$translations = swiftling_object_translations( $owner );
+		foreach ( $keys as $unit_key ) {
+			if ( isset( $translations[ $unit_key ] ) ) {
+				$texts[] = $translations[ $unit_key ];
+			}
+		}
+	}
+
+	$texts                    = array_values( array_unique( $texts ) );
+	$state['values'][ $memo ] = 1 === count( $texts ) ? $texts[0] : null;
+	return $state['values'][ $memo ];
 }
 
 /**
