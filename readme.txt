@@ -4,7 +4,7 @@ Tags: multilingual, translation, machine translation, language switcher, woocomm
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.21
+Stable tag: 1.0.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,9 @@ License: [MIT](https://opensource.org/licenses/MIT)
 Source: [https://gitlab.com/catamphetamine/country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons)
 
 == Changelog ==
+
+= 1.0.22 =
+* A block that moves keeps its translation. Adding a block above translated blocks, or swapping two, put their translations away: the page showed them in the original language, and the translation editor took each for a changed text, with the earlier translation of the block that stood there before. Now visitors read them translated as soon as the page is saved, and the editor lists the new block as the only text to translate. A block copied to another place shows the translation of the one it was copied from. When the same words stand twice with two different translations and both move, neither is guessed.
 
 = 1.0.21 =
 * A redirect to another language is kept by no cache. On a site with a subdomain or a domain per language, a CDN that caches whole pages, as Cloudflare with "Cache Everything", could keep the redirect of an address with ?lang= for the same address without it, and send every visitor of the original page to the other language until it expired. The same holds for the other temporary redirects: from a hidden page, to a separate copy, and to the original language's folder.

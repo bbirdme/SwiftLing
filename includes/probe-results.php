@@ -802,6 +802,10 @@ function swiftling_save_learned_rules( $rules ) {
  * editor can show the old translation as outdated, until every language that had the old version
  * has the new one.
  *
+ * A text found at another place than before, with the same words, moved there, as blocks do when
+ * one is added above them: its translations move with it, see swiftling_carry_moved_translations(),
+ * and the place it left holds a new text, not a changed one.
+ *
  * @param string $post_owner Object key of the page; empty when only shared objects gain texts, as
  *                           when a recording finds texts of themes and plugins on a page.
  * @param array  $groups     Object key => texts found.
@@ -823,6 +827,11 @@ function swiftling_save_unit_maps( $post_owner, $groups ) {
 		$previous = isset( $old[ $owner ] ) ? $old[ $owner ]['units'] : array();
 		$map      = $owner === $post_owner ? array() : $previous;
 		$changed  = false;
+		// Where each text stood before, by its wording, so a text found at another place moved. The
+		// texts of code are kept by what they say in the code, not by a place, so none of them moves.
+		$stood  = 0 === strpos( $owner, 'gettext:' ) ? array() : swiftling_keys_by_hash( $previous );
+		$moves  = array();
+		$edited = array();
 
 		foreach ( $units as $unit ) {
 			if ( $unit['o'] !== $owner ) {
@@ -836,6 +845,18 @@ function swiftling_save_unit_maps( $post_owner, $groups ) {
 			$key  = swiftling_unit_key( $unit );
 			$hash = swiftling_hash( $unit['v'] );
 			$was  = isset( $previous[ $key ] ) ? $previous[ $key ] : null;
+
+			// A text that is new here, or another than before, while the same words stood at another
+			// place of the object: it moved there, as a block that another block pushed down.
+			if ( null === $was || ( is_array( $was ) ? $was[0] : $was ) !== $hash ) {
+				$from = swiftling_other_places( $stood, $hash, $key );
+				if ( $from ) {
+					$moves[ $key ] = array( $hash, $from );
+					$map[ $key ]   = $hash;
+					$changed       = true;
+					continue;
+				}
+			}
 
 			if ( null === $was ) {
 				$map[ $key ] = $hash;
@@ -852,14 +873,16 @@ function swiftling_save_unit_maps( $post_owner, $groups ) {
 			}
 
 			// The text changed: remember the version that was translated.
-			$map[ $key ] = array( $hash, '' !== $was_prev ? $was_prev : $was_hash );
-			$changed     = true;
+			$map[ $key ]    = array( $hash, '' !== $was_prev ? $was_prev : $was_hash );
+			$edited[ $key ] = true;
+			$changed        = true;
 		}
 
 		if ( $owner === $post_owner && array_diff_key( $previous, $map ) ) {
 			$changed = true;
 		}
 
+		$map = swiftling_carry_moved_translations( $owner, $moves, $edited, $previous, $map );
 		$map = swiftling_settle_outdated( $owner, $map );
 
 		$sources = $owner === $post_owner || ! isset( $old[ $owner ] ) ? array() : $old[ $owner ]['sources'];
@@ -895,6 +918,131 @@ function swiftling_save_unit_maps( $post_owner, $groups ) {
  */
 function swiftling_unit_key( $unit ) {
 	return swiftling_is_address_kind( $unit['kind'] ) ? swiftling_link_key( $unit['p'] ) : swiftling_path_key( $unit['p'] );
+}
+
+/**
+ * Returns the places of an object's texts by their wording: the keys of a map by the hash of the
+ * version each holds now. A shared text a page lists is left out; it moves within its own object.
+ *
+ * @param array $map Map key => hash or array( hash, previous hash ).
+ * @return array<string, string[]> Hash => map keys.
+ */
+function swiftling_keys_by_hash( $map ) {
+	$keys = array();
+	foreach ( $map as $unit_key => $entry ) {
+		$unit_key = (string) $unit_key;
+		if ( ! swiftling_is_shared_key( $unit_key ) ) {
+			$keys[ is_array( $entry ) ? $entry[0] : (string) $entry ][] = $unit_key;
+		}
+	}
+	return $keys;
+}
+
+/**
+ * Returns the other places where the same words stood, of the same kind as a place: a text's
+ * places for a text, an address's for an address.
+ *
+ * @param array<string, string[]> $stood Hash => map keys, see swiftling_keys_by_hash().
+ * @param string                  $hash  Hash of the words.
+ * @param string                  $key   Map key of the place.
+ * @return string[] Map keys.
+ */
+function swiftling_other_places( $stood, $hash, $key ) {
+	$link   = swiftling_is_link_key( $key );
+	$places = array();
+	foreach ( isset( $stood[ $hash ] ) ? $stood[ $hash ] : array() as $other ) {
+		if ( $other !== $key && swiftling_is_link_key( $other ) === $link ) {
+			$places[] = $other;
+		}
+	}
+	return $places;
+}
+
+/**
+ * Moves the translations of texts that moved to their new places, in every language of the site.
+ *
+ * A text takes the translation of the place it left: of a place that holds other words now, or no
+ * text at all. When the same words stand at several places, the places they left count; when they
+ * left none, as a block copied to another place, all of them do. Those places must agree, in each
+ * language on its own: the same words translated differently in two places that both moved can no
+ * longer be told apart, so neither translation is taken, and the text waits to be translated as a
+ * new one. A machine translation stays one.
+ *
+ * A text that changed before it moved and waits for its new translation still waits for it, with
+ * its own earlier translation, when it left one place. The place it left holds new words, not a
+ * changed version of the text, so they come without the text's earlier translation.
+ *
+ * The translations at the places left stay where they are, as earlier versions of a text do, so
+ * moving a block back finds them there.
+ *
+ * @param string $owner    Object key.
+ * @param array  $moves    Map key now => array( hash, map keys the same words stood at ).
+ * @param array  $edited   Map keys whose text changed => true.
+ * @param array  $previous The map before, map key => hash or array( hash, previous hash ).
+ * @param array  $map      The map now.
+ * @return array The map now, with the earlier versions that moved, and without those that did not.
+ */
+function swiftling_carry_moved_translations( $owner, $moves, $edited, $previous, $map ) {
+	if ( ! $moves ) {
+		return $map;
+	}
+
+	$plans  = array();
+	$places = array();
+	foreach ( $moves as $unit_key => $move ) {
+		list( $hash, $from ) = $move;
+		$left                = array();
+		foreach ( $from as $old ) {
+			$now = isset( $map[ $old ] ) ? $map[ $old ] : null;
+			if ( null === $now || ( is_array( $now ) ? $now[0] : $now ) !== $hash ) {
+				$left[] = $old;
+				// Other words where the text was are a new text, not the text changed.
+				if ( isset( $edited[ $old ] ) && is_array( $map[ $old ] ) ) {
+					$map[ $old ] = $map[ $old ][0];
+				}
+			}
+		}
+		$sources = $left ? $left : $from;
+		$earlier = 1 === count( $sources ) && is_array( $previous[ $sources[0] ] ) ? $previous[ $sources[0] ][1] : '';
+
+		$plans[ $unit_key ] = array( $sources, array_values( array_filter( array( $hash, $earlier ) ) ) );
+		foreach ( $sources as $old ) {
+			foreach ( $plans[ $unit_key ][1] as $version ) {
+				$places[] = swiftling_place_key( $owner, $old, $version );
+			}
+		}
+		if ( '' !== $earlier ) {
+			$map[ $unit_key ] = array( $hash, $earlier );
+		}
+	}
+
+	foreach ( swiftling_languages()['targets'] as $language ) {
+		$known = swiftling_get_translations( $language['locale'], $places );
+		$items = array();
+		foreach ( $plans as $unit_key => $plan ) {
+			list( $sources, $versions ) = $plan;
+			foreach ( $versions as $version ) {
+				$found = array();
+				foreach ( $sources as $old ) {
+					$place = swiftling_place_key( $owner, $old, $version );
+					if ( isset( $known[ $place ] ) ) {
+						$found[] = $known[ $place ];
+					}
+				}
+				if ( $found && 1 === count( array_unique( array_column( $found, 'text' ) ) ) ) {
+					$items[ swiftling_place_key( $owner, $unit_key, $version ) ] = array(
+						'text'   => $found[0]['text'],
+						'status' => min( array_column( $found, 'status' ) ),
+					);
+				}
+			}
+		}
+		if ( $items ) {
+			swiftling_save_translations( $language['locale'], $items );
+		}
+	}
+
+	return $map;
 }
 
 /**
